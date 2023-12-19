@@ -21,7 +21,6 @@ class MyBot(commands.Bot):
         config = yaml.load(open(os.path.join(os.path.dirname(__file__), "config", "bot.yml"), "r"), Loader=yaml.FullLoader)
         self.name = config["name"]
         self.username = config["username"]
-        self.token = config["token"]
         self.prefix = config["default_prefix"]
         self.client_id = config["client_id"]
 
@@ -67,7 +66,8 @@ class MyBot(commands.Bot):
 
     # Bot execution
     def run(self):
-        super().run(self.token, reconnect=True)
+        token =  os.getenv("TOKEN") #config["token"]
+        super().run(token, reconnect=True)
     
 
     # Bot command error handling
