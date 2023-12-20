@@ -1,5 +1,5 @@
-discord.py==2.3.2
-pyaml==23.9.7
+discord.py
+pyaml
 instaloader
 requests
 BeautifulSoup4
