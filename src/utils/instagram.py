@@ -64,7 +64,7 @@ class Instagram(commands.Cog, name="Instagram"):
                             if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif")]
             os.system("rm -rf downloads/*")
             # Send the post with caption and likes as embed message
-            short_caption = post.caption.split("\n")[0] if post.caption.split("\n")[0] else post.caption.split("\n")[0][:50]+"..."
+            short_caption = post.caption.split("\n")[0] if len(post.caption.split("\n")[0]) < 50  else post.caption.split("\n")[0][:50]+"..."
             embed = discord.Embed(
                 title=str(post.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(post.owner_profile.username),
@@ -104,7 +104,7 @@ class Instagram(commands.Cog, name="Instagram"):
                                         if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif")]
                         os.system("rm -rf downloads/*")
                         # Send the post with caption and likes as embed message
-                        short_caption = post.caption.split("\n")[0] if post.caption.split("\n")[0] else post.caption.split("\n")[0][:50]+"..."
+                        short_caption = post.caption.split("\n")[0] if len(post.caption.split("\n")[0]) < 50 else post.caption.split("\n")[0][:50]+"..."
                         embed = discord.Embed(
                             title=str(post.owner_profile.full_name),
                             url="https://www.instagram.com/"+str(post.owner_profile.username),
@@ -136,6 +136,6 @@ class Instagram(commands.Cog, name="Instagram"):
                 else:
                     return
                 
-                
+
 async def setup(bot):
     await bot.add_cog(Instagram(bot))
