@@ -15,7 +15,7 @@ from discord.ext import commands
 from discord.ext.commands import Context
 import instaloader
 
-
+temp_download_dir = "downloads"
 
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):
@@ -95,10 +95,10 @@ class Instagram(commands.Cog, name="Instagram"):
             shortcode = url.split("/")[-2]  # (https://www.instagram.com/p/<shortcode>/<post_id>)
             post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the post
-            self.loader.download_post(post, target="downloads")
-            media_files = [discord.File("downloads/"+file) for file in os.listdir(os.getcwd()+"/downloads") 
+            self.loader.download_post(post, target=temp_download_dir)
+            media_files = [discord.File(temp_download_dir+"/"+file) for file in os.listdir(os.getcwd()+"/"+temp_download_dir)
                             if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif")]
-            os.system("rm -rf downloads/*")
+            os.system("rm -rf "+temp_download_dir+"/*")
             # Send the post with caption and likes as embed message
             short_caption = post.caption.split("\n")[0] if len(post.caption.split("\n")[0]) < 50  else post.caption.split("\n")[0][:50]+"..."
             embed = discord.Embed(
@@ -124,10 +124,10 @@ class Instagram(commands.Cog, name="Instagram"):
             shortcode = url.split("/")[-2]  # (https://www.instagram.com/reel/<shortcode>/<post_id>)
             post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the post
-            self.loader.download_post(post, target="downloads")
-            media_files = [discord.File("downloads/"+file) for file in os.listdir(os.getcwd()+"/downloads") 
+            self.loader.download_post(post, target=temp_download_dir)
+            media_files = [discord.File(temp_download_dir+"/"+file) for file in os.listdir(os.getcwd()+"/"+temp_download_dir)
                             if file.endswith(".mp4")]   # Reels are always mp4. jpg is for thumbnail
-            os.system("rm -rf downloads/*")
+            os.system("rm -rf "+temp_download_dir+"/*")
             # Send the post with caption and likes as embed message
             short_caption = post.caption.split("\n")[0] if len(post.caption.split("\n")[0]) < 50  else post.caption.split("\n")[0][:50]+"..."
             embed = discord.Embed(
