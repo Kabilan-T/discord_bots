@@ -37,18 +37,18 @@ class Instagram(commands.Cog, name="Instagram"):
     @commands.hybrid_command( name="show", description="Download a post from instagram.")
     async def show(self, context: Context, url: str):
         # Download a media from instagram and show it
-        await self.send_post(context.reply, url)
+        await self.send_media(context.reply, url)
 
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.channel == self.channel_to_watch and message.author.bot == False and message.content != "":
             if str("https://www.instagram.com/") in message.content:
-                if len(message.content.split("/")) == 6:
-                    # Link is of a post - download and send it
-                    await self.send_post(message.reply, message.content)
-                elif len(message.content.split("/")) == 4:
+                if len(message.content.split("/")) == 4:
                     # Link is of a profile - get the bio
                     await self.send_bio(message.reply, message.content)
+                elif len(message.content.split("/")) >= 5:
+                    # Link is of a media - get the media and send it
+                    await self.send_media(message.reply, message.content)
                 else:
                     return
 
@@ -78,6 +78,15 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=0xBEBEFE,
                     )
             await reply_function(embed=embed)
+    
+    async def send_media(self, reply_function, url):
+        # download a media from instagram url and send it
+        if url.split("/")[3] == "p":
+            await self.send_post(reply_function, url)
+        elif url.split("/")[3] == "reel":
+            await self.send_reel(reply_function, url)
+        elif url.split("/")[3] == "stories":
+            await self.send_stories(reply_function, url)
 
     async def send_post(self, reply_function, url):
         # send a post
@@ -95,11 +104,58 @@ class Instagram(commands.Cog, name="Instagram"):
             embed = discord.Embed(
                 title=str(post.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(post.owner_profile.username),
-                description="Caption: "+str(short_caption)+"\nLikes: "+str(post.likes)+"\n",
+                description="Caption: "+str(short_caption)+"\nType: Post ("+str(len(media_files))+" files)\nLikes: "+str(post.likes)+"\n",
                 color=0xBEBEFE,
             )
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
             await reply_function(embed=embed, files=media_files)
+        except instaloader.exceptions.InstaloaderException:
+            embed = discord.Embed(
+                    title="Sorry! There is some problem.",
+                    description="Possibly the user is private or the post doesn't exist.",
+                    color=0xBEBEFE,
+                    )
+            await reply_function(embed=embed)
+
+    async def send_reel(self, reply_function, url):
+        # send a reel
+        try:
+            #Find the post from the url
+            shortcode = url.split("/")[-2]  # (https://www.instagram.com/reel/<shortcode>/<post_id>)
+            post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
+            # Download the post
+            self.loader.download_post(post, target="downloads")
+            media_files = [discord.File("downloads/"+file) for file in os.listdir(os.getcwd()+"/downloads") 
+                            if file.endswith(".mp4")]   # Reels are always mp4. jpg is for thumbnail
+            os.system("rm -rf downloads/*")
+            # Send the post with caption and likes as embed message
+            short_caption = post.caption.split("\n")[0] if len(post.caption.split("\n")[0]) < 50  else post.caption.split("\n")[0][:50]+"..."
+            embed = discord.Embed(
+                title=str(post.owner_profile.full_name),
+                url="https://www.instagram.com/"+str(post.owner_profile.username),
+                description="Caption: "+str(short_caption)+"\nType: Reel \nLikes: "+str(post.likes)+"\n",
+                color=0xBEBEFE,
+            )
+            embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
+            await reply_function(embed=embed, files=media_files)
+        except instaloader.exceptions.InstaloaderException:
+            embed = discord.Embed(
+                    title="Sorry! There is some problem.",
+                    description="Possibly the user is private or the post doesn't exist.",
+                    color=0xBEBEFE,
+                    )
+            await reply_function(embed=embed)
+
+    async def send_stories(self, reply_function, url):
+        # send a story
+        try:
+            # TODO: Yet to be implemented
+            embed = discord.Embed(
+                    title="Sorry! Stories are not yet implemented.",
+                    description=" Hopefully it will be implemented soon.",
+                    color=0xBEBEFE,
+                    )
+            await reply_function(embed=embed)
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
