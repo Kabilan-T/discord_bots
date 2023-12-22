@@ -82,6 +82,25 @@ class General(commands.Cog, name="General"):
             color=0xBEBEFE,
         )
         await context.send(embed=embed)
+
+    @commands.hybrid_command( name="prefix", description="Change the bot prefix.")
+    async def prefix(self, context: Context, prefix: str = None):
+        # Change the bot prefix
+        if prefix is None:
+            embed = discord.Embed(
+                title="Prefix",
+                description=f"The current prefix is `{self.bot.prefix}`",
+                color=0xBEBEFE,
+            )
+            await context.send(embed=embed)
+        else:
+            self.bot.prefix = prefix
+            embed = discord.Embed(
+                title="Prefix",
+                description=f"The prefix has been changed to `{self.bot.prefix}`",
+                color=0xBEBEFE,
+            )
+            await context.send(embed=embed)
     
 async def setup(bot):
     await bot.add_cog(General(bot))
