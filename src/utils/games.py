@@ -31,10 +31,11 @@ class Games(commands.Cog, name="Games"):
                 description=f"Use `{self.bot.prefix}bingo <@player>...` to start a game of bingo.",
                 color=0xBEBEFE,
             )
+            print("Game started")
             await context.send(embed=embed)
             return
 
-        game_id = context.guild.id
+        game_id = context.guild.id+""+context.channel.id
         if game_id in self.games:
             embed = discord.Embed(
                 title="Bingo",
@@ -58,6 +59,7 @@ class Games(commands.Cog, name="Games"):
                 description=f"Your Bingo Chart:\n{self.format_bingo_chart(chart)}",
                 color=0xBEBEFE,
             )
+            print("bingo chart "+self.format_bingo_chart(chart))
             try:
                 await player.send(embed=embed)
             except discord.Forbidden:
@@ -127,7 +129,7 @@ class Games(commands.Cog, name="Games"):
         return [numbers[i:i + 5] for i in range(0, 25, 5)]
 
     async def play_turn(self, context: Context, player: discord.Member):
-        game_id = context.guild.id
+        game_id = context.guild.id+""+context.channel.id
         current_chart = self.games[game_id]["scores"][player.id]["chart"]
 
         embed = discord.Embed(

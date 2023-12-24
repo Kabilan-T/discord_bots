@@ -13,6 +13,12 @@ import os
 import yaml
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+
 
 class MyBot(commands.Bot):
     def __init__(self):
@@ -66,7 +72,8 @@ class MyBot(commands.Bot):
 
     # Bot execution
     def run(self):
-        token =  os.getenv("TOKEN") #config["token"]
+    
+        token =  os.getenv('TOKEN') #config["token"]
         super().run(token, reconnect=True)
     
 
