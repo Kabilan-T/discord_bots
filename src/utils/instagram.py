@@ -18,13 +18,20 @@ import instaloader
 temp_download_dir = "downloads"
 
 class Instagram(commands.Cog, name="Instagram"):
-    
     def __init__(self, bot):
         self.bot = bot
         self.channel_to_watch = None
         self.loader = instaloader.Instaloader()
+        if os.environ.get("INSTAGRAM_USERNAME") != None and os.environ.get("INSTAGRAM_PASSWORD") != None:
+            username = os.environ.get("INSTAGRAM_USERNAME")
+            password = os.environ.get("INSTAGRAM_PASSWORD")
+            self.loader.login(username, password)
+            if self.loader.test_login() == username:
+                print("Instagram login failed. Check your username and password.")
+                exit(1)
+            else:
+                print("Instagram login successful.")
         proxy = "246.60.163.237:8080"
-
         self.loader.context._session.proxies = {"http": "http://" + proxy, "https": "https://" + proxy}
         print("using proxy :- https://" + proxy)
 
