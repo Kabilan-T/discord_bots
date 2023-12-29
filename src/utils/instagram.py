@@ -18,10 +18,16 @@ import instaloader
 temp_download_dir = "downloads"
 
 class Instagram(commands.Cog, name="Instagram"):
+    
     def __init__(self, bot):
         self.bot = bot
         self.channel_to_watch = None
         self.loader = instaloader.Instaloader()
+        proxy = "246.60.163.237:8080"
+
+        self.loader.context._session.proxies = {"http": "http://" + proxy, "https": "https://" + proxy}
+        print("using proxy :- https://" + proxy)
+
 
     @commands.hybrid_command( name="bio", description="Get the bio of a user.")
     async def bio(self, context: Context, username: str):
