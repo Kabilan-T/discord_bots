@@ -25,11 +25,14 @@ class Instagram(commands.Cog, name="Instagram"):
         if os.environ.get("INSTAGRAM_USERNAME") != None and os.environ.get("INSTAGRAM_PASSWORD") != None:
             username = os.environ.get("INSTAGRAM_USERNAME")
             password = os.environ.get("INSTAGRAM_PASSWORD")
-            self.loader.login(username, password)
-            if self.loader.test_login() == username:
-                print("Instagram login successful. Logged in as "+username)
-            else:
-                print("Instagram login failed. Please check your credentials.")
+            try:
+                self.loader.login(username, password)
+                if self.loader.test_login() == username:
+                    print("Instagram login successful. Logged in as "+username)
+                else:
+                    print("Instagram login failed. Please check your credentials.")
+            except Exception as e:
+                print("couldn't login to instagram. Error: "+str(e))
         proxy = "246.60.163.237:8080"
         self.loader.context._session.proxies = {"http": "http://" + proxy, "https": "https://" + proxy}
         print("using proxy :- https://" + proxy)
