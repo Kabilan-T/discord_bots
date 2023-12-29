@@ -28,7 +28,6 @@ class Instagram(commands.Cog, name="Instagram"):
             self.loader.login(username, password)
             if self.loader.test_login() == username:
                 print("Instagram login failed. Check your username and password.")
-                exit(1)
             else:
                 print("Instagram login successful.")
         proxy = "246.60.163.237:8080"
