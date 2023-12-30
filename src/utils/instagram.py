@@ -32,8 +32,8 @@ class Instagram(commands.Cog, name="Instagram"):
 
         # channels to watch for instagram links
         self.channels_to_watch = list()
-        self.channels_to_watch.append(bot.get_channel(1183051684767871076)) # axiom server - sauce-deck channel
-        self.channels_to_watch.append(bot.get_channel(1186341011350360167)) # Hello World server - general channel
+        self.channels_to_watch.append(1183051684767871076) # axiom server - sauce-deck channel
+        self.channels_to_watch.append(1186341011350360167) # Hello World server - general channel
 
 
     @commands.hybrid_command( name="bio", description="Get the bio of a user.")
@@ -44,7 +44,7 @@ class Instagram(commands.Cog, name="Instagram"):
     @commands.hybrid_command( name="set_channel", description="Set the channel to watch for instagram links.")
     async def set_channel(self, context: Context, channel: discord.TextChannel):
         # Set the channel to watch for instagram links
-        self.channels_to_watch.append(channel)
+        self.channels_to_watch.append(channel.id)
         await context.send("Instagram channel set to "+channel.mention+".")
 
     @commands.hybrid_command( name="show", description="Download a post from instagram.")
@@ -54,7 +54,7 @@ class Instagram(commands.Cog, name="Instagram"):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.channel in self.channels_to_watch and message.author.bot == False and message.content != "":
+        if message.channel.id in self.channels_to_watch and message.author.bot == False and message.content != "":
             if str("https://www.instagram.com/") in message.content:
                 if len(message.content.split("/")) == 4:
                     # Link is of a profile - get the bio
@@ -112,7 +112,7 @@ class Instagram(commands.Cog, name="Instagram"):
             L = instaloader.Instaloader()
             
             print(L.context._session.proxies.__str__())
-            self.login(L)
+            #self.login(L)
             profile = instaloader.Profile.from_username(L.context, username)
             self.remove_proxy()
             embed = discord.Embed(
@@ -149,7 +149,7 @@ class Instagram(commands.Cog, name="Instagram"):
         try:
             self.setup_proxy()
             L = instaloader.Instaloader()
-            self.login(L)
+            #self.login(L)
             #Find the post from the url
             shortcode = url.split("/")[-2]  # (https://www.instagram.com/p/<shortcode>/<post_id>)
             post = instaloader.Post.from_shortcode(L.context, shortcode)
@@ -183,7 +183,7 @@ class Instagram(commands.Cog, name="Instagram"):
         try:
             self.setup_proxy()
             L = instaloader.Instaloader()
-            self.login(L)
+            #self.login(L)
             #Find the post from the url
             shortcode = url.split("/")[-2]  # (https://www.instagram.com/reel/<shortcode>/<post_id>)
             post = instaloader.Post.from_shortcode(L.context, shortcode)
