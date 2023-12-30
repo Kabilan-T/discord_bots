@@ -33,9 +33,6 @@ class Instagram(commands.Cog, name="Instagram"):
                     print("Instagram login failed. Please check your credentials.")
             except Exception as e:
                 print("couldn't login to instagram. Error: "+str(e))
-        proxy = "246.60.163.237:8080"
-        self.loader.context._session.proxies = {"http": "http://" + proxy, "https": "https://" + proxy}
-        print("using proxy :- https://" + proxy)
 
 
     @commands.hybrid_command( name="bio", description="Get the bio of a user.")
