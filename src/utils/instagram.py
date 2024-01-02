@@ -22,7 +22,7 @@ class Instagram(commands.Cog, name="Instagram"):
         self.bot = bot
         self.loader = instaloader.Instaloader()
         # login to instagram if login credentials are provided
-        self.login()
+        self.is_logged_in = self.login()
         # channels to watch for instagram links
         self.channels_to_watch = list()
         self.channels_to_watch.append(1183051684767871076) # axiom server - sauce-deck channel
@@ -175,13 +175,31 @@ class Instagram(commands.Cog, name="Instagram"):
     async def send_stories(self, reply_function, url):
         # send a story
         try:
-            # TODO: Yet to be implemented
-            embed = discord.Embed(
-                    title="Sorry! Stories are not yet implemented.",
-                    description=" Hopefully it will be implemented soon.",
+            # check if logged in
+            if self.is_logged_in == False:
+                embed = discord.Embed(
+                    title="Sorry! There is some problem.",
+                    description="Stories can be downloaded only if the bot is logged in. There is some problem with the login credentials.",
                     color=0xBEBEFE,
                     )
-            await reply_function(embed=embed)
+                await reply_function(embed=embed)
+                return
+            else:
+                profile = instaloader.Profile.from_username(self.loader.context, url.split("/")[4])
+                # Download the story
+                self.loader.download_stories([profile.userid],  filename_target=temp_download_dir)
+                media_files = [discord.File(temp_download_dir+"/"+file) for file in os.listdir(os.getcwd()+"/"+temp_download_dir)
+                                if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif")]
+                os.system("rm -rf "+temp_download_dir+"/*")
+                # Send the story with caption and likes as embed message
+                embed = discord.Embed(
+                    title=str(profile.full_name),
+                    url="https://www.instagram.com/"+str(profile.username),
+                    description="Type: Story ("+str(len(media_files))+" files)\n",
+                    color=0xBEBEFE,
+                )
+                embed.set_thumbnail(url=profile.profile_pic_url)
+            await reply_function(embed=embed, files=media_files)
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
