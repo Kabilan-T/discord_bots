@@ -34,10 +34,20 @@ class Instagram(commands.Cog, name="Instagram"):
         await self.send_bio(context.reply, username)
 
     @commands.hybrid_command( name="set_channel", description="Set the channel to watch for instagram links.")
-    async def set_channel(self, context: Context, channel: discord.TextChannel):
+    async def set_channel(self, context: Context, channel: discord.TextChannel = None):
         # Set the channel to watch for instagram links
+        if channel == None:
+            channel = context.channel
         self.channels_to_watch.append(channel.id)
         await context.send("Instagram channel set to "+channel.mention+".")
+
+    @commands.hybrid_command( name="unset_channel", description="Unset the channel to watch for instagram links.")
+    async def unset_channel(self, context: Context, channel: discord.TextChannel = None):
+        # Unset the channel to watch for instagram links
+        if channel == None:
+            channel = context.channel
+        self.channels_to_watch.remove(channel.id)
+        await context.send("Instagram channel unset from "+channel.mention+".")
 
     @commands.hybrid_command( name="show", description="Download a post from instagram.")
     async def show(self, context: Context, url: str):
