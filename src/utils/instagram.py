@@ -20,21 +20,13 @@ temp_download_dir = "downloads"
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):
         self.bot = bot
-        # Load proxy list from config file proxy.txt
-        proxy_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "proxy.txt")
-        if os.path.exists(proxy_dir):
-            with open(proxy_dir, "r") as f:
-                self.proxy_list = f.read().split("\n")
-            print("Proxy list loaded. "+str(len(self.proxy_list))+" proxies found.")
-        else:
-            print("Proxy list not found. Proxy will not be used.")
-            self.proxy_list = None
-
+        self.loader = instaloader.Instaloader()
+        # login to instagram if login credentials are provided
+        self.login()
         # channels to watch for instagram links
         self.channels_to_watch = list()
         self.channels_to_watch.append(1183051684767871076) # axiom server - sauce-deck channel
         self.channels_to_watch.append(1186341011350360167) # Hello World server - general channel
-
 
     @commands.hybrid_command( name="bio", description="Get the bio of a user.")
     async def bio(self, context: Context, username: str):
@@ -65,30 +57,15 @@ class Instagram(commands.Cog, name="Instagram"):
                 else:
                     return
                 
-    def setup_proxy(self):
-        # setup proxy form proxy list
-        if self.proxy_list != None:
-            proxy = self.proxy_list[0]
-            os.environ["http_proxy"] = "http://"+proxy
-            os.environ["https_proxy"] = "http://"+proxy
-            print("Proxy set to "+proxy)
-            self.proxy_list.remove(proxy)
-
-    def remove_proxy(self):
-        if os.environ.get("http_proxy") != None and os.environ.get("https_proxy") != None:
-            os.environ["http_proxy"] = ""
-            os.environ["https_proxy"] = ""
-            print("Proxy removed")
-                
-    def login(self,L):
+    def login(self):
         # login to instagram if login credentials are provided
         if os.environ.get("INSTAGRAM_USERNAME") != None and os.environ.get("INSTAGRAM_PASSWORD") != None:
             username = os.environ.get("INSTAGRAM_USERNAME")
             password = os.environ.get("INSTAGRAM_PASSWORD")
             try:
                 print("Trying to login to instagram...")
-                L.login(username, password)
-                if L.test_login() == username:
+                self.loader.login(username, password)
+                if self.loader.test_login() == username:
                     print("Instagram login successful. Logged in as "+username)
                     return True
                 else:
@@ -107,14 +84,8 @@ class Instagram(commands.Cog, name="Instagram"):
             username = username[1:]
         elif username.startswith("https://www.instagram.com/"):
             username = username.split("/")[-1]
-        try:
-            self.setup_proxy()
-            L = instaloader.Instaloader()
-            
-            print(L.context._session.proxies.__str__())
-            #self.login(L)
-            profile = instaloader.Profile.from_username(L.context, username)
-            self.remove_proxy()
+        try:    
+            profile = instaloader.Profile.from_username(self.loader.context, username)
             embed = discord.Embed(
                     title=str(profile.full_name),
                     url="https://www.instagram.com/"+str(profile.username),
@@ -127,7 +98,6 @@ class Instagram(commands.Cog, name="Instagram"):
             embed.add_field(name="Posts", value=str(profile.mediacount), inline=True)
             await reply_function(embed=embed)
         except instaloader.exceptions.InstaloaderException:
-            self.remove_proxy()
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="Possibly the username is wrong or doesn't exist.",
@@ -147,15 +117,11 @@ class Instagram(commands.Cog, name="Instagram"):
     async def send_post(self, reply_function, url):
         # send a post
         try:
-            self.setup_proxy()
-            L = instaloader.Instaloader()
-            #self.login(L)
             #Find the post from the url
             shortcode = url.split("/")[-2]  # (https://www.instagram.com/p/<shortcode>/<post_id>)
-            post = instaloader.Post.from_shortcode(L.context, shortcode)
+            post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the post
-            L.download_post(post, target=temp_download_dir)
-            self.remove_proxy()
+            self.loader.download_post(post, target=temp_download_dir)
             media_files = [discord.File(temp_download_dir+"/"+file) for file in os.listdir(os.getcwd()+"/"+temp_download_dir)
                             if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif")]
             os.system("rm -rf "+temp_download_dir+"/*")
@@ -170,7 +136,6 @@ class Instagram(commands.Cog, name="Instagram"):
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
             await reply_function(embed=embed, files=media_files)
         except instaloader.exceptions.InstaloaderException:
-            self.remove_proxy()
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="Possibly the user is private or the post doesn't exist.",
@@ -181,15 +146,11 @@ class Instagram(commands.Cog, name="Instagram"):
     async def send_reel(self, reply_function, url):
         # send a reel
         try:
-            self.setup_proxy()
-            L = instaloader.Instaloader()
-            #self.login(L)
             #Find the post from the url
             shortcode = url.split("/")[-2]  # (https://www.instagram.com/reel/<shortcode>/<post_id>)
-            post = instaloader.Post.from_shortcode(L.context, shortcode)
+            post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the post
-            L.download_post(post, target=temp_download_dir)
-            self.remove_proxy()
+            self.loader.download_post(post, target=temp_download_dir)
             media_files = [discord.File(temp_download_dir+"/"+file) for file in os.listdir(os.getcwd()+"/"+temp_download_dir)
                             if file.endswith(".mp4")]   # Reels are always mp4. jpg is for thumbnail
             os.system("rm -rf "+temp_download_dir+"/*")
@@ -204,7 +165,6 @@ class Instagram(commands.Cog, name="Instagram"):
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
             await reply_function(embed=embed, files=media_files)
         except instaloader.exceptions.InstaloaderException:
-            self.remove_proxy()
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="Possibly the user is private or the post doesn't exist.",
