@@ -39,7 +39,12 @@ class General(commands.Cog, name="General"):
         else:
             command = self.bot.get_command(command)
             if command is None:
-                await context.send("Command not found.")
+                embed = discord.Embed(
+                    title="Help",
+                    description=f"`{command}` is not a valid command.",
+                    color=0xBEBEFE,
+                )
+                await context.send(embed=embed)
             else:
                 embed = discord.Embed(
                     title=f"Help: {command.name}",
@@ -101,6 +106,7 @@ class General(commands.Cog, name="General"):
                 color=0xBEBEFE,
             )
             await context.send(embed=embed)
+            self.bot.logger.info(f"Prefix changed to {self.bot.prefix}")
     
 async def setup(bot):
     await bot.add_cog(General(bot))
