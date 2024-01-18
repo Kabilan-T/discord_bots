@@ -32,14 +32,11 @@ class MyBot(commands.Bot):
         self.logger.info(f"Loaded config for {self.name}")
 
         # Create discord bot
-        intents = discord.Intents.default()
-        intents.members = True
-        intents.presences = True
-        intents.message_content = True
         super().__init__(description="Discord bot : "+self.name,
                          command_prefix=self.prefix, 
-                         intents=intents,
-                         help_command=None)
+                         intents=discord.Intents.all(),
+                         help_command=None,
+                         application_id=self.client_id)
         
     def setup_logging(self):
         log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
@@ -77,6 +74,7 @@ class MyBot(commands.Bot):
             info += f"\n\t - {guild.name} (ID: {guild.id}) with {guild.member_count} members"
         self.logger.info(info)
         self.logger.info("Time to get to work!")
+        await self.tree.sync()
         
     # Execute when bot is closed
     async def close(self):
