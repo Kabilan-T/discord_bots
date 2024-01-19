@@ -1,5 +1,6 @@
 token.sh
 logs/*
+src/config/warns.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
