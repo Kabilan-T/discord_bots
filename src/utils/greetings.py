@@ -35,7 +35,6 @@ class Greetings(commands.Cog, name="Greetings"):
         except discord.Forbidden:
             pass
 
-
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         ''' Send goodbye message when a member leaves the server '''
