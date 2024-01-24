@@ -21,6 +21,7 @@ temp_audio_dir = "generated_audio"
 class Voice(commands.Cog, name="Voice Features"):
     def __init__(self, bot):
         self.bot = bot
+        self.volume = self.bot.default_volume
 
     @commands.command(name="join", aliases=["j"])
     async def join(self, context: Context):
@@ -99,13 +100,42 @@ class Voice(commands.Cog, name="Voice Features"):
         tts.save(file)
         context.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: print("done", e))
         context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source)
-        context.voice_client.source.volume = 0.5
+        context.voice_client.source.volume = self.volume / 100
         embed = discord.Embed(title="Speaking :speaking_head:",
                               description=" *'" + text + "'*",
                               color=0xBEBEFE,
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+
+    @commands.command(name="volume", aliases=["v"])
+    async def volume(self, context: Context):
+        ''' Get the volume of the bot '''
+        embed = discord.Embed(title="Volume :loud_sound:",
+                              description=f"Volume is {self.volume}",
+                              color=0xBEBEFE,
+                              )
+        await context.reply(embed=embed)
+        self.bot.logger.info(f"Current volume is {self.volume} checked by {context.author} in guild {context.guild.name}")
+
+    @commands.command(name="setvolume", aliases=["sv"])
+    async def setvolume(self, context: Context, volume: int):
+        ''' Set the volume of the bot '''
+        if volume < 0 or volume > 100:
+            embed = discord.Embed(title="Invalid volume :confused:",
+                                  description="Please enter a volume between 0 and 100",
+                                  color=0xBEBEFE,
+                                  )
+            await context.reply(embed=embed)
+            self.bot.logger.info(f"{context.author} tried to use setvolume command with invalid volume {volume} in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+            return
+        self.volume = volume
+        embed = discord.Embed(title="Volume set :loud_sound:",
+                              description=f"Volume set to {self.volume}",
+                              color=0xBEBEFE,
+                              )
+        await context.reply(embed=embed)
+        self.bot.logger.info(f"{context.author} set the volume to {volume} in {context.guild.name}")
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))

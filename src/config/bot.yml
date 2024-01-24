@@ -2,6 +2,7 @@ name: 'M-O'
 username: 'M-O#9369'
 client_id: '1186344395239325847'
 default_prefix: '??'
+default_volume: 75
 extensions:
   - 'general'
   - 'moderation'
