@@ -9,9 +9,14 @@
 
 #-------------------------------------------------------------------------------
 
+import os
+import gtts
+import asyncio
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
+
+temp_audio_dir = "generated_audio"
 
 class Voice(commands.Cog, name="Voice Features"):
     def __init__(self, bot):
@@ -21,73 +26,85 @@ class Voice(commands.Cog, name="Voice Features"):
     async def join(self, context: Context):
         ''' Join the voice channel of the user '''
         if context.author.voice is None:
-            await context.send("You are not in a voice channel")
+            embed = discord.Embed(title="You are not in a voice channel :confused:",
+                                  description="Please join a voice channel and try again",
+                                  color=0xBEBEFE,
+                                  )
+            await context.reply(embed=embed)
+            self.bot.logger.info(f"{context.author} tried to use join command without being in a voice channel")
             return
         voice_channel = context.author.voice.channel
         if context.voice_client is None:
             await voice_channel.connect()
-            await context.send(f"Joined {voice_channel.name}")
+            embed = discord.Embed(title=f"Joined {voice_channel.name} :microphone:",
+                                  description="I have joined the voice channel",
+                                  color=0xBEBEFE,
+                                  )
+            await context.reply(embed=embed)
+            self.bot.logger.info(f"{self.bot.name} joined voice channel {voice_channel.name} in {context.guild.name}")
+        elif context.voice_client.channel == voice_channel:
+            embed = discord.Embed(title=f"Already in {voice_channel.name} :confused:",
+                                  description="I am already in the voice channel",
+                                  color=0xBEBEFE,
+                                  )
+            await context.reply(embed=embed)
+            self.bot.logger.info(f"{self.bot.name} tried to join voice channel {voice_channel.name} in {context.guild.name} when already in it")
         else:
             await context.voice_client.move_to(voice_channel)
-            await context.send(f"Moved to {voice_channel.name}")
+            embed = discord.Embed(title=f"Moved to {voice_channel.name} :person_running:",
+                                  description="I have moved to the voice channel",
+                                  color=0xBEBEFE,
+                                  )
+            await context.reply(embed=embed)
+            self.bot.logger.info(f"{self.bot.name} moved to voice channel {voice_channel.name} in {context.guild.name}")
 
     @commands.command(name="leave", aliases=["l"])
     async def leave(self, context: Context):
         ''' Leave the voice channel '''
         if context.voice_client is None:
-            await context.send("I am not in a voice channel")
+            embed = discord.Embed(title="Not in a voice channel :confused:",
+                                  description="I am not in any voice channel. How can I leave?",
+                                  color=0xBEBEFE,
+                                  )
+            await context.reply(embed=embed)
+            self.bot.logger.info(f"{context.author} tried to use leave command without being in a voice channel")
             return
         await context.voice_client.disconnect()
-        await context.send("Disconnected")
+        embed = discord.Embed(title="Left the voice channel :wave:",
+                              description="I have left the voice channel",
+                              color=0xBEBEFE,
+                              )
+        await context.reply(embed=embed)
+        self.bot.logger.info(f"{self.bot.name} left voice channel {context.voice_client.channel.name} in {context.guild.name}")
 
-    @commands.command(name="play", aliases=["p"])
-    async def play(self, context: Context, url: str):
-        ''' Play audio from a youtube url '''
+    @commands.command(name="say", aliases=["s"])
+    async def say(self, context: Context, *, text: str):
+        ''' Say the text in the voice channel '''
         if context.voice_client is None:
-            await context.send("I am not in a voice channel")
-            return
-        if not context.voice_client.is_playing():
-            context.voice_client.play(discord.FFmpegPCMAudio(url))
-            await context.send("Playing")
-        else:
-            await context.send("Already playing")
-
-    @commands.command(name="pause")
-    async def pause(self, context: Context):
-        ''' Pause the audio '''
-        if context.voice_client is None:
-            await context.send("I am not in a voice channel")
-            return
+            await self.join(context)
         if context.voice_client.is_playing():
-            context.voice_client.pause()
-            await context.send("Paused")
-        else:
-            await context.send("Nothing is playing")
-    
-    @commands.command(name="resume")
-    async def resume(self, context: Context):
-        ''' Resume the audio '''
-        if context.voice_client is None:
-            await context.send("I am not in a voice channel")
-            return
-        if context.voice_client.is_paused():
-            context.voice_client.resume()
-            await context.send("Resumed")
-        else:
-            await context.send("Nothing is paused")
-    
-    @commands.command(name="stop")
-    async def stop(self, context: Context):
-        ''' Stop the audio '''
-        if context.voice_client is None:
-            await context.send("I am not in a voice channel")
-            return
-        if context.voice_client.is_playing():
-            context.voice_client.stop()
-            await context.send("Stopped")
-        else:
-            await context.send("Nothing is playing")
-
+            embed = discord.Embed(title="Already speaking :tired_face:",
+                                  description="I am already speaking. Please wait for me to finish",
+                                  color=0xBEBEFE,
+                                  )
+            await context.reply(embed=embed)
+            self.bot.logger.info(f"{context.author} tried to use say command when already speaking in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+            # wait for the bot to finish speaking
+            while context.voice_client.is_playing():
+                await asyncio.sleep(1)
+        tts = gtts.gTTS(text, lang="en")
+        file = os.path.join(temp_audio_dir, "tts.mp3")
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        tts.save(file)
+        context.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: print("done", e))
+        context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source)
+        context.voice_client.source.volume = 0.5
+        embed = discord.Embed(title="Speaking :speaking_head:",
+                              description=" *'" + text + "'*",
+                              color=0xBEBEFE,
+                              )
+        await context.reply(embed=embed)
+        self.bot.logger.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}")
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))

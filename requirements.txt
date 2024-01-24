@@ -4,3 +4,4 @@ pyaml==23.9.7
 instaloader==4.10.2
 requests==2.31.0
 beautifulsoup4==4.12.2
+gTTS==2.5.0
