@@ -69,13 +69,14 @@ class Voice(commands.Cog, name="Voice Features"):
             await context.reply(embed=embed)
             self.bot.logger.info(f"{context.author} tried to use leave command without being in a voice channel")
             return
+        channel = context.voice_client.channel
         await context.voice_client.disconnect()
         embed = discord.Embed(title="Left the voice channel :wave:",
                               description="I have left the voice channel",
                               color=0xBEBEFE,
                               )
         await context.reply(embed=embed)
-        self.bot.logger.info(f"{self.bot.name} left voice channel {context.voice_client.channel.name} in {context.guild.name}")
+        self.bot.logger.info(f"{self.bot.name} left voice channel {channel.name} in {context.guild.name}")
 
     @commands.command(name="say", aliases=["s"])
     async def say(self, context: Context, *, text: str):
