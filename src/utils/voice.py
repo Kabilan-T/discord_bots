@@ -12,6 +12,7 @@
 import os
 import gtts
 import asyncio
+import requests
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -21,7 +22,15 @@ temp_audio_dir = "generated_audio"
 class Voice(commands.Cog, name="Voice Features"):
     def __init__(self, bot):
         self.bot = bot
-        self.volume = self.bot.default_volume
+        self.volume = self.bot.voice["default_volume"]
+        self.language = self.bot.voice["language"]
+        self.accent = self.bot.voice["accent"]
+        self.available_languages = gtts.lang.tts_langs().keys()
+        try:
+            response = requests.get("https://www.google.com/supported_domains").text.splitlines()
+            self.available_accents = [domain.removeprefix(".google.") for domain in response]
+        except:
+            self.available_accents = [self.accent]
 
     @commands.command(name="join", aliases=["j"])
     async def join(self, context: Context):
@@ -94,7 +103,7 @@ class Voice(commands.Cog, name="Voice Features"):
             # wait for the bot to finish speaking
             while context.voice_client.is_playing():
                 await asyncio.sleep(1)
-        tts = gtts.gTTS(text, lang="en")
+        tts = gtts.gTTS(text, lang=self.language, tld=self.accent)
         file = os.path.join(temp_audio_dir, "tts.mp3")
         os.makedirs(os.path.dirname(file), exist_ok=True)
         tts.save(file)
@@ -136,6 +145,44 @@ class Voice(commands.Cog, name="Voice Features"):
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{context.author} set the volume to {volume} in {context.guild.name}")
+
+    @commands.command(name="setlanguage", aliases=["sl"])
+    async def setlanguage(self, context: Context, language: str):
+        ''' Set the language of the bot '''
+        if language not in self.available_languages:
+            embed = discord.Embed(title="Invalid language :confused:",
+                                  description="Please enter a valid language.The available languages are:\n" + "\n".join(self.available_languages),
+                                  color=0xBEBEFE,
+                                  )
+            await context.reply(embed=embed)
+            self.bot.logger.info(f"{context.author} tried to use setlanguage command with invalid language {language} in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+            return
+        self.language = language
+        embed = discord.Embed(title="Language set :globe_with_meridians:",
+                              description=f"Language set to {self.language}",
+                              color=0xBEBEFE,
+                              )
+        await context.reply(embed=embed)
+        self.bot.logger.info(f"{context.author} set the language to {language} in {context.guild.name}")
+
+    @commands.command(name="setaccent", aliases=["sa"])
+    async def setaccent(self, context: Context, accent: str):
+        ''' Set the accent of the bot '''
+        if accent not in gtts.lang.tts_langs().keys():
+            embed = discord.Embed(title="Invalid accent :confused:",
+                                  description="Please enter a valid accent.The available accents are:\n" + "\n".join(self.available_accents),
+                                  color=0xBEBEFE,
+                                  )
+            await context.reply(embed=embed)
+            self.bot.logger.info(f"{context.author} tried to use setaccent command with invalid accent {accent} in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+            return
+        self.accent = accent
+        embed = discord.Embed(title="Accent set :globe_with_meridians:",
+                              description=f"Accent set to {self.accent}",
+                              color=0xBEBEFE,
+                              )
+        await context.reply(embed=embed)
+        self.bot.logger.info(f"{context.author} set the accent to {accent} in {context.guild.name}")
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))

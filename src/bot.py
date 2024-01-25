@@ -28,7 +28,7 @@ class MyBot(commands.Bot):
         self.username = config["username"]
         self.prefix = config["default_prefix"]
         self.client_id = config["client_id"]
-        self.default_volume = config["default_volume"]
+        self.voice = config["voice"]
         self.extensions_to_load = config["extensions"]
         self.logger.info(f"Loaded config for {self.name}")
 
