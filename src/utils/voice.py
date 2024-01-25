@@ -136,7 +136,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=0xBEBEFE,
                                   )
             await context.reply(embed=embed)
-            self.bot.logger.info(f"{context.author} tried to use setvolume command with invalid volume {volume} in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+            self.bot.logger.info(f"{context.author} tried to use setvolume command with invalid volume {volume} in {context.guild.name}")
             return
         self.volume = volume
         embed = discord.Embed(title="Volume set :loud_sound:",
@@ -151,11 +151,11 @@ class Voice(commands.Cog, name="Voice Features"):
         ''' Set the language of the bot '''
         if language not in self.available_languages:
             embed = discord.Embed(title="Invalid language :confused:",
-                                  description="Please enter a valid language.The available languages are:\n" + "\n".join(self.available_languages),
+                                  description="Please enter a valid language.The available languages are:\n" + "\t".join(self.available_languages),
                                   color=0xBEBEFE,
                                   )
             await context.reply(embed=embed)
-            self.bot.logger.info(f"{context.author} tried to use setlanguage command with invalid language {language} in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+            self.bot.logger.info(f"{context.author} tried to use setlanguage command with invalid language {language} in {context.guild.name}")
             return
         self.language = language
         embed = discord.Embed(title="Language set :globe_with_meridians:",
@@ -168,13 +168,13 @@ class Voice(commands.Cog, name="Voice Features"):
     @commands.command(name="setaccent", aliases=["sa"])
     async def setaccent(self, context: Context, accent: str):
         ''' Set the accent of the bot '''
-        if accent not in gtts.lang.tts_langs().keys():
+        if accent not in self.available_accents:
             embed = discord.Embed(title="Invalid accent :confused:",
-                                  description="Please enter a valid accent.The available accents are:\n" + "\n".join(self.available_accents),
+                                  description="Please enter a valid accent.The available accents are:\n" + "\t".join(self.available_accents),
                                   color=0xBEBEFE,
                                   )
             await context.reply(embed=embed)
-            self.bot.logger.info(f"{context.author} tried to use setaccent command with invalid accent {accent} in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+            self.bot.logger.info(f"{context.author} tried to use setaccent command with invalid accent {accent} in {context.guild.name}")
             return
         self.accent = accent
         embed = discord.Embed(title="Accent set :globe_with_meridians:",
