@@ -54,11 +54,11 @@ class MyBot(commands.Bot):
 
 
     async def setup_hook(self):
-        # Load utils
+        # Load cogs
         for extension in self.extensions_to_load:
-            if os.path.isfile(os.path.join(os.path.dirname(__file__), "utils", extension+".py")):
+            if os.path.isfile(os.path.join(os.path.dirname(__file__), "cogs", extension+".py")):
                 try:
-                    await self.load_extension(f"src.utils.{extension}")
+                    await self.load_extension(f"src.cogs.{extension}")
                     self.logger.info(f"Loaded extension {extension}")
                 except Exception as e:
                     exception = f"{type(e).__name__}: {e}"
@@ -130,4 +130,3 @@ class MyBot(commands.Bot):
                 color=0xBEBEFE,
             )
         await ctx.send(embed=embed)
-    
