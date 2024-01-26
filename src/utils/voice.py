@@ -43,7 +43,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{context.author} tried to use join command without being in a voice channel")
-            return
+            return False
         voice_channel = context.author.voice.channel
         self.called_channel_id = context.channel.id
         if context.voice_client is None:
@@ -54,6 +54,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{self.bot.name} joined voice channel {voice_channel.name} in {context.guild.name}")
+            return True
         elif context.voice_client.channel == voice_channel:
             embed = discord.Embed(title=f"Already in {voice_channel.name} :confused:",
                                   description="I am already in the voice channel",
@@ -61,6 +62,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{self.bot.name} tried to join voice channel {voice_channel.name} in {context.guild.name} when already in it")
+            return False
         else:
             await context.voice_client.move_to(voice_channel)
             embed = discord.Embed(title=f"Moved to {voice_channel.name} :person_running:",
@@ -69,6 +71,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{self.bot.name} moved to voice channel {voice_channel.name} in {context.guild.name}")
+            return True
 
     @commands.command(name="leave", aliases=["l"])
     async def leave(self, context: Context):
@@ -110,7 +113,8 @@ class Voice(commands.Cog, name="Voice Features"):
     async def say(self, context: Context, *, text: str):
         ''' Say the text in the voice channel '''
         if context.voice_client is None:
-            await self.join(context)
+            if not await self.join(context):
+                return
         if context.voice_client.is_playing():
             embed = discord.Embed(title="Already speaking :tired_face:",
                                   description="I am already speaking. Please wait for me to finish",
