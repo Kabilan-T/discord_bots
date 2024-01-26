@@ -24,14 +24,14 @@ class Voice(commands.Cog, name="Voice Features"):
         self.bot = bot
         self.volume = self.bot.voice["default_volume"]
         self.language = self.bot.voice["language"]
-        self.accent = self.bot.voice["accent"]
-        self.available_languages = gtts.lang.tts_langs().keys()
+        self.domain = self.bot.voice["domain"]
+        self.available_languages = gtts.lang.tts_langs()
         try:
             response = requests.get("https://www.google.com/supported_domains").text.splitlines()
-            self.available_accents = [domain.removeprefix(".google.") for domain in response]
+            self.available_domains = [domain.removeprefix(".google.") for domain in response]
         except:
-            self.available_accents = [self.accent]
-        self.bot.logger.info(f"Voice features initialized with volume {self.volume}, language {self.language} and accent {self.accent}")
+            self.available_domains = [self.domain]
+        self.bot.logger.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
 
     @commands.command(name="join", aliases=["j"])
     async def join(self, context: Context):
@@ -121,7 +121,7 @@ class Voice(commands.Cog, name="Voice Features"):
             # wait for the bot to finish speaking
             while context.voice_client.is_playing():
                 await asyncio.sleep(1)
-        tts = gtts.gTTS(text, lang=self.language, tld=self.accent)
+        tts = gtts.gTTS(text, lang=self.language, tld=self.domain)
         file = os.path.join(temp_audio_dir, "tts.mp3")
         os.makedirs(os.path.dirname(file), exist_ok=True)
         tts.save(file)
@@ -167,9 +167,9 @@ class Voice(commands.Cog, name="Voice Features"):
     @commands.command(name="setlanguage", aliases=["sl"])
     async def setlanguage(self, context: Context, language: str):
         ''' Set the language of the bot '''
-        if language not in self.available_languages:
+        if language not in self.available_languages.keys():
             embed = discord.Embed(title="Invalid language :confused:",
-                                  description="Please enter a valid language.The available languages are:\n" + "\t".join(self.available_languages),
+                                  description="Please enter a valid language.The available languages are:\n" + ",\t".join([f"'{key} - {value}'" for key, value in self.available_languages.items()]),
                                   color=0xBEBEFE,
                                   )
             await context.reply(embed=embed)
@@ -177,30 +177,30 @@ class Voice(commands.Cog, name="Voice Features"):
             return
         self.language = language
         embed = discord.Embed(title="Language set :globe_with_meridians:",
-                              description=f"Language set to {self.language}",
+                              description=f"Language set to '{language} - {self.available_languages[language]}'",
                               color=0xBEBEFE,
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{context.author} set the language to {language} in {context.guild.name}")
 
-    @commands.command(name="setaccent", aliases=["sa"])
-    async def setaccent(self, context: Context, accent: str):
-        ''' Set the accent of the bot '''
-        if accent not in self.available_accents:
-            embed = discord.Embed(title="Invalid accent :confused:",
-                                  description="Please enter a valid accent.The available accents are:\n" + "\t".join(self.available_accents),
+    @commands.command(name="setdomain", aliases=["sd"])
+    async def setdomain(self, context: Context, domain: str):
+        ''' Set the domain of the google text to speech '''
+        if domain not in self.available_domains:
+            embed = discord.Embed(title="Invalid domain :confused:",
+                                  description="Please enter a valid domain.The available domains are:\n" + ",\t".join([f"'{domain}'" for domain in self.available_domains]),
                                   color=0xBEBEFE,
                                   )
             await context.reply(embed=embed)
-            self.bot.logger.info(f"{context.author} tried to use setaccent command with invalid accent {accent} in {context.guild.name}")
+            self.bot.logger.info(f"{context.author} tried to use setdomain command with invalid domain {domain} in {context.guild.name}")
             return
-        self.accent = accent
-        embed = discord.Embed(title="Accent set :globe_with_meridians:",
-                              description=f"Accent set to {self.accent}",
+        self.domain = domain
+        embed = discord.Embed(title="Domain set :globe_with_meridians:",
+                              description=f"domain set to '{domain} - google.{domain}'",
                               color=0xBEBEFE,
                               )
         await context.reply(embed=embed)
-        self.bot.logger.info(f"{context.author} set the accent to {accent} in {context.guild.name}")
+        self.bot.logger.info(f"{context.author} set the domain to {domain} in {context.guild.name}")
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))

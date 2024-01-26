@@ -5,7 +5,7 @@ default_prefix: '??'
 voice:
   default_volume: 75
   language: 'en'
-  accent: 'co.in'
+  domain: 'com'
 extensions:
   - 'general'
   - 'moderation'
