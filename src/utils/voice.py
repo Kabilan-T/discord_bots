@@ -31,6 +31,7 @@ class Voice(commands.Cog, name="Voice Features"):
             self.available_accents = [domain.removeprefix(".google.") for domain in response]
         except:
             self.available_accents = [self.accent]
+        self.bot.logger.info(f"Voice features initialized with volume {self.volume}, language {self.language} and accent {self.accent}")
 
     @commands.command(name="join", aliases=["j"])
     async def join(self, context: Context):
@@ -44,6 +45,7 @@ class Voice(commands.Cog, name="Voice Features"):
             self.bot.logger.info(f"{context.author} tried to use join command without being in a voice channel")
             return
         voice_channel = context.author.voice.channel
+        self.called_channel_id = context.channel.id
         if context.voice_client is None:
             await voice_channel.connect()
             embed = discord.Embed(title=f"Joined {voice_channel.name} :microphone:",
@@ -87,6 +89,22 @@ class Voice(commands.Cog, name="Voice Features"):
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{self.bot.name} left voice channel {channel.name} in {context.guild.name}")
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):        
+        ''' Leave the voice channel when the last member leaves '''
+        if member == self.bot.user: return # ignore bot
+        if before.channel is not None and after.channel is None:
+            if len(before.channel.members) == 1:
+                await asyncio.sleep(5)
+                if len(before.channel.members) == 1:
+                    await before.channel.guild.voice_client.disconnect()
+                    embed = discord.Embed(title="I'm leaving :wave:",
+                                          description="I have left the voice channel as the last member left",
+                                          color=0xBEBEFE,
+                                          )
+                    await self.bot.get_channel(self.called_channel_id).send(embed=embed)
+                    self.bot.logger.info(f"{self.bot.name} left voice channel {before.channel.name} in {before.channel.guild.name} as the last member left")
 
     @commands.command(name="say", aliases=["s"])
     async def say(self, context: Context, *, text: str):
