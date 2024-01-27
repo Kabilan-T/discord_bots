@@ -31,6 +31,7 @@ class Voice(commands.Cog, name="Voice Features"):
             self.available_domains = [domain.removeprefix(".google.") for domain in response]
         except:
             self.available_domains = [self.domain]
+        self.bot.greet_messages = {}
         self.bot.logger.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
 
     @commands.command(name="join", aliases=["j"])
@@ -222,7 +223,11 @@ class Voice(commands.Cog, name="Voice Features"):
             return
         if member.guild.voice_client.channel != member.voice.channel:
             return
-        tts = gtts.gTTS(f"Vanakkam {member.display_name}", lang='ta', tld='co.in')
+        if member.id in self.bot.greet_messages.keys():
+            greet_message = self.bot.greet_messages[member.id] + f" {member.display_name}"
+        else:
+            greet_message = "Vanakkam " + f"{member.display_name}"
+        tts = gtts.gTTS(f"{greet_message}", lang='ta', tld='co.in')
         file = os.path.join(temp_audio_dir, "greet.mp3")
         os.makedirs(os.path.dirname(file), exist_ok=True)
         tts.save(file)
@@ -231,6 +236,17 @@ class Voice(commands.Cog, name="Voice Features"):
         member.guild.voice_client.source = discord.PCMVolumeTransformer(member.guild.voice_client.source)
         member.guild.voice_client.source.volume = self.volume / 100
         self.bot.logger.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}")
+
+    @commands.command(name="setgreet", aliases=["sg"])
+    async def setgreet(self, context: Context, member: discord.Member, *, text: str):
+        ''' Set the greet message for the user '''
+        self.bot.greet_messages[member.id] = text
+        embed = discord.Embed(title="Greet message set :wave:",
+                              description=f"Greet message set to '{text}'",
+                              color=0xBEBEFE,
+                              )
+        await context.reply(embed=embed)
+        self.bot.logger.info(f"{context.author} set the greet message to {text} in {context.guild.name}")
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))
