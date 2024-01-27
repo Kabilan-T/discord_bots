@@ -206,6 +206,32 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.logger.info(f"{context.author} set the domain to {domain} in {context.guild.name}")
 
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if member == self.bot.user: return # ignore bot
+        if before.channel is None and after.channel is not None:
+            if after.channel == member.guild.voice_client.channel:
+                await self.greet(member)
+    
+    async def greet(self, member):
+        ''' Greet the member in the voice channel '''
+        if member == self.bot.user: return
+        if member.guild.voice_client is None:
+            return
+        if member.guild.voice_client.is_playing():
+            return
+        if member.guild.voice_client.channel != member.voice.channel:
+            return
+        tts = gtts.gTTS(f"Vanakkam {member.display_name}", lang='ta', tld='co.in')
+        file = os.path.join(temp_audio_dir, "greet.mp3")
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        tts.save(file)
+        await asyncio.sleep(3)
+        member.guild.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: print("done", e))
+        member.guild.voice_client.source = discord.PCMVolumeTransformer(member.guild.voice_client.source)
+        member.guild.voice_client.source.volume = self.volume / 100
+        self.bot.logger.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}")
+
 async def setup(bot):
     await bot.add_cog(Voice(bot))
 
