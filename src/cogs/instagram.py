@@ -297,8 +297,8 @@ class Instagram(commands.Cog, name="Instagram"):
             self.bot.logger.info("Trying to set up proxy with "+str(proxy))
             session = requests.Session()
             session.proxies = {"http": proxy, "https": proxy}
-            os.environ["HTTP_PROXY"] = "http://" + proxy
-            os.environ["HTTPS_PROXY"] = "https://" + proxy
+            os.environ["HTTP_PROXY"] = "http://" + str(self._username) + ":" + str(self._password) + "@" + proxy
+            os.environ["HTTPS_PROXY"] = "https://" + str(self._username) + ":" + str(self._password) + "@" + proxy
             self.loader.context._session = session
             self.bot.logger.info("Proxy set up successfully.")
             return True
