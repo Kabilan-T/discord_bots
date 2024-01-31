@@ -93,23 +93,7 @@ class Voice(commands.Cog, name="Voice Features"):
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{self.bot.name} left voice channel {channel.name} in {context.guild.name}")
-
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):        
-        ''' Leave the voice channel when the last member leaves '''
-        if member == self.bot.user: return # ignore bot
-        if before.channel is not None and after.channel is None:
-            if len(before.channel.members) == 1:
-                await asyncio.sleep(5)
-                if len(before.channel.members) == 1:
-                    await before.channel.guild.voice_client.disconnect()
-                    embed = discord.Embed(title="I'm leaving :wave:",
-                                          description="I have left the voice channel as the last member left",
-                                          color=0xBEBEFE,
-                                          )
-                    await self.bot.get_channel(self.called_channel_id).send(embed=embed)
-                    self.bot.logger.info(f"{self.bot.name} left voice channel {before.channel.name} in {before.channel.guild.name} as the last member left")
-
+        
     @commands.command(name="say", aliases=["s"])
     async def say(self, context: Context, *, text: str):
         ''' Say the text in the voice channel '''
@@ -207,46 +191,46 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.logger.info(f"{context.author} set the domain to {domain} in {context.guild.name}")
 
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        if member == self.bot.user: return # ignore bot
-        if before.channel is None and after.channel is not None:
-            if after.channel == member.guild.voice_client.channel:
-                await self.greet(member)
-    
-    async def greet(self, member):
-        ''' Greet the member in the voice channel '''
-        if member == self.bot.user: return
-        if member.guild.voice_client is None:
-            return
-        if member.guild.voice_client.is_playing():
-            return
-        if member.guild.voice_client.channel != member.voice.channel:
-            return
-        if member.id in self.bot.greet_messages.keys():
-            greet_message = self.bot.greet_messages[member.id] + f" {member.display_name}"
-        else:
-            greet_message = "Vanakkam " + f"{member.display_name}"
-        tts = gtts.gTTS(f"{greet_message}", lang='ta', tld='co.in')
-        file = os.path.join(temp_audio_dir, "greet.mp3")
-        os.makedirs(os.path.dirname(file), exist_ok=True)
-        tts.save(file)
-        await asyncio.sleep(3)
-        member.guild.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: print("done", e))
-        member.guild.voice_client.source = discord.PCMVolumeTransformer(member.guild.voice_client.source)
-        member.guild.voice_client.source.volume = self.volume / 100
-        self.bot.logger.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}")
-
     @commands.command(name="setgreet", aliases=["sg"])
     async def setgreet(self, context: Context, member: discord.Member, *, text: str):
         ''' Set the greet message for the user '''
         self.bot.greet_messages[member.id] = text
         embed = discord.Embed(title="Greet message set :wave:",
-                              description=f"Greet message set to '{text}'",
+                              description=f"Greet message for {member.mention} is set to '{text}'",
                               color=0xBEBEFE,
                               )
         await context.reply(embed=embed)
-        self.bot.logger.info(f"{context.author} set the greet message to {text} in {context.guild.name}")
+        self.bot.logger.info(f"{context.author} set the greet message for {member.display_name} to '{text}' in {context.guild.name}")
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if member == self.bot.user: return # ignore bot
+        if member.guild.voice_client is None: return # ignore if bot is not in voice channel
+        if before.channel != after.channel and after.channel == member.guild.voice_client.channel:
+            if member.id in self.bot.greet_messages.keys():
+                greet_message = self.bot.greet_messages[member.id] + f" {member.display_name}"
+            else:
+                greet_message = "Vanakkam " + f"{member.display_name}"
+            tts = gtts.gTTS(f"{greet_message}", lang='ta', tld='co.in')
+            file = os.path.join(temp_audio_dir, "greet.mp3")
+            os.makedirs(os.path.dirname(file), exist_ok=True)
+            tts.save(file)
+            await asyncio.sleep(3)
+            member.guild.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: print("done", e))
+            member.guild.voice_client.source = discord.PCMVolumeTransformer(member.guild.voice_client.source)
+            member.guild.voice_client.source.volume = self.volume / 100
+            self.bot.logger.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}")
+        elif before.channel != after.channel and before.channel == member.guild.voice_client.channel:
+            if len(before.channel.members) == 1:
+                await asyncio.sleep(5)
+                if len(before.channel.members) == 1:
+                    await before.channel.guild.voice_client.disconnect()
+                    embed = discord.Embed( title="I'm leaving :wave:",
+                                        description=f"I have left the voice channel {before.channel.name} as I was alone",
+                                        color=0xBEBEFE,
+                                        )
+                    await self.bot.get_channel(self.called_channel_id).send(embed=embed)
+                    self.bot.logger.info(f"{self.bot.name} left voice channel {before.channel.name} in {before.channel.guild.name} as the last member left")
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))
