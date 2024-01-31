@@ -26,14 +26,11 @@ class Instagram(commands.Cog, name="Instagram"):
         # channels to watch for instagram links
         self.channels_to_watch = list()
         self.channels_to_watch.append(1183051684767871076) # axiom server - sauce-deck channel
-        # read the proxies
-        with open(proxy_list, "r") as file:
-            self.proxies = [line.strip() for line in file.readlines()]
-        # set up proxy
-        self.setup_proxy()
-
         # get the instagram credentials
         self.is_credentials_provided = self._get_credentials()
+         # read the proxies
+        with open(proxy_list, "r") as file:
+            self.proxies = [line.strip() for line in file.readlines()]
         # login to instagram
         if self.is_credentials_provided:
             self._login_to_instagram()
@@ -302,8 +299,8 @@ class Instagram(commands.Cog, name="Instagram"):
             self.loader.context._session = session
             self.bot.logger.info("Proxy set up successfully.")
             return True
-        except:
-            self.bot.logger.error("Failed to set up proxy.")
+        except Exception as e:
+            self.bot.logger.error("Failed to set up proxy. "+str(e))
             return False
     
     def setup_proxy(self):
