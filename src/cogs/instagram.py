@@ -292,13 +292,25 @@ class Instagram(commands.Cog, name="Instagram"):
         # set up proxy
         try:
             self.bot.logger.info("Trying to set up proxy with "+str(proxy))
+            proxies = {"http": "http://"+str(proxy), 
+                       "https": "https://"+str(proxy)}
             session = requests.Session()
-            session.proxies = {"http": proxy, "https": proxy}
-            os.environ["HTTP_PROXY"] = "http://" + str(self._username) + ":" + str(self._password) + "@" + proxy
-            os.environ["HTTPS_PROXY"] = "https://" + str(self._username) + ":" + str(self._password) + "@" + proxy
+            session.proxies.update(proxies)
+            # os.environ["HTTP_PROXY"] = "http://" + str(self._username) + ":" + str(self._password) + "@" + proxy
+            # os.environ["HTTPS_PROXY"] = "https://" + str(self._username) + ":" + str(self._password) + "@" + proxy
+
+            # test the proxy
+            response = requests.get("https://www.google.com/", proxies=proxies, timeout=5)
+            print(response.json(), response.status_code)
+            if response.status_code != 200:
+                self.bot.logger.error("Proxy is not working.")
+                return False
+            else:
+                self.bot.logger.info("Proxy is working.")
+            # set up the proxy
             self.loader.context._session = session
             self.bot.logger.info("Proxy set up successfully.")
-            return True
+            
         except Exception as e:
             self.bot.logger.error("Failed to set up proxy. "+str(e))
             return False

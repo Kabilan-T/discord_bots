@@ -2,7 +2,7 @@ token.sh
 logs/*
 *.mp3
 src/config/warns.yml
-
+*proxies.txt
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
