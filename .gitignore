@@ -1,5 +1,5 @@
 token.sh
-logs/*
+bot_logs/*
 *.mp3
 src/config/warns.yml
 *proxies.txt

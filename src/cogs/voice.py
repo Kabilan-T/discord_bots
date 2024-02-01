@@ -203,7 +203,7 @@ class Voice(commands.Cog, name="Voice Features"):
         self.bot.logger.info(f"{context.author} set the greet message for {member.display_name} to '{text}' in {context.guild.name}")
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if member == self.bot.user: return # ignore bot
         if member.guild.voice_client is None: return # ignore if bot is not in voice channel
         if before.channel != after.channel and after.channel == member.guild.voice_client.channel:

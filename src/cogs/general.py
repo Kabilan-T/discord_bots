@@ -16,11 +16,12 @@ from discord.ext.commands import Context
 
 class General(commands.Cog, name="General"):
     def __init__(self, bot):
+        '''Initializes the general cog'''
         self.bot = bot
     
-    @commands.hybrid_command( name="help", description="Get help on a command.")
+    @commands.hybrid_command( name="help", description="Get help on a command." , aliases=["h"])
     async def help(self, context: Context, command: str = None):
-        # Send help message
+        '''Get help on a command'''
         if command is None:
             embed = discord.Embed(
                 title="Help",
@@ -58,9 +59,9 @@ class General(commands.Cog, name="General"):
                 )
                 await context.send(embed=embed)
 
-    @commands.hybrid_command( name="hello", description="Say hello to the bot.")
+    @commands.hybrid_command( name="hello", description="Say hello to the bot.", aliases=["hi", "hey"])
     async def hello(self, context: Context):
-        # Send a greeting message to the user
+        '''Say hello to the bot'''
         embed = discord.Embed(
             title="Hello "+context.author.name+" :wave:",
             description=f"I am {self.bot.name}, a discord bot. Nice to meet you! :smile:",
@@ -68,9 +69,9 @@ class General(commands.Cog, name="General"):
         )
         await context.send(embed=embed)
 
-    @commands.hybrid_command( name="ping", description="Check if the bot is alive.")
+    @commands.hybrid_command( name="ping", description="Check if the bot is alive.", aliases=["p"])
     async def ping(self, context: Context):
-        # Check if the bot is active and send the latency
+        '''Check if the bot is active and send the latency'''
         embed = discord.Embed(
             title="🏓 Pong!",
             description=f"The bot latency is {round(self.bot.latency * 1000)}ms.",
@@ -80,7 +81,7 @@ class General(commands.Cog, name="General"):
 
     @commands.hybrid_command( name="invite", description="Get the bot invite link.")
     async def invite(self, context: Context):
-        #  Send the bot invite link with permissions of admin
+        '''Send the bot invite link with permissions of admin'''
         embed = discord.Embed(
             title="Invite",
             description=f"Use this link to invite the bot to your server: https://discord.com/oauth2/authorize?client_id={self.bot.client_id}&scope=bot&permissions=8",
@@ -90,7 +91,7 @@ class General(commands.Cog, name="General"):
 
     @commands.hybrid_command( name="prefix", description="Change the bot prefix.")
     async def prefix(self, context: Context, prefix: str = None):
-        # Change the bot prefix
+        '''Change or get the bot prefix'''
         if prefix is None:
             embed = discord.Embed(
                 title="Prefix",

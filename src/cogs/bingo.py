@@ -18,11 +18,13 @@ import asyncio
 
 class Bingo(commands.Cog, name="Bingo"):
     def __init__(self, bot):
+        '''Initializes the bingo cog'''
         self.bot = bot
         self.games = {}  # Store active games
 
     @commands.command(name="bingo", description="Start a game of bingo.")
     async def bingo(self, context: Context, *players: discord.Member):
+        '''Starts a game of bingo'''
         self.bot.logger.info(f"Bingo game requested by {context.author.name}")
         # Check if players are mentioned
         if not 1 <= len(players):
@@ -105,6 +107,7 @@ class Bingo(commands.Cog, name="Bingo"):
     
     @commands.command(name="quit", description="Quit the current game of bingo.")
     async def quit(self, context: Context):
+        '''Quits the current game of bingo'''
         game_id = str(context.guild.id) + str(context.channel.id)
         if game_id in self.games:
             if context.author in self.games[game_id]["players"]:
@@ -172,7 +175,6 @@ class Bingo(commands.Cog, name="Bingo"):
         self.bot.logger.info(f"Players - Scores: {[(player.name, game['score'][player.id]) for player in game['players']]}")
     
     async def play_game(self, game):
-        # send a message to the current player
         embed = discord.Embed(
             title="It's your turn to play! :smiley:",
             description=f"Your Bingo Chart:\n{self.format_bingo_chart(game['chart'][game['current_player'].id])}",

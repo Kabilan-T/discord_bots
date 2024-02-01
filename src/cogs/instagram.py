@@ -37,12 +37,12 @@ class Instagram(commands.Cog, name="Instagram"):
 
     @commands.hybrid_command( name="bio", description="Get the bio of a user.")
     async def bio(self, context: Context, username: str):
-        # Get the bio of a user
+        '''Get the bio of a user'''
         await self.send_bio(context.reply, username)
 
     @commands.hybrid_command( name="set_channel", description="Set the channel to watch for instagram links.")
     async def set_channel(self, context: Context, channel: discord.TextChannel = None):
-        # Set the channel to watch for instagram links
+        '''Set the channel to watch for instagram links'''
         if channel == None:
             channel = context.channel
         self.channels_to_watch.append(channel.id)
@@ -56,7 +56,7 @@ class Instagram(commands.Cog, name="Instagram"):
 
     @commands.hybrid_command( name="unset_channel", description="Unset the channel to watch for instagram links.")
     async def unset_channel(self, context: Context, channel: discord.TextChannel = None):
-        # Unset the channel to watch for instagram links
+        '''Unset the channel to watch for instagram links'''
         if channel == None:
             channel = context.channel
         self.channels_to_watch.remove(channel.id)
@@ -70,11 +70,12 @@ class Instagram(commands.Cog, name="Instagram"):
 
     @commands.hybrid_command( name="show", description="Download a post from instagram.")
     async def show(self, context: Context, url: str):
-        # Download a media from instagram and show it
+        '''Download a media from instagram and show it'''
         await self.send_media(context.reply, url)
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        ''' Watch for instagram links and send the media'''
         if message.channel.id in self.channels_to_watch and message.author.bot == False and message.content != "":
             if str("https://www.instagram.com/") in message.content:
                 if len(message.content.split("/")) == 4:
