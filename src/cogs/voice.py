@@ -31,7 +31,8 @@ class Voice(commands.Cog, name="Voice Features"):
             self.available_domains = [domain.removeprefix(".google.") for domain in response]
         except:
             self.available_domains = [self.domain]
-        self.bot.greet_messages = {}
+        self.bot.greet_messages = dict()
+        self.load_greet_messages()
         self.bot.logger.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
 
     @commands.command(name="join", aliases=["j"])
@@ -200,12 +201,13 @@ class Voice(commands.Cog, name="Voice Features"):
                               color=0xBEBEFE,
                               )
         await context.reply(embed=embed)
+        self.save_greet_messages()
         self.bot.logger.info(f"{context.author} set the greet message for {member.display_name} to '{text}' in {context.guild.name}")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if member == self.bot.user: return # ignore bot
-        if member.guild.voice_client is None: return # ignore if bot is not in voice channel
+        if member.guild.voice_client is None or member.guild.voice_client.is_playing(): return # ignore if bot is not in a voice channel or is speaking
         if before.channel != after.channel and after.channel == member.guild.voice_client.channel:
             if member.id in self.bot.greet_messages.keys():
                 greet_message = self.bot.greet_messages[member.id] + f" {member.display_name}"
@@ -231,6 +233,24 @@ class Voice(commands.Cog, name="Voice Features"):
                                         )
                     await self.bot.get_channel(self.called_channel_id).send(embed=embed)
                     self.bot.logger.info(f"{self.bot.name} left voice channel {before.channel.name} in {before.channel.guild.name} as the last member left")
+    
+    def save_greet_messages(self):
+        ''' Save the greet messages to a file '''
+        with open("greet_messages.txt", "w+") as file:
+            for key, value in self.bot.greet_messages.items():
+                file.write(f"{key} {value}\n")
+        self.bot.logger.info(f"Greet messages saved to file", send_to_log_channel=False)
+    
+    def load_greet_messages(self):
+        ''' Load the greet messages from a file '''
+        try:
+            with open("greet_messages.txt", "r") as file:
+                for line in file.readlines():
+                    key, value = line.split(" ", 1)
+                    self.bot.greet_messages[int(key)] = value.strip()
+            self.bot.logger.info(f"Greet messages loaded from file", send_to_log_channel=False)
+        except FileNotFoundError:
+            self.bot.logger.info(f"Greet messages file not found", send_to_log_channel=False)
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))

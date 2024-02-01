@@ -1,6 +1,7 @@
 token.sh
 bot_logs/*
 *.mp3
+*greet_messages.txt
 src/config/warns.yml
 *proxies.txt
 # Byte-compiled / optimized / DLL files
