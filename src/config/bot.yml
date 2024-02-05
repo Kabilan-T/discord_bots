@@ -13,4 +13,4 @@ extensions:
   - 'greetings'
   - 'bingo'
   - 'voice'
-  # - 'instagram'
+  - 'instagram'

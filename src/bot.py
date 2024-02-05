@@ -62,7 +62,7 @@ class MyBot(commands.Bot):
         
     async def close(self):
         '''Execute when bot is closed'''
-        self.logger.info("Bot execution terminated.", send_to_log_channel=False)
+        self.logger.info("Bot execution terminated.")
         await super().close()
 
     def run(self):

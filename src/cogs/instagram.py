@@ -17,7 +17,6 @@ from discord.ext.commands import Context
 import instaloader
 
 temp_download_dir = "downloads"
-proxy_list = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "proxies.txt")
 
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):
@@ -28,9 +27,6 @@ class Instagram(commands.Cog, name="Instagram"):
         self.channels_to_watch.append(1183051684767871076) # axiom server - sauce-deck channel
         # get the instagram credentials
         self.is_credentials_provided = self._get_credentials()
-         # read the proxies
-        with open(proxy_list, "r") as file:
-            self.proxies = [line.strip() for line in file.readlines()]
         # login to instagram
         if self.is_credentials_provided:
             self._login_to_instagram()
@@ -95,14 +91,6 @@ class Instagram(commands.Cog, name="Instagram"):
             username = username[1:]
         elif username.startswith("https://www.instagram.com/"):
             username = username.split("/")[-1]
-        if self.setup_proxy() == False:
-            embed = discord.Embed(
-                    title="Sorry! There is some problem. :sweat:",
-                    description="I couldn't set up proxy to get the bio.",
-                    color=0xBEBEFE,
-                    )
-            await reply_function(embed=embed)
-            return
         try:    
             profile = instaloader.Profile.from_username(self.loader.context, username)
             embed = discord.Embed(
@@ -128,14 +116,6 @@ class Instagram(commands.Cog, name="Instagram"):
     
     async def send_media(self, reply_function, url):
         # download a media from instagram url and send it
-        if self.setup_proxy() == False:
-            embed = discord.Embed(
-                    title="Sorry! There is some problem. :sweat:",
-                    description="I couldn't set up proxy to download the media.",
-                    color=0xBEBEFE,
-                    )
-            await reply_function(embed=embed)
-            return
         if url.split("/")[3] == "p":
             await self.send_post(reply_function, url)
         elif url.split("/")[3] == "reel":
@@ -271,9 +251,6 @@ class Instagram(commands.Cog, name="Instagram"):
         if self.loader.context.is_logged_in == True:
             self.bot.logger.info("Already logged in to instagram.")
             return True
-        if self.setup_proxy() == False:
-            self.bot.logger.error("Proxy is not set up. Can't log in to instagram.")
-            return False
         # try to log in
         try:
             self.bot.logger.info("Trying to log in to instagram ...")
@@ -289,45 +266,6 @@ class Instagram(commands.Cog, name="Instagram"):
             self.bot.logger.error("Failed to log in to instagram. Bad credentials.")
             return False
     
-    def _setup_proxy(self, proxy):
-        # set up proxy
-        try:
-            self.bot.logger.info("Trying to set up proxy with "+str(proxy))
-            proxies = {"http": "http://"+str(proxy), 
-                       "https": "https://"+str(proxy)}
-            session = requests.Session()
-            session.proxies.update(proxies)
-            # os.environ["HTTP_PROXY"] = "http://" + str(self._username) + ":" + str(self._password) + "@" + proxy
-            # os.environ["HTTPS_PROXY"] = "https://" + str(self._username) + ":" + str(self._password) + "@" + proxy
-
-            # test the proxy
-            response = requests.get("https://www.google.com/", proxies=proxies, timeout=5)
-            print(response.json(), response.status_code)
-            if response.status_code != 200:
-                self.bot.logger.error("Proxy is not working.")
-                return False
-            else:
-                self.bot.logger.info("Proxy is working.")
-            # set up the proxy
-            self.loader.context._session = session
-            self.bot.logger.info("Proxy set up successfully.")
-            
-        except Exception as e:
-            self.bot.logger.error("Failed to set up proxy. "+str(e))
-            return False
-    
-    def setup_proxy(self):
-        # Rotate the proxies
-        proxy = self.proxies.pop(0)
-        if proxy != None:
-            if self._setup_proxy(proxy) == False:
-                self.bot.logger.error("Trying next proxy.")
-                return self.setup_proxy()
-            else:
-                return True 
-        else:
-            self.bot.logger.error("No proxies left to try.")
-            return False
     
 async def setup(bot):
     await bot.add_cog(Instagram(bot))
