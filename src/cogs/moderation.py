@@ -131,11 +131,49 @@ class Moderation(commands.Cog, name="Moderation"):
     async def purge(self, context: Context, amount: int):
         '''Purge messages from a channel'''
         if self.check(context, PermissionToPurge):
-            self.bot.logger.info(f"{context.author.name} purged {amount} messages from {context.channel.name} in {context.guild.name}")
             await context.channel.purge(limit=amount)
+            self.bot.logger.info(f"{context.author.name} purged {amount} messages from {context.channel.name} in {context.guild.name}")
             embed = discord.Embed(
                 title="Purge :wastebasket:",
                 description=f"{amount} messages have been purged from {context.channel.mention}",
+                color=0xBEBEFE,
+            )
+            await context.send(embed=embed)
+    
+    @commands.hybrid_command( name="purgeuser", description="Purge messages from a user in a channel.")
+    async def purgeuser(self, context: Context, member: discord.Member, amount: int = 0):
+        '''Purge messages from a user in a channel'''
+        if self.check(context, PermissionToPurge):
+            if amount == 0:
+                # Purge all messages from the user
+                await context.channel.purge(check=lambda m: m.author == member)
+                self.bot.logger.info(f"{context.author.name} purged all messages from {member.name} in {context.channel.name} in {context.guild.name}")
+                embed = discord.Embed(
+                    title="Purge :wastebasket:",
+                    description=f"All messages from {member.mention} have been purged from {context.channel.mention}",
+                    color=0xBEBEFE,
+                )
+                await context.send(embed=embed)
+            else:
+                # Purge a certain number of messages from the user
+                await context.channel.purge(check=lambda m: m.author == member, limit=amount)
+                self.bot.logger.info(f"{context.author.name} purged {amount} messages from {member.name} in {context.channel.name} in {context.guild.name}")
+                embed = discord.Embed(
+                    title="Purge :wastebasket:",
+                    description=f"{amount} messages from {member.mention} have been purged from {context.channel.mention}",
+                    color=0xBEBEFE,
+                )
+                await context.send(embed=embed)
+
+    @commands.hybrid_command( name="purgeall", description="Purge all messages from a channel.")
+    async def purgeall(self, context: Context):
+        '''Purge all messages from a channel'''
+        if self.check(context, PermissionToPurge):
+            await context.channel.purge()
+            self.bot.logger.info(f"{context.author.name} purged all messages from {context.channel.name} in {context.guild.name}")
+            embed = discord.Embed(
+                title="Purge :wastebasket:",
+                description=f"All messages have been purged from {context.channel.mention}",
                 color=0xBEBEFE,
             )
             await context.send(embed=embed)
