@@ -20,9 +20,7 @@ class Roles(commands.Cog, name="Roles"):
         '''Initializes the role cog'''
         self.bot = bot
     
-    @commands.Cog.listener()
-    async def on_member_join(self, member: discord.Member):
-        ''' Assign roles to a member when they join the server '''
-        guild = member.guild
-        if guild.id != 1182777669373399202:
+
+async def setup(bot):
+    await bot.add_cog(Roles(bot))
     
