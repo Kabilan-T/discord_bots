@@ -41,7 +41,7 @@ class Voice(commands.Cog, name="Voice Features"):
         if context.author.voice is None:
             embed = discord.Embed(title="You are not in a voice channel :confused:",
                                   description="Please join a voice channel and try again",
-                                  color=0xBEBEFE,
+                                  color=self.default_color,
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{context.author} tried to use join command without being in a voice channel")
@@ -52,7 +52,7 @@ class Voice(commands.Cog, name="Voice Features"):
             await voice_channel.connect()
             embed = discord.Embed(title=f"Joined {voice_channel.name} :microphone:",
                                   description="I have joined the voice channel",
-                                  color=0xBEBEFE,
+                                  color=self.default_color,
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{self.bot.name} joined voice channel {voice_channel.name} in {context.guild.name}")
@@ -60,7 +60,7 @@ class Voice(commands.Cog, name="Voice Features"):
         elif context.voice_client.channel == voice_channel:
             embed = discord.Embed(title=f"Already in {voice_channel.name} :confused:",
                                   description="I am already in the voice channel",
-                                  color=0xBEBEFE,
+                                  color=self.default_color,
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{self.bot.name} tried to join voice channel {voice_channel.name} in {context.guild.name} when already in it")
@@ -69,7 +69,7 @@ class Voice(commands.Cog, name="Voice Features"):
             await context.voice_client.move_to(voice_channel)
             embed = discord.Embed(title=f"Moved to {voice_channel.name} :person_running:",
                                   description="I have moved to the voice channel",
-                                  color=0xBEBEFE,
+                                  color=self.default_color,
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{self.bot.name} moved to voice channel {voice_channel.name} in {context.guild.name}")
@@ -81,7 +81,7 @@ class Voice(commands.Cog, name="Voice Features"):
         if context.voice_client is None:
             embed = discord.Embed(title="Not in a voice channel :confused:",
                                   description="I am not in any voice channel. How can I leave?",
-                                  color=0xBEBEFE,
+                                  color=self.default_color,
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{context.author} tried to use leave command without being in a voice channel")
@@ -90,7 +90,7 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.voice_client.disconnect()
         embed = discord.Embed(title="Left the voice channel :wave:",
                               description="I have left the voice channel",
-                              color=0xBEBEFE,
+                              color=self.default_color,
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{self.bot.name} left voice channel {channel.name} in {context.guild.name}")
@@ -104,7 +104,7 @@ class Voice(commands.Cog, name="Voice Features"):
         if context.voice_client.is_playing():
             embed = discord.Embed(title="Already speaking :tired_face:",
                                   description="I am already speaking. Please wait for me to finish",
-                                  color=0xBEBEFE,
+                                  color=self.default_color,
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{context.author} tried to use say command when already speaking in voice channel {context.voice_client.channel.name} in {context.guild.name}")
@@ -120,7 +120,7 @@ class Voice(commands.Cog, name="Voice Features"):
         context.voice_client.source.volume = self.volume / 100
         embed = discord.Embed(title="Speaking :speaking_head:",
                               description=" *'" + text + "'*",
-                              color=0xBEBEFE,
+                              color=self.default_color,
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}")
@@ -130,7 +130,7 @@ class Voice(commands.Cog, name="Voice Features"):
         ''' Get the volume of the bot '''
         embed = discord.Embed(title="Volume :loud_sound:",
                               description=f"Volume is {self.volume}",
-                              color=0xBEBEFE,
+                              color=self.default_color,
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"Current volume is {self.volume} checked by {context.author} in guild {context.guild.name}")
@@ -141,7 +141,7 @@ class Voice(commands.Cog, name="Voice Features"):
         if volume < 0 or volume > 100:
             embed = discord.Embed(title="Invalid volume :confused:",
                                   description="Please enter a volume between 0 and 100",
-                                  color=0xBEBEFE,
+                                  color=self.default_color,
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{context.author} tried to use setvolume command with invalid volume {volume} in {context.guild.name}")
@@ -149,7 +149,7 @@ class Voice(commands.Cog, name="Voice Features"):
         self.volume = volume
         embed = discord.Embed(title="Volume set :loud_sound:",
                               description=f"Volume set to {self.volume}",
-                              color=0xBEBEFE,
+                              color=self.default_color,
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{context.author} set the volume to {volume} in {context.guild.name}")
@@ -160,7 +160,7 @@ class Voice(commands.Cog, name="Voice Features"):
         if language not in self.available_languages.keys():
             embed = discord.Embed(title="Invalid language :confused:",
                                   description="Please enter a valid language.The available languages are:\n" + ",\t".join([f"'{key} - {value}'" for key, value in self.available_languages.items()]),
-                                  color=0xBEBEFE,
+                                  color=self.default_color,
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{context.author} tried to use setlanguage command with invalid language {language} in {context.guild.name}")
@@ -168,7 +168,7 @@ class Voice(commands.Cog, name="Voice Features"):
         self.language = language
         embed = discord.Embed(title="Language set :globe_with_meridians:",
                               description=f"Language set to '{language} - {self.available_languages[language]}'",
-                              color=0xBEBEFE,
+                              color=self.default_color,
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{context.author} set the language to {language} in {context.guild.name}")
@@ -179,7 +179,7 @@ class Voice(commands.Cog, name="Voice Features"):
         if domain not in self.available_domains:
             embed = discord.Embed(title="Invalid domain :confused:",
                                   description="Please enter a valid domain.The available domains are:\n" + ",\t".join([f"'{domain}'" for domain in self.available_domains]),
-                                  color=0xBEBEFE,
+                                  color=self.default_color,
                                   )
             await context.reply(embed=embed)
             self.bot.logger.info(f"{context.author} tried to use setdomain command with invalid domain {domain} in {context.guild.name}")
@@ -187,7 +187,7 @@ class Voice(commands.Cog, name="Voice Features"):
         self.domain = domain
         embed = discord.Embed(title="Domain set :globe_with_meridians:",
                               description=f"domain set to '{domain} - google.{domain}'",
-                              color=0xBEBEFE,
+                              color=self.default_color,
                               )
         await context.reply(embed=embed)
         self.bot.logger.info(f"{context.author} set the domain to {domain} in {context.guild.name}")
@@ -198,7 +198,7 @@ class Voice(commands.Cog, name="Voice Features"):
         self.bot.greet_messages[member.id] = text
         embed = discord.Embed(title="Greet message set :wave:",
                               description=f"Greet message for {member.mention} is set to '{text}'",
-                              color=0xBEBEFE,
+                              color=self.default_color,
                               )
         await context.reply(embed=embed)
         self.save_greet_messages()
@@ -229,7 +229,7 @@ class Voice(commands.Cog, name="Voice Features"):
                     await before.channel.guild.voice_client.disconnect()
                     embed = discord.Embed( title="I'm leaving :wave:",
                                         description=f"I have left the voice channel {before.channel.name} as I was alone",
-                                        color=0xBEBEFE,
+                                        color=self.default_color,
                                         )
                     await self.bot.get_channel(self.called_channel_id).send(embed=embed)
                     self.bot.logger.info(f"{self.bot.name} left voice channel {before.channel.name} in {before.channel.guild.name} as the last member left")

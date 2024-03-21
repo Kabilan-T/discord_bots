@@ -45,7 +45,7 @@ class Instagram(commands.Cog, name="Instagram"):
         embed = discord.Embed(
                 title="Instagram channel set",
                 description="I will watch for instagram links in "+channel.mention+".",
-                color=0xBEBEFE,
+                color=self.default_color,
                 )
         await context.send(embed=embed)
         self.bot.logger.info("Added channel "+str(channel.id)+" to watch for instagram links.")
@@ -59,7 +59,7 @@ class Instagram(commands.Cog, name="Instagram"):
         embed = discord.Embed(
                 title="Instagram channel unset",
                 description="I will remove "+channel.mention+" from my watch list for instagram links.",
-                color=0xBEBEFE,
+                color=self.default_color,
                 )
         await context.send(embed=embed)
         self.bot.logger.info("Removed channel "+str(channel.id)+" from watch for instagram links.")
@@ -97,7 +97,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     title=str(profile.full_name),
                     url="https://www.instagram.com/"+str(profile.username),
                     description=profile.biography,
-                    color=0xBEBEFE,
+                    color=self.default_color,
                     )
             embed.set_thumbnail(url=profile.profile_pic_url)
             embed.add_field(name="Followers", value=str(profile.followers), inline=True)
@@ -109,7 +109,7 @@ class Instagram(commands.Cog, name="Instagram"):
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="Possibly the username is wrong or doesn't exist.",
-                    color=0xBEBEFE,
+                    color=self.default_color,
                     )
             await reply_function(embed=embed)
             self.bot.logger.error("Failed to send bio of "+str(username))
@@ -140,7 +140,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 title=str(post.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(post.owner_profile.username),
                 description="Caption: "+str(short_caption)+"\nType: Post ("+str(len(media_files))+" files)\nLikes: "+str(post.likes)+"\n",
-                color=0xBEBEFE,
+                color=self.default_color,
             )
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
             await reply_function(embed=embed, files=media_files)
@@ -149,7 +149,7 @@ class Instagram(commands.Cog, name="Instagram"):
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="Possibly the user is private or the post doesn't exist.",
-                    color=0xBEBEFE,
+                    color=self.default_color,
                     )
             await reply_function(embed=embed)
             self.bot.logger.error("Failed to send post from "+str(url))
@@ -171,7 +171,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 title=str(reel.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(reel.owner_profile.username),
                 description="Caption: "+str(short_caption)+"\nType: Reel \nLikes: "+str(reel.likes)+"\n",
-                color=0xBEBEFE,
+                color=self.default_color,
             )
             embed.set_thumbnail(url=reel.owner_profile.profile_pic_url)
             await reply_function(embed=embed, files=media_files)
@@ -180,7 +180,7 @@ class Instagram(commands.Cog, name="Instagram"):
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="Possibly the user is private or the reel doesn't exist.",
-                    color=0xBEBEFE,
+                    color=self.default_color,
                     )
             await reply_function(embed=embed)
             self.bot.logger.error("Failed to send reel from "+str(url))
@@ -191,7 +191,7 @@ class Instagram(commands.Cog, name="Instagram"):
             embed = discord.Embed(
                 title="Sorry! There is some problem. :sweat:",
                 description="Stories can be downloaded only if the bot is logged in. There is no login credentials provided to log in to instagram.",
-                color=0xBEBEFE,
+                color=self.default_color,
                 )
             await reply_function(embed=embed)
             return
@@ -200,7 +200,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="I tried to log in to instagram but unfortunately I couldn't. Try again later.",
-                    color=0xBEBEFE,
+                    color=self.default_color,
                     )
                 await reply_function(embed=embed)
                 return
@@ -221,7 +221,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 title=str(profile.full_name),
                 url="https://www.instagram.com/"+str(profile.username),
                 description="Type: Story ("+str(len(media_files))+" files)\n",
-                color=0xBEBEFE,
+                color=self.default_color,
             )
             embed.set_thumbnail(url=profile.profile_pic_url)
             await reply_function(embed=embed, files=media_files)
@@ -230,7 +230,7 @@ class Instagram(commands.Cog, name="Instagram"):
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="Possibly the user is private or the reel doesn't exist.",
-                    color=0xBEBEFE,
+                    color=self.default_color,
                     )
             await reply_function(embed=embed)
             self.bot.logger.error("Failed to send story from "+str(url))

@@ -26,7 +26,7 @@ class General(commands.Cog, name="General"):
             embed = discord.Embed(
                 title="Help",
                 description=f"Use `{self.bot.prefix}help <command>` for more info on a command.",
-                color=0xBEBEFE,
+                color=self.default_color,
             )
             for cog in self.bot.cogs:
                 cog_commands = self.bot.get_cog(cog).get_commands()
@@ -43,14 +43,14 @@ class General(commands.Cog, name="General"):
                 embed = discord.Embed(
                     title="Help",
                     description=f"`{command}` is not a valid command.",
-                    color=0xBEBEFE,
+                    color=self.default_color,
                 )
                 await context.send(embed=embed)
             else:
                 embed = discord.Embed(
                     title=f"Help: {command.name}",
                     description=command.description,
-                    color=0xBEBEFE,
+                    color=self.default_color,
                 )
                 embed.add_field(
                     name="Usage",
@@ -65,7 +65,7 @@ class General(commands.Cog, name="General"):
         embed = discord.Embed(
             title="Hello "+context.author.name+" :wave:",
             description=f"I am {self.bot.name}, a discord bot. Nice to meet you! :smile:",
-            color=0xBEBEFE,
+            color=self.default_color,
         )
         await context.send(embed=embed)
 
@@ -75,7 +75,7 @@ class General(commands.Cog, name="General"):
         embed = discord.Embed(
             title="🏓 Pong!",
             description=f"The bot latency is {round(self.bot.latency * 1000)}ms.",
-            color=0xBEBEFE,
+            color=self.default_color,
         )
         await context.send(embed=embed)
 
@@ -85,7 +85,7 @@ class General(commands.Cog, name="General"):
         embed = discord.Embed(
             title="Invite",
             description=f"Use this link to invite the bot to your server: https://discord.com/oauth2/authorize?client_id={self.bot.client_id}&scope=bot&permissions=8",
-            color=0xBEBEFE,
+            color=self.default_color,
         )
         await context.send(embed=embed)
 
@@ -96,7 +96,7 @@ class General(commands.Cog, name="General"):
             embed = discord.Embed(
                 title="Prefix",
                 description=f"The current prefix is `{self.bot.prefix}`",
-                color=0xBEBEFE,
+                color=self.default_color,
             )
             await context.send(embed=embed)
         else:
@@ -104,7 +104,7 @@ class General(commands.Cog, name="General"):
             embed = discord.Embed(
                 title="Prefix",
                 description=f"The prefix has been changed to `{self.bot.prefix}`",
-                color=0xBEBEFE,
+                color=self.default_color,
             )
             await context.send(embed=embed)
             self.bot.logger.info(f"Prefix changed to {self.bot.prefix}")

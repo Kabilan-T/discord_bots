@@ -39,7 +39,7 @@ class Moderation(commands.Cog, name="Moderation"):
             embed = discord.Embed(
                 title="Sorry :confused:",
                 description="You do not have permission to use this command. You need the following permission to use this command : " + str(permission),
-                color=0xBEBEFE,
+                color=self.default_color,
             )
             context.send(embed=embed)
             self.bot.logger.warning(f"{context.author.name} tried to use a command. But they do not have the required permissions - {permission}")
@@ -49,7 +49,7 @@ class Moderation(commands.Cog, name="Moderation"):
         embed = discord.Embed(
             title="Moderation activity :judge:",
             description=f"**{member.mention}** has been {action} by **{context.author.mention}**.",
-            color=0xBEBEFE,
+            color=self.default_color,
         )
         if reason is not None:
             embed.add_field(name="Reason", value=reason, inline=False)
@@ -61,7 +61,7 @@ class Moderation(commands.Cog, name="Moderation"):
         embed = discord.Embed(
             title="Moderation activity :judge:",
             description=f"You have been {action} in **{context.guild.name}**",
-            color=0xBEBEFE,
+            color=self.default_color,
         )
         if reason is not None:
             embed.add_field(name="Reason", value=reason, inline=False)
@@ -136,7 +136,7 @@ class Moderation(commands.Cog, name="Moderation"):
             embed = discord.Embed(
                 title="Purge :wastebasket:",
                 description=f"{amount} messages have been purged from {context.channel.mention}",
-                color=0xBEBEFE,
+                color=self.default_color,
             )
             await context.send(embed=embed)
     
@@ -184,7 +184,7 @@ class Moderation(commands.Cog, name="Moderation"):
                 embed = discord.Embed(
                     title="Warns :confused:",
                     description=f"{member.mention} has no warns.",
-                    color=0xBEBEFE,
+                    color=self.default_color,
                 )
                 await context.send(embed=embed)
                     
@@ -196,13 +196,13 @@ class Moderation(commands.Cog, name="Moderation"):
                 embed = discord.Embed(
                     title="Warns :warning:",
                     description=f"{member.mention} has {self.warns[member.id]} warns.",
-                    color=0xBEBEFE,
+                    color=self.default_color,
                 )
             else:
                 embed = discord.Embed(
                     title="Warns :warning:",
                     description=f"{member.mention} has 0 warns.",
-                    color=0xBEBEFE,
+                    color=self.default_color,
                 )
             await context.send(embed=embed)
     
