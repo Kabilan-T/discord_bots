@@ -20,7 +20,7 @@ class AutoBot(BaseBot):
         ''' Initialize the bot '''
         config_file = 'auto.yml'
         self.default_color = discord.Color.purple()
-        self.extensions_to_load =  ['cogs.greetings', 
+        self.extensions_to_load =  ['cogs.general', 
                                     'cogs.auto.moderation',
                                     'cogs.auto.greetings',
                                     'cogs.auto.roles']
