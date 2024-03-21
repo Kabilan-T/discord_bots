@@ -16,7 +16,7 @@ from discord.ext import commands
 from discord.ext.commands import Context
 import instaloader
 
-temp_download_dir = "downloads"
+temp_download_dir = "temp/downloads"
 
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):

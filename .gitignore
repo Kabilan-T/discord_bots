@@ -1,9 +1,8 @@
-token.sh
-bot_logs/*
-*.mp3
-*greet_messages.txt
-src/config/warns.yml
-*proxies.txt
+logs/*
+temp/*
+*/__pycache__/*
+*/__init__.py
+*token.sh
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

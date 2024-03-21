@@ -17,7 +17,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Context
 
-temp_audio_dir = "generated_audio"
+temp_audio_dir = "temp/audio"
 
 class Voice(commands.Cog, name="Voice Features"):
     def __init__(self, bot):
