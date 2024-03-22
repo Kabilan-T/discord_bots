@@ -5,4 +5,3 @@ instaloader==4.10.2
 requests==2.31.0
 beautifulsoup4==4.12.2
 gTTS==2.5.0
-re==2.2.1
