@@ -18,13 +18,13 @@ class AutoBot(BaseBot):
 
     def __init__(self):
         ''' Initialize the bot '''
-        config_file = 'auto.yml'
+        bot_name = 'auto'
         self.default_color = discord.Color.purple()
         self.extensions_to_load =  ['cogs.general', 
                                     'cogs.auto.moderation',
                                     'cogs.auto.greetings',
                                     'cogs.auto.roles']
-        super().__init__(config_file, self.default_color, self.extensions_to_load)
+        super().__init__(bot_name, self.default_color, self.extensions_to_load)
     
 if __name__ == '__main__':
     # Launch the bot

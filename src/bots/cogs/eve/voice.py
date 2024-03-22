@@ -17,14 +17,14 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Context
 
-temp_audio_dir = "temp/audio"
+tmp = "tmp"
 
 class Voice(commands.Cog, name="Voice Features"):
     def __init__(self, bot):
         self.bot = bot
         self.volume = self.bot.voice["default_volume"]
         self.language = self.bot.voice["language"]
-        self.domain = "com"
+        self.domain = self.bot.voice["domain"]
         self.available_languages = gtts.lang.tts_langs()
         try:
             response = requests.get("https://www.google.com/supported_domains").text.splitlines()
@@ -33,7 +33,7 @@ class Voice(commands.Cog, name="Voice Features"):
             self.available_domains = [self.domain]
         self.bot.greet_messages = dict()
         self.load_greet_messages()
-        self.bot.log.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
+        self.bot.log.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}", self.bot)
 
     @commands.command(name="join", aliases=["j"])
     async def join(self, context: Context):
@@ -44,7 +44,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=self.bot.default_color,
                                   )
             await context.reply(embed=embed)
-            self.bot.log.info(f"{context.author} tried to use join command without being in a voice channel")
+            self.bot.log.info(f"{context.author} tried to use join command without being in a voice channel", context.guild)
             return False
         voice_channel = context.author.voice.channel
         self.called_channel_id = context.channel.id
@@ -55,7 +55,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=self.bot.default_color,
                                   )
             await context.reply(embed=embed)
-            self.bot.log.info(f"{self.bot.name} joined voice channel {voice_channel.name} in {context.guild.name}")
+            self.bot.log.info(f"{self.bot.name} joined voice channel {voice_channel.name} in {context.guild.name}", context.guild)
             return True
         elif context.voice_client.channel == voice_channel:
             embed = discord.Embed(title=f"Already in {voice_channel.name} :confused:",
@@ -63,7 +63,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=self.bot.default_color,
                                   )
             await context.reply(embed=embed)
-            self.bot.log.info(f"{self.bot.name} tried to join voice channel {voice_channel.name} in {context.guild.name} when already in it")
+            self.bot.log.info(f"{self.bot.name} tried to join voice channel {voice_channel.name} in {context.guild.name} when already in it", context.guild)
             return False
         else:
             await context.voice_client.move_to(voice_channel)
@@ -72,7 +72,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=self.bot.default_color,
                                   )
             await context.reply(embed=embed)
-            self.bot.log.info(f"{self.bot.name} moved to voice channel {voice_channel.name} in {context.guild.name}")
+            self.bot.log.info(f"{self.bot.name} moved to voice channel {voice_channel.name} in {context.guild.name}", context.guild)
             return True
 
     @commands.command(name="leave", aliases=["l"])
@@ -84,7 +84,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=self.bot.default_color,
                                   )
             await context.reply(embed=embed)
-            self.bot.log.info(f"{context.author} tried to use leave command without being in a voice channel")
+            self.bot.log.info(f"{context.author} tried to use leave command without being in a voice channel", context.guild)
             return
         channel = context.voice_client.channel
         await context.voice_client.disconnect()
@@ -93,7 +93,7 @@ class Voice(commands.Cog, name="Voice Features"):
                               color=self.bot.default_color,
                               )
         await context.reply(embed=embed)
-        self.bot.log.info(f"{self.bot.name} left voice channel {channel.name} in {context.guild.name}")
+        self.bot.log.info(f"{self.bot.name} left voice channel {channel.name} in {context.guild.name}", context.guild)
         
     @commands.command(name="say", aliases=["s"])
     async def say(self, context: Context, *, text: str):
@@ -107,12 +107,12 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=self.bot.default_color,
                                   )
             await context.reply(embed=embed)
-            self.bot.log.info(f"{context.author} tried to use say command when already speaking in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+            self.bot.log.info(f"{context.author} tried to use say command when already speaking in voice channel {context.voice_client.channel.name} in {context.guild.name}", context.guild)
             # wait for the bot to finish speaking
             while context.voice_client.is_playing():
                 await asyncio.sleep(1)
         tts = gtts.gTTS(text, lang=self.language, tld=self.domain)
-        file = os.path.join(temp_audio_dir, "tts.mp3")
+        file = os.path.join(tmp, "tts.mp3")
         os.makedirs(os.path.dirname(file), exist_ok=True)
         tts.save(file)
         context.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: print("done", e))
@@ -123,7 +123,8 @@ class Voice(commands.Cog, name="Voice Features"):
                               color=self.bot.default_color,
                               )
         await context.reply(embed=embed)
-        self.bot.log.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}")
+        os.remove(file)
+        self.bot.log.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}", context.guild)
 
     @commands.command(name="volume", aliases=["v"])
     async def volume(self, context: Context):
@@ -133,7 +134,7 @@ class Voice(commands.Cog, name="Voice Features"):
                               color=self.bot.default_color,
                               )
         await context.reply(embed=embed)
-        self.bot.log.info(f"Current volume is {self.volume} checked by {context.author} in guild {context.guild.name}")
+        self.bot.log.info(f"Current volume is {self.volume} checked by {context.author} in guild {context.guild.name}", context.guild)
 
     @commands.command(name="setvolume", aliases=["sv"])
     async def setvolume(self, context: Context, volume: int):
@@ -144,7 +145,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=self.bot.default_color,
                                   )
             await context.reply(embed=embed)
-            self.bot.log.info(f"{context.author} tried to use setvolume command with invalid volume {volume} in {context.guild.name}")
+            self.bot.log.info(f"{context.author} tried to use setvolume command with invalid volume {volume} in {context.guild.name}", context.guild)
             return
         self.volume = volume
         embed = discord.Embed(title="Volume set :loud_sound:",
@@ -152,7 +153,7 @@ class Voice(commands.Cog, name="Voice Features"):
                               color=self.bot.default_color,
                               )
         await context.reply(embed=embed)
-        self.bot.log.info(f"{context.author} set the volume to {volume} in {context.guild.name}")
+        self.bot.log.info(f"{context.author} set the volume to {volume} in {context.guild.name}", context.guild)
 
     @commands.command(name="setlanguage", aliases=["sl"])
     async def setlanguage(self, context: Context, language: str):
@@ -163,7 +164,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=self.bot.default_color,
                                   )
             await context.reply(embed=embed)
-            self.bot.log.info(f"{context.author} tried to use setlanguage command with invalid language {language} in {context.guild.name}")
+            self.bot.log.info(f"{context.author} tried to use setlanguage command with invalid language {language} in {context.guild.name}", context.guild)
             return
         self.language = language
         embed = discord.Embed(title="Language set :globe_with_meridians:",
@@ -171,7 +172,7 @@ class Voice(commands.Cog, name="Voice Features"):
                               color=self.bot.default_color,
                               )
         await context.reply(embed=embed)
-        self.bot.log.info(f"{context.author} set the language to {language} in {context.guild.name}")
+        self.bot.log.info(f"{context.author} set the language to {language} in {context.guild.name}", context.guild)
 
     @commands.command(name="setdomain", aliases=["sd"])
     async def setdomain(self, context: Context, domain: str):
@@ -182,7 +183,7 @@ class Voice(commands.Cog, name="Voice Features"):
                                   color=self.bot.default_color,
                                   )
             await context.reply(embed=embed)
-            self.bot.log.info(f"{context.author} tried to use setdomain command with invalid domain {domain} in {context.guild.name}")
+            self.bot.log.info(f"{context.author} tried to use setdomain command with invalid domain {domain} in {context.guild.name}", context.guild)
             return
         self.domain = domain
         embed = discord.Embed(title="Domain set :globe_with_meridians:",
@@ -190,7 +191,7 @@ class Voice(commands.Cog, name="Voice Features"):
                               color=self.bot.default_color,
                               )
         await context.reply(embed=embed)
-        self.bot.log.info(f"{context.author} set the domain to {domain} in {context.guild.name}")
+        self.bot.log.info(f"{context.author} set the domain to {domain} in {context.guild.name}", context.guild)
 
     @commands.command(name="setgreet", aliases=["sg"])
     async def setgreet(self, context: Context, member: discord.Member, *, text: str):
@@ -202,7 +203,7 @@ class Voice(commands.Cog, name="Voice Features"):
                               )
         await context.reply(embed=embed)
         self.save_greet_messages()
-        self.bot.log.info(f"{context.author} set the greet message for {member.display_name} to '{text}' in {context.guild.name}")
+        self.bot.log.info(f"{context.author} set the greet message for {member.display_name} to '{text}' in {context.guild.name}", context.guild)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
@@ -214,14 +215,15 @@ class Voice(commands.Cog, name="Voice Features"):
             else:
                 greet_message = "Vanakkam " + f"{member.display_name}"
             tts = gtts.gTTS(f"{greet_message}", lang='ta', tld='co.in')
-            file = os.path.join(temp_audio_dir, "greet.mp3")
+            file = os.path.join(tmp, "tts.mp3")
             os.makedirs(os.path.dirname(file), exist_ok=True)
             tts.save(file)
             await asyncio.sleep(3)
             member.guild.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: print("done", e))
             member.guild.voice_client.source = discord.PCMVolumeTransformer(member.guild.voice_client.source)
             member.guild.voice_client.source.volume = self.volume / 100
-            self.bot.log.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}")
+            self.bot.log.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}", member.guild)
+            os.remove(file)
         elif before.channel != after.channel and before.channel == member.guild.voice_client.channel:
             if len(before.channel.members) == 1:
                 await asyncio.sleep(5)
@@ -232,14 +234,14 @@ class Voice(commands.Cog, name="Voice Features"):
                                         color=self.bot.default_color,
                                         )
                     await self.bot.get_channel(self.called_channel_id).send(embed=embed)
-                    self.bot.log.info(f"{self.bot.name} left voice channel {before.channel.name} in {before.channel.guild.name} as the last member left")
+                    self.bot.log.info(f"{self.bot.name} left voice channel {before.channel.name} in {before.channel.guild.name} as the last member left", before.channel.guild)
     
     def save_greet_messages(self):
         ''' Save the greet messages to a file '''
         with open("greet_messages.txt", "w+") as file:
             for key, value in self.bot.greet_messages.items():
                 file.write(f"{key} {value}\n")
-        self.bot.log.info(f"Greet messages saved to file", send_to_log_channel=False)
+        self.bot.log.info(f"Greet messages saved to file")
     
     def load_greet_messages(self):
         ''' Load the greet messages from a file '''
@@ -248,9 +250,9 @@ class Voice(commands.Cog, name="Voice Features"):
                 for line in file.readlines():
                     key, value = line.split(" ", 1)
                     self.bot.greet_messages[int(key)] = value.strip()
-            self.bot.log.info(f"Greet messages loaded from file", send_to_log_channel=False)
+            self.bot.log.info(f"Greet messages loaded from file")
         except FileNotFoundError:
-            self.bot.log.info(f"Greet messages file not found", send_to_log_channel=False)
+            self.bot.log.info(f"Greet messages file not found")
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))

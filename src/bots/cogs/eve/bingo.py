@@ -25,7 +25,7 @@ class Bingo(commands.Cog, name="Bingo"):
     @commands.command(name="bingo", description="Start a game of bingo.")
     async def bingo(self, context: Context, *players: discord.Member):
         '''Starts a game of bingo'''
-        self.bot.log.info(f"Bingo game requested by {context.author.name}")
+        self.bot.log.info(f"Bingo game requested by {context.author.name}", context.guild)
         # Check if players are mentioned
         if not 1 <= len(players):
             embed = discord.Embed(
@@ -33,7 +33,7 @@ class Bingo(commands.Cog, name="Bingo"):
                 description=f"Use `{self.bot.prefix}bingo <@player>...` to start a game of bingo.",
                 color=self.bot.default_color,
             )
-            self.bot.log.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} as no players were mentioned.")
+            self.bot.log.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} as no players were mentioned.", context.guild)
             await context.send(embed=embed)
             return
         
@@ -53,7 +53,7 @@ class Bingo(commands.Cog, name="Bingo"):
                     color=self.bot.default_color,
                 )
                 await context.send(embed=embed)
-                self.bot.log.info(f"Game aborted. {player.name} has DMs disabled.")
+                self.bot.log.info(f"Game aborted. {player.name} has DMs disabled.", context.guild)
                 return
 
         # Create new game
@@ -65,7 +65,7 @@ class Bingo(commands.Cog, name="Bingo"):
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
-            self.bot.log.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} but a game is already active.")
+            self.bot.log.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} but a game is already active.", context.guild)
             return
         else:
             self.games[game_id] = {
@@ -88,7 +88,7 @@ class Bingo(commands.Cog, name="Bingo"):
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
-            self.bot.log.info(f"Game started in #{context.channel.name} of {context.guild.name} with players {[player.name for player in players]}.")
+            self.bot.log.info(f"Game started in #{context.channel.name} of {context.guild.name} with players {[player.name for player in players]}.", context.guild)
         
         # Play the game
         while not self.games[game_id]["game_over"]:
@@ -103,7 +103,7 @@ class Bingo(commands.Cog, name="Bingo"):
         )
         await context.send(embed=embed)
         del self.games[game_id]
-        self.bot.log.info(f"Game ended in #{context.channel.name} of {context.guild.name}.")
+        self.bot.log.info(f"Game ended in #{context.channel.name} of {context.guild.name}.", context.guild)
     
     @commands.command(name="quit", description="Quit the current game of bingo.")
     async def quit(self, context: Context):
@@ -118,7 +118,7 @@ class Bingo(commands.Cog, name="Bingo"):
                 )
                 await context.send(embed=embed)
                 del self.games[game_id]
-                self.bot.log.info(f"Game aborted in #{context.channel.name} of {context.guild.name} by {context.author.name}.")
+                self.bot.log.info(f"Game aborted in #{context.channel.name} of {context.guild.name} by {context.author.name}.", context.guild)
             else:
                 embed = discord.Embed(
                     title="Ooops! :slight_frown:",
@@ -126,7 +126,7 @@ class Bingo(commands.Cog, name="Bingo"):
                     color=self.bot.default_color,
                 )
                 await context.send(embed=embed)
-                self.bot.log.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as they are not playing.")
+                self.bot.log.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as they are not playing.", context.guild)
         else:
             embed = discord.Embed(
                 title="Ooops! :slight_frown:",
@@ -134,7 +134,7 @@ class Bingo(commands.Cog, name="Bingo"):
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
-            self.bot.log.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as there is no active game.")
+            self.bot.log.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as there is no active game.", context.guild)
     
     async def create_game(self, game):
         for player in game["players"]:
@@ -170,9 +170,9 @@ class Bingo(commands.Cog, name="Bingo"):
             color=self.bot.default_color,
         )
         await game["channel"].send(embed=embed)
-        self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} ended.")
-        self.bot.log.info(f"Winners: {[player.name for player in game['winners']]}")
-        self.bot.log.info(f"Players - Scores: {[(player.name, game['score'][player.id]) for player in game['players']]}")
+        self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} ended.", game["channel"].guild)
+        self.bot.log.info(f"Winners: {[player.name for player in game['winners']]}", game["channel"].guild)
+        self.bot.log.info(f"Players - Scores: {[(player.name, game['score'][player.id]) for player in game['players']]}", game["channel"].guild)
     
     async def play_game(self, game):
         embed = discord.Embed(
@@ -181,7 +181,7 @@ class Bingo(commands.Cog, name="Bingo"):
             color=self.bot.default_color,
         )
         await game["current_player"].send(embed=embed)
-        self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name}'s turn.")
+        self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name}'s turn.", game["channel"].guild)
 
         for player in game["players"]:
             if player != game["current_player"]:
@@ -196,7 +196,7 @@ class Bingo(commands.Cog, name="Bingo"):
         is_number_called = await self.call_number(game["current_player"], game)
         if is_number_called:
             game["called_numbers"].append(game["current_number"])
-            self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name} called {game['current_number']}.")
+            self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name} called {game['current_number']}.", game["channel"].guild)
             score_updated = False
             for player in game["players"]:
                 # strike the number from all players' charts

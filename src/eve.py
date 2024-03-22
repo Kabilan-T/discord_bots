@@ -18,13 +18,13 @@ class EveBot(BaseBot):
 
     def __init__(self):
         ''' Initialize the bot '''
-        config_file = 'eve.yml'
-        self.default_color = discord.Color.purple()
-        self.voice = {'default_volume': 75, 'language': 'ta'}
+        bot_name = 'eve'
+        self.default_color = 0xBEBEFE
+        self.voice = {'default_volume': 75, 'language': 'ta', 'domain': 'com'}
         self.extensions_to_load =  ['cogs.general',
                                     'cogs.eve.bingo',
                                     'cogs.eve.voice']
-        super().__init__(config_file, self.default_color, self.extensions_to_load)
+        super().__init__(bot_name, self.default_color, self.extensions_to_load)
     
 if __name__ == '__main__':
     # Launch the bot

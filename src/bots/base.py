@@ -16,7 +16,8 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from bots.log import Logger
 
-config_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config')
+config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.yml')
+data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
 class BaseBot(commands.Bot):
     ''' Base class for all bots '''
@@ -24,27 +25,28 @@ class BaseBot(commands.Bot):
     def __init__(self, config_file: str, default_color: discord.Color, extensions_to_load: list):
         ''' Initialize the bot '''
         self.load_config(config_file)
+        self.prefix = dict()
         self.default_color = default_color
         self.extensions_to_load = extensions_to_load
         self.log = Logger(self.bot_name)
         self.log.info(f"Loaded config for {self.bot_name}")
         # Create discord bot
         super().__init__(description="Discord bot : "+self.bot_name,
-                         command_prefix=self.prefix, 
+                         command_prefix=self.get_prefix,
                          intents=discord.Intents.all(),
                          help_command=None,
                          application_id=self.client_id)
         
-    def load_config(self, config_file: str):
+    def load_config(self, bot_name: str):
         '''Load the configuration file'''
-        file_path = os.path.join(config_dir, config_file)
-        with open(file_path, 'r') as file:
-            self.config = yaml.safe_load(file)
-        self.bot_name = self.config.get('name', None)
-        self.user_name = self.config.get('user_name', None)
-        self.client_id = self.config.get('client_id', None)
-        self.prefix = self.config.get('prefix', '!')
-        self.log_channel_id = self.config.get('log_channel_id', None)
+        with open(config_file, 'r') as file:
+            config = yaml.safe_load(file).get(bot_name, None)
+        if config is None:
+            raise ValueError(f"Configuration not found for {bot_name}")
+        self.bot_name = config.get('name', None)
+        self.user_name = config.get('user_name', None)
+        self.client_id = config.get('client_id', None)
+        self.default_prefix = config.get('default_prefix', None)
 
     async def setup_hook(self):
         '''Setup hook executed before bot execution'''
@@ -56,17 +58,39 @@ class BaseBot(commands.Bot):
             except Exception as e:
                 exception = f"{type(e).__name__}: {e}"
                 self.log.error(f"Failed to load extension {extension}\n{exception}")
+    
+    async def get_prefix(self, bot, message):
+        '''Get the prefix for the bot'''
+        if message.guild is None:
+            return self.default_prefix
+        return self.prefix.get(message.guild.id, self.default_prefix)
 
     async def on_ready(self):
         ''' Called when the bot is ready '''
         self.log.info(f"Logged in as {self.user.name} ({self.user.id})")
-        # self.log.set_log_channel(self.get_channel(self.log_channel_id))
-        self.log.info(f'{self.bot_name} is ready')
-        self.log.info(f'Prefix: {self.prefix}')
+        if not os.path.exists(os.path.join(data_dir, self.bot_name)):
+            os.makedirs(os.path.join(data_dir, self.bot_name))
+        for guild in self.guilds:
+            if not os.path.exists(os.path.join(data_dir, self.bot_name, str(guild.id))):
+                os.makedirs(os.path.join(data_dir, self.bot_name, str(guild.id)))
+                self.log.info(f"Data directory created for {guild.name}")
+            else:
+                self.log.info(f"Data directory for {guild.name} already exists")
+                if os.path.exists(os.path.join(data_dir, self.bot_name, str(guild.id), 'custom_settings.yml')):
+                    with open(os.path.join(data_dir, self.bot_name, str(guild.id), 'custom_settings.yml'), 'r') as file:
+                        guild_settings = yaml.safe_load(file)
+                        self.log.info(f"Loaded custom settings for {guild.name}")
+                        self.log.set_log_channel(guild.id, self.get_channel(guild_settings.get('log_channel', None)))
+                        self.log.info(f"{self.bot_name} is ready for {guild.name}", guild)
+                        self.prefix[guild.id] = guild_settings.get('prefix', self.default_prefix)
+                        self.log.info(f"Prefix for {guild.name} set to {self.prefix[guild.id]}", guild)
+                else:
+                    self.prefix[guild.id] = self.default_prefix
+                    self.log.info(f"Prefix for {guild.name} set to default")
                           
     async def close(self):
         '''Execute when bot is closed'''
-        self.log.info("Bot execution terminated.")
+        self.log.info("Bot execution terminated.", None, False)
         await super().close()
     
     def run(self, token=None):
@@ -77,15 +101,17 @@ class BaseBot(commands.Bot):
         else:
             self.log.error(f"Token not found for {self.bot_name}. Please set the TOKEN as environment variable.")
 
-    async def on_command_completion(self, context: Context):
-        ''' Called when a command is completed '''
-        self.log.info(f'{context.author} has executed {context.command}')
+    async def on_command(self, context: Context):
+        ''' Called when a command is used '''
+        info = f"Command {context.command.name} used by @{context.author.name}"
+        info += f" in #{context.channel.name} of {context.guild.name}" if context.guild is not None else f" in DMs."
+        self.log.info(info, context.guild)
 
     async def on_command_error(self, context : Context, error : Exception):
         '''Execute when a command error occurs'''
         err = f"{error} - Occurred while executing '{context.message.content}' by @{context.author.name}"
         err += f" in #{context.channel.name} of {context.guild.name}" if context.guild is not None else f" in DMs."
-        self.log.error(err)
+        self.log.error(err, context.guild)
         if isinstance(error, commands.CommandNotFound):
             embed = discord.Embed(
                 title="Command not found :confused:",
@@ -111,10 +137,6 @@ class BaseBot(commands.Bot):
                 color=discord.Color.red(),
             )
         await context.send(embed=embed)
-
-    async def on_error(self, event_method, *args, **kwargs):
-        ''' Called when an error occurs '''
-        self.log.error(f'Error in {event_method}: {args[0]}')
 
     async def on_connect(self):
         ''' Called when the bot connects '''

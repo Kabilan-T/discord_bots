@@ -20,10 +20,10 @@ base_log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.p
 class Logger():
     ''' Logging class definition '''
 
-    def __init__(self, bot_name: str, log_channel: discord.TextChannel = None):
+    def __init__(self, bot_name: str):
         ''' Initialize the log '''
         self.bot_name = bot_name.lower()
-        self.log_channel = log_channel
+        self.log_channel = dict()
         self.log_dir = os.path.join(base_log_dir, self.bot_name)
         os.makedirs(self.log_dir, exist_ok=True)
         self.log_file = os.path.join(self.log_dir, f'{self.bot_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.log')
@@ -33,53 +33,50 @@ class Logger():
                             datefmt="%Y-%m-%d %H:%M:%S")
         self.log = logging.getLogger(__name__)
 
-    def set_log_channel(self, log_channel: discord.TextChannel):
+    def set_log_channel(self, guild_id: int, log_channel: discord.TextChannel):
         ''' Set the log channel '''
-        self.log_channel = log_channel
+        self.log_channel[guild_id] = log_channel
 
-    def info(self, msg, send_to_log_channel=True):
+    def info(self, log_message: str, guild: discord.Guild=None, send_log=True):
         '''Logs an info message'''
-        self.log.info(msg)
-        if send_to_log_channel:
-            self.send_log_message(msg, "info")
+        self.log.info(log_message)
+        if send_log and guild is not None:
+            self.send_log_message(guild, log_message, "info")
     
-    def debug(self, msg, send_to_log_channel=True):
+    def debug(self, log_message: str, guild: discord.Guild=None, send_log=True):
         '''Logs a debug message'''
-        self.log.debug(msg)
-        if send_to_log_channel:
-            self.send_log_message(msg, "debug")
+        self.log.debug(log_message)
+        if send_log and guild is not None:
+            self.send_log_message(guild, log_message, "debug")
     
-    def warning(self, msg, send_to_log_channel=True):
+    def warning(self, log_message: str, guild: discord.Guild=None, send_log=True):
         '''Logs a warning message'''
-        self.log.warning(msg)
-        if send_to_log_channel:
-            self.send_log_message(msg, "warning")
+        self.log.warning(log_message)
+        if send_log and guild is not None:
+            self.send_log_message(guild, log_message, "warning")
 
-    def error(self, msg, send_to_log_channel=True):
+    def error(self, log_message: str, guild: discord.Guild=None, send_log=True):
         '''Logs an error message'''
-        self.log.error(msg)
-        if send_to_log_channel:
-            self.send_log_message(msg, "error")
+        self.log.error(log_message)
+        if send_log and guild is not None:
+            self.send_log_message(guild, log_message, "error")
     
-    def send_log_message(self, msg, level):
+    def send_log_message(self, log_message: str, guild: discord.Guild=None, level: str="info"):
         '''Sends a message to the log channel'''
-        if self.log_channel is not None:
+        log_channel = self.log_channel.get(guild.id, None)
+        if log_channel is not None:
             embed = discord.Embed()
             if level == "info": 
-                embed.description = f':information_source: \t `{msg}`'
+                embed.description = f':information_source: \t `{log_message}`'
                 embed.color = discord.Color.dark_grey()
             elif level == "debug":
-                embed.description = f':mag: \t `{msg}` \n{self.log_channel.guild.owner.mention}'
+                embed.description = f':mag: \t `{log_message}` \n{log_channel.guild.owner.mention}'
                 embed.color = discord.Color.orange()
             elif level == "error": 
-                embed.description = f':interrobang: \t `{msg}` \n{self.log_channel.guild.owner.mention}'
+                embed.description = f':interrobang: \t `{log_message}` \n{log_channel.guild.owner.mention}'
                 embed.color = discord.Color.red()
             elif level == "warning": 
                 embed.title = ""
-                embed.description = f':warning: \t `{msg}` \n{self.log_channel.guild.owner.mention}'
+                embed.description = f':warning: \t `{log_message}` \n{log_channel.guild.owner.mention}'
                 embed.color = discord.Color.yellow()
-            asyncio.ensure_future(self.log_channel.send(embed=embed))
-    
-
-
-   
+            asyncio.ensure_future(log_channel.send(embed=embed))

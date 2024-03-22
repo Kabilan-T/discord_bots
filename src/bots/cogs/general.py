@@ -25,7 +25,7 @@ class General(commands.Cog, name="General"):
         if command is None:
             embed = discord.Embed(
                 title="Help",
-                description=f"Use `{self.bot.prefix}help <command>` for more info on a command.",
+                description=f"Use `{self.bot.prefix[context.guild.id]}help <command>` to get help on a specific command.",
                 color=self.bot.default_color,
             )
             for cog in self.bot.cogs:
@@ -54,7 +54,7 @@ class General(commands.Cog, name="General"):
                 )
                 embed.add_field(
                     name="Usage",
-                    value=f"`{self.bot.prefix}{command.name} {command.signature}`",
+                    value=f"`{self.bot.prefix[context.guild.id]}{command.name} {command.signature}`",
                     inline=False,
                 )
                 await context.send(embed=embed)
@@ -95,19 +95,19 @@ class General(commands.Cog, name="General"):
         if prefix is None:
             embed = discord.Embed(
                 title="Prefix",
-                description=f"The current prefix is `{self.bot.prefix}`",
+                description=f"The current prefix is `{self.bot.prefix[context.guild.id]}`",
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
         else:
-            self.bot.prefix = prefix
+            self.bot.prefix[context.guild.id] = prefix
             embed = discord.Embed(
                 title="Prefix",
-                description=f"The prefix has been changed to `{self.bot.prefix}`",
+                description=f"The prefix has been changed to `{self.bot.prefix[context.guild.id]}`",
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
-            self.bot.log.info(f"Prefix changed to {self.bot.prefix}")
+            self.bot.log.info(f"Prefix changed to {self.bot.prefix[context.guild.id]}", context.guild)
     
 async def setup(bot):
     await bot.add_cog(General(bot))
