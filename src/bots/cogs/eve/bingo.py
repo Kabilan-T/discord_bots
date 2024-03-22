@@ -25,15 +25,15 @@ class Bingo(commands.Cog, name="Bingo"):
     @commands.command(name="bingo", description="Start a game of bingo.")
     async def bingo(self, context: Context, *players: discord.Member):
         '''Starts a game of bingo'''
-        self.bot.logger.info(f"Bingo game requested by {context.author.name}")
+        self.bot.log.info(f"Bingo game requested by {context.author.name}")
         # Check if players are mentioned
         if not 1 <= len(players):
             embed = discord.Embed(
                 title="No players mentioned",
                 description=f"Use `{self.bot.prefix}bingo <@player>...` to start a game of bingo.",
-                color=self.default_color,
+                color=self.bot.default_color,
             )
-            self.bot.logger.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} as no players were mentioned.")
+            self.bot.log.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} as no players were mentioned.")
             await context.send(embed=embed)
             return
         
@@ -43,17 +43,17 @@ class Bingo(commands.Cog, name="Bingo"):
                 embed = discord.Embed(
                     title="BinGo! :smiley:",
                     description=f"You have been invited to play bingo by {context.author.mention}.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                 )
                 await player.send(embed=embed)
             except discord.Forbidden:
                 embed = discord.Embed(
                     title="Ooops! Game aborted :slight_frown:",
                     description=f"Please enable DMs from server members to play bingo.\n{player.mention} has DMs disabled.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                 )
                 await context.send(embed=embed)
-                self.bot.logger.info(f"Game aborted. {player.name} has DMs disabled.")
+                self.bot.log.info(f"Game aborted. {player.name} has DMs disabled.")
                 return
 
         # Create new game
@@ -62,10 +62,10 @@ class Bingo(commands.Cog, name="Bingo"):
             embed = discord.Embed(
                 title="Ooops! Game already started",
                 description=f"There is already an active game in this channel. :slight_frown:",
-                color=self.default_color,
+                color=self.bot.default_color,
             )
             await context.send(embed=embed)
-            self.bot.logger.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} but a game is already active.")
+            self.bot.log.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} but a game is already active.")
             return
         else:
             self.games[game_id] = {
@@ -85,10 +85,10 @@ class Bingo(commands.Cog, name="Bingo"):
             embed = discord.Embed(
                 title="BinGo! :smiley:",
                 description=f"Game started by {context.author.mention}.\n {' '.join([player.mention for player in players])} are playing.\n Let's see who gets bingo first! :slight_smile:",
-                color=self.default_color,
+                color=self.bot.default_color,
             )
             await context.send(embed=embed)
-            self.bot.logger.info(f"Game started in #{context.channel.name} of {context.guild.name} with players {[player.name for player in players]}.")
+            self.bot.log.info(f"Game started in #{context.channel.name} of {context.guild.name} with players {[player.name for player in players]}.")
         
         # Play the game
         while not self.games[game_id]["game_over"]:
@@ -99,11 +99,11 @@ class Bingo(commands.Cog, name="Bingo"):
         embed = discord.Embed(
             title="Thanks for playing! :slight_smile:",
             description=f"{' '.join([player.mention for player in self.games[game_id]['players']])} \nSee you next time!",
-            color=self.default_color,
+            color=self.bot.default_color,
         )
         await context.send(embed=embed)
         del self.games[game_id]
-        self.bot.logger.info(f"Game ended in #{context.channel.name} of {context.guild.name}.")
+        self.bot.log.info(f"Game ended in #{context.channel.name} of {context.guild.name}.")
     
     @commands.command(name="quit", description="Quit the current game of bingo.")
     async def quit(self, context: Context):
@@ -114,27 +114,27 @@ class Bingo(commands.Cog, name="Bingo"):
                 embed = discord.Embed(
                     title="Game aborted! :slight_frown:",
                     description=f"{context.author.mention} quit the game.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                 )
                 await context.send(embed=embed)
                 del self.games[game_id]
-                self.bot.logger.info(f"Game aborted in #{context.channel.name} of {context.guild.name} by {context.author.name}.")
+                self.bot.log.info(f"Game aborted in #{context.channel.name} of {context.guild.name} by {context.author.name}.")
             else:
                 embed = discord.Embed(
                     title="Ooops! :slight_frown:",
                     description=f"You are not playing the game.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                 )
                 await context.send(embed=embed)
-                self.bot.logger.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as they are not playing.")
+                self.bot.log.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as they are not playing.")
         else:
             embed = discord.Embed(
                 title="Ooops! :slight_frown:",
                 description=f"There is no active game in this channel.",
-                color=self.default_color,
+                color=self.bot.default_color,
             )
             await context.send(embed=embed)
-            self.bot.logger.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as there is no active game.")
+            self.bot.log.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as there is no active game.")
     
     async def create_game(self, game):
         for player in game["players"]:
@@ -143,7 +143,7 @@ class Bingo(commands.Cog, name="Bingo"):
             embed = discord.Embed(
                 title="Your bingo chart is ready. :smiley:",
                 description=f"{self.format_bingo_chart(game['chart'][player.id])}",
-                color=self.default_color,
+                color=self.bot.default_color,
             )
             await player.send(embed=embed)
         game["current_player"] = game["players"][0]
@@ -154,41 +154,41 @@ class Bingo(commands.Cog, name="Bingo"):
                 embed = discord.Embed(
                     title="Congratulations! :smiley:",
                     description=f"You won the game! :tada:",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                 )
                 await player.send(embed=embed)
             else:
                 embed = discord.Embed(
                     title="Ooops! :slight_frown:",
                     description=f"You lost the game! Better luck next time.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                 )
                 await player.send(embed=embed)
         embed = discord.Embed(
             title="Game over! :smiley:",
             description=f"{' '.join([player.mention for player in game['winners']])} won the game! :tada:",
-            color=self.default_color,
+            color=self.bot.default_color,
         )
         await game["channel"].send(embed=embed)
-        self.bot.logger.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} ended.")
-        self.bot.logger.info(f"Winners: {[player.name for player in game['winners']]}")
-        self.bot.logger.info(f"Players - Scores: {[(player.name, game['score'][player.id]) for player in game['players']]}")
+        self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} ended.")
+        self.bot.log.info(f"Winners: {[player.name for player in game['winners']]}")
+        self.bot.log.info(f"Players - Scores: {[(player.name, game['score'][player.id]) for player in game['players']]}")
     
     async def play_game(self, game):
         embed = discord.Embed(
             title="It's your turn to play! :smiley:",
             description=f"Your Bingo Chart:\n{self.format_bingo_chart(game['chart'][game['current_player'].id])}",
-            color=self.default_color,
+            color=self.bot.default_color,
         )
         await game["current_player"].send(embed=embed)
-        self.bot.logger.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name}'s turn.")
+        self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name}'s turn.")
 
         for player in game["players"]:
             if player != game["current_player"]:
                 embed = discord.Embed(
                     title=f"It's {game['current_player'].mention}'s turn to play!",
                     description=f"Let's wait for them to finish.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                 )
                 await player.send(embed=embed)
         
@@ -196,7 +196,7 @@ class Bingo(commands.Cog, name="Bingo"):
         is_number_called = await self.call_number(game["current_player"], game)
         if is_number_called:
             game["called_numbers"].append(game["current_number"])
-            self.bot.logger.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name} called {game['current_number']}.")
+            self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name} called {game['current_number']}.")
             score_updated = False
             for player in game["players"]:
                 # strike the number from all players' charts
@@ -210,14 +210,14 @@ class Bingo(commands.Cog, name="Bingo"):
                     embed = discord.Embed(
                         title=f"{game['current_player'].mention} called {game['current_number']}!",
                         description=f"Your Bingo Chart:\n{self.format_bingo_chart(game['chart'][player.id])}",
-                        color=self.default_color,
+                        color=self.bot.default_color,
                     )
                     await player.send(embed=embed)
                 elif player == game["current_player"]:
                     embed = discord.Embed(
                         title=f"You called {game['current_number']}!",
                         description=f"Your Bingo Chart:\n{self.format_bingo_chart(game['chart'][player.id])}",
-                        color=self.default_color,
+                        color=self.bot.default_color,
                     )
                     await player.send(embed=embed)
         
@@ -225,7 +225,7 @@ class Bingo(commands.Cog, name="Bingo"):
                 embed = discord.Embed(
                     title="Scores updated! :smiley:",
                     description=f"{self.get_scores_message(game)}",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                 )
                 await game["channel"].send(embed=embed)
                 for player in game["players"]:
@@ -241,7 +241,7 @@ class Bingo(commands.Cog, name="Bingo"):
         embed = discord.Embed(  
             title="Call a number :hourglass_flowing_sand:",
             description=f"Please send a number from your chart to call it.",
-            color=self.default_color,
+            color=self.bot.default_color,
         )
         await player.send(embed=embed)
         try:
@@ -257,7 +257,7 @@ class Bingo(commands.Cog, name="Bingo"):
                 embed = discord.Embed(
                     title="Invalid number :confused:",
                     description=f"Please send a number from your chart to call it.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                 )
                 await player.send(embed=embed)
                 return await self.call_number(player, game)
@@ -265,7 +265,7 @@ class Bingo(commands.Cog, name="Bingo"):
             embed = discord.Embed(
                 title="Ooops! Time's up :slight_frown:",
                 description=f"You took too long to call a number. You turn is skipped.",
-                color=self.default_color,
+                color=self.bot.default_color,
             )
             await player.send(embed=embed)
             return False

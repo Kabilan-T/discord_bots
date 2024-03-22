@@ -2,7 +2,7 @@ logs/*
 temp/*
 */__pycache__/*
 */__init__.py
-*token.sh
+*tokens.sh
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

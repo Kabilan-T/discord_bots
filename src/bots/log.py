@@ -21,7 +21,7 @@ class Logger():
     ''' Logging class definition '''
 
     def __init__(self, bot_name: str, log_channel: discord.TextChannel = None):
-        ''' Initialize the logger '''
+        ''' Initialize the log '''
         self.bot_name = bot_name.lower()
         self.log_channel = log_channel
         self.log_dir = os.path.join(base_log_dir, self.bot_name)
@@ -31,7 +31,7 @@ class Logger():
                             level= logging.INFO,
                             format= "%(asctime)s [%(levelname)s] %(message)s",
                             datefmt="%Y-%m-%d %H:%M:%S")
-        self.logger = logging.getLogger(__name__)
+        self.log = logging.getLogger(__name__)
 
     def set_log_channel(self, log_channel: discord.TextChannel):
         ''' Set the log channel '''
@@ -39,25 +39,25 @@ class Logger():
 
     def info(self, msg, send_to_log_channel=True):
         '''Logs an info message'''
-        self.logger.info(msg)
+        self.log.info(msg)
         if send_to_log_channel:
             self.send_log_message(msg, "info")
     
     def debug(self, msg, send_to_log_channel=True):
         '''Logs a debug message'''
-        self.logger.debug(msg)
+        self.log.debug(msg)
         if send_to_log_channel:
             self.send_log_message(msg, "debug")
     
     def warning(self, msg, send_to_log_channel=True):
         '''Logs a warning message'''
-        self.logger.warning(msg)
+        self.log.warning(msg)
         if send_to_log_channel:
             self.send_log_message(msg, "warning")
 
     def error(self, msg, send_to_log_channel=True):
         '''Logs an error message'''
-        self.logger.error(msg)
+        self.log.error(msg)
         if send_to_log_channel:
             self.send_log_message(msg, "error")
     

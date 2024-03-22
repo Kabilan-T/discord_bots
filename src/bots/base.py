@@ -60,9 +60,10 @@ class BaseBot(commands.Bot):
     async def on_ready(self):
         ''' Called when the bot is ready '''
         self.log.info(f"Logged in as {self.user.name} ({self.user.id})")
-        self.log.set_log_channel(self.get_channel(self.log_channel_id))
+        # self.log.set_log_channel(self.get_channel(self.log_channel_id))
         self.log.info(f'{self.bot_name} is ready')
-    
+        self.log.info(f'Prefix: {self.prefix}')
+                          
     async def close(self):
         '''Execute when bot is closed'''
         self.log.info("Bot execution terminated.")
@@ -84,7 +85,7 @@ class BaseBot(commands.Bot):
         '''Execute when a command error occurs'''
         err = f"{error} - Occurred while executing '{context.message.content}' by @{context.author.name}"
         err += f" in #{context.channel.name} of {context.guild.name}" if context.guild is not None else f" in DMs."
-        self.logger.error(err)
+        self.log.error(err)
         if isinstance(error, commands.CommandNotFound):
             embed = discord.Embed(
                 title="Command not found :confused:",

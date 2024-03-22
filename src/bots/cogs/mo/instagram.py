@@ -45,10 +45,10 @@ class Instagram(commands.Cog, name="Instagram"):
         embed = discord.Embed(
                 title="Instagram channel set",
                 description="I will watch for instagram links in "+channel.mention+".",
-                color=self.default_color,
+                color=self.bot.default_color,
                 )
         await context.send(embed=embed)
-        self.bot.logger.info("Added channel "+str(channel.id)+" to watch for instagram links.")
+        self.bot.log.info("Added channel "+str(channel.id)+" to watch for instagram links.")
 
     @commands.hybrid_command( name="unset_channel", description="Unset the channel to watch for instagram links.")
     async def unset_channel(self, context: Context, channel: discord.TextChannel = None):
@@ -59,10 +59,10 @@ class Instagram(commands.Cog, name="Instagram"):
         embed = discord.Embed(
                 title="Instagram channel unset",
                 description="I will remove "+channel.mention+" from my watch list for instagram links.",
-                color=self.default_color,
+                color=self.bot.default_color,
                 )
         await context.send(embed=embed)
-        self.bot.logger.info("Removed channel "+str(channel.id)+" from watch for instagram links.")
+        self.bot.log.info("Removed channel "+str(channel.id)+" from watch for instagram links.")
 
     @commands.hybrid_command( name="show", description="Download a post from instagram.")
     async def show(self, context: Context, url: str):
@@ -76,11 +76,11 @@ class Instagram(commands.Cog, name="Instagram"):
             if str("https://www.instagram.com/") in message.content:
                 if len(message.content.split("/")) == 4:
                     # Link is of a profile - get the bio
-                    self.bot.logger.info("Got a link of a profile from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
+                    self.bot.log.info("Got a link of a profile from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
                     await self.send_bio(message.reply, message.content)
                 elif len(message.content.split("/")) >= 5:
                     # Link is of a media - get the media and send it
-                    self.bot.logger.info("Got a link of a media from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
+                    self.bot.log.info("Got a link of a media from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
                     await self.send_media(message.reply, message.content)
                 else:
                     return
@@ -97,22 +97,22 @@ class Instagram(commands.Cog, name="Instagram"):
                     title=str(profile.full_name),
                     url="https://www.instagram.com/"+str(profile.username),
                     description=profile.biography,
-                    color=self.default_color,
+                    color=self.bot.default_color,
                     )
             embed.set_thumbnail(url=profile.profile_pic_url)
             embed.add_field(name="Followers", value=str(profile.followers), inline=True)
             embed.add_field(name="Following", value=str(profile.followees), inline=True)
             embed.add_field(name="Posts", value=str(profile.mediacount), inline=True)
             await reply_function(embed=embed)
-            self.bot.logger.info("Sent bio of @"+str(profile.username))
+            self.bot.log.info("Sent bio of @"+str(profile.username))
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="Possibly the username is wrong or doesn't exist.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                     )
             await reply_function(embed=embed)
-            self.bot.logger.error("Failed to send bio of "+str(username))
+            self.bot.log.error("Failed to send bio of "+str(username))
     
     async def send_media(self, reply_function, url):
         # download a media from instagram url and send it
@@ -140,19 +140,19 @@ class Instagram(commands.Cog, name="Instagram"):
                 title=str(post.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(post.owner_profile.username),
                 description="Caption: "+str(short_caption)+"\nType: Post ("+str(len(media_files))+" files)\nLikes: "+str(post.likes)+"\n",
-                color=self.default_color,
+                color=self.bot.default_color,
             )
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
             await reply_function(embed=embed, files=media_files)
-            self.bot.logger.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post "+str(post.mediaid))
+            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post "+str(post.mediaid))
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="Possibly the user is private or the post doesn't exist.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                     )
             await reply_function(embed=embed)
-            self.bot.logger.error("Failed to send post from "+str(url))
+            self.bot.log.error("Failed to send post from "+str(url))
 
     async def send_reel(self, reply_function, url):
         # send a reel
@@ -171,19 +171,19 @@ class Instagram(commands.Cog, name="Instagram"):
                 title=str(reel.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(reel.owner_profile.username),
                 description="Caption: "+str(short_caption)+"\nType: Reel \nLikes: "+str(reel.likes)+"\n",
-                color=self.default_color,
+                color=self.bot.default_color,
             )
             embed.set_thumbnail(url=reel.owner_profile.profile_pic_url)
             await reply_function(embed=embed, files=media_files)
-            self.bot.logger.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel "+str(reel.mediaid))
+            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel "+str(reel.mediaid))
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="Possibly the user is private or the reel doesn't exist.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                     )
             await reply_function(embed=embed)
-            self.bot.logger.error("Failed to send reel from "+str(url))
+            self.bot.log.error("Failed to send reel from "+str(url))
 
     async def send_stories(self, reply_function, url):
         # stories requires
@@ -191,7 +191,7 @@ class Instagram(commands.Cog, name="Instagram"):
             embed = discord.Embed(
                 title="Sorry! There is some problem. :sweat:",
                 description="Stories can be downloaded only if the bot is logged in. There is no login credentials provided to log in to instagram.",
-                color=self.default_color,
+                color=self.bot.default_color,
                 )
             await reply_function(embed=embed)
             return
@@ -200,7 +200,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="I tried to log in to instagram but unfortunately I couldn't. Try again later.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                     )
                 await reply_function(embed=embed)
                 return
@@ -221,49 +221,49 @@ class Instagram(commands.Cog, name="Instagram"):
                 title=str(profile.full_name),
                 url="https://www.instagram.com/"+str(profile.username),
                 description="Type: Story ("+str(len(media_files))+" files)\n",
-                color=self.default_color,
+                color=self.bot.default_color,
             )
             embed.set_thumbnail(url=profile.profile_pic_url)
             await reply_function(embed=embed, files=media_files)
-            self.bot.logger.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story")
+            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story")
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="Possibly the user is private or the reel doesn't exist.",
-                    color=self.default_color,
+                    color=self.bot.default_color,
                     )
             await reply_function(embed=embed)
-            self.bot.logger.error("Failed to send story from "+str(url))
+            self.bot.log.error("Failed to send story from "+str(url))
 
     def _get_credentials(self):
         # get the instagram credentials
         if os.environ.get("INSTAGRAM_USERNAME") != None and os.environ.get("INSTAGRAM_PASSWORD") != None:
             self._username = os.environ.get("INSTAGRAM_USERNAME")
             self._password = os.environ.get("INSTAGRAM_PASSWORD")
-            self.bot.logger.info("Instagram credentials are provided")
+            self.bot.log.info("Instagram credentials are provided")
             return True
         else:
-            self.bot.logger.error("Instagram credentials are not provided")
+            self.bot.log.error("Instagram credentials are not provided")
             return False
     
     def _login_to_instagram(self):
         # check if already logged in
         if self.loader.context.is_logged_in == True:
-            self.bot.logger.info("Already logged in to instagram.")
+            self.bot.log.info("Already logged in to instagram.")
             return True
         # try to log in
         try:
-            self.bot.logger.info("Trying to log in to instagram ...")
+            self.bot.log.info("Trying to log in to instagram ...")
             self.loader.login(self._username, self._password)
             # check if logged in
             if self.loader.test_login() == self._username:
-                self.bot.logger.info("Logged in to instagram successfully.")
+                self.bot.log.info("Logged in to instagram successfully.")
                 return True
             else:
-                self.bot.logger.error("Failed to log in to instagram.")
+                self.bot.log.error("Failed to log in to instagram.")
                 return False
         except instaloader.exceptions.BadCredentialsException:
-            self.bot.logger.error("Failed to log in to instagram. Bad credentials.")
+            self.bot.log.error("Failed to log in to instagram. Bad credentials.")
             return False
     
     

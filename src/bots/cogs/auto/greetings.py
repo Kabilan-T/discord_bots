@@ -23,15 +23,15 @@ class Greetings(commands.Cog, name="Greetings"):
         guild = member.guild
         if guild.id != 1182777669373399202:  # Axiom guild id 
             return
-        self.bot.logger.info(f"New member {member.display_name} joined {guild.name}")
+        self.bot.log.info(f"New member {member.display_name} joined {guild.name}")
         if guild.system_channel is not None:
             embed = await self.get_welcome_message(guild, member)
             await guild.system_channel.send(embed=embed)
-            self.bot.logger.info(f"Sending greeting message to {member.display_name} in {guild.system_channel.name}")
+            self.bot.log.info(f"Sending greeting message to {member.display_name} in {guild.system_channel.name}")
         try:
             embed = await self.get_welcome_dm_message(guild, member)
             await member.send(embed=embed)
-            self.bot.logger.info(f"Sending greeting message to {member.display_name} in DM")
+            self.bot.log.info(f"Sending greeting message to {member.display_name} in DM")
         except discord.Forbidden:
             pass
 
@@ -41,15 +41,15 @@ class Greetings(commands.Cog, name="Greetings"):
         guild = member.guild
         if guild.id != 1182777669373399202:
             return
-        self.bot.logger.info(f"Member {member.display_name} left {guild.name}")
+        self.bot.log.info(f"Member {member.display_name} left {guild.name}")
         if guild.system_channel is not None:
             embed = await self.get_goodbye_message(guild, member)
             await guild.system_channel.send(embed=embed)
-            self.bot.logger.info(f"Sending goodbye message to {member.display_name} in {guild.system_channel.name}")
+            self.bot.log.info(f"Sending goodbye message to {member.display_name} in {guild.system_channel.name}")
         try:
             embed = await self.get_goodbye_dm_message(guild, member)
             await member.send(embed=embed)
-            self.bot.logger.info(f"Sending goodbye message to {member.display_name} in DM")
+            self.bot.log.info(f"Sending goodbye message to {member.display_name} in DM")
         except discord.Forbidden:
             pass
 
