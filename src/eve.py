@@ -20,7 +20,7 @@ class EveBot(BaseBot):
         ''' Initialize the bot '''
         bot_name = 'eve'
         self.default_color = 0xBEBEFE
-        self.voice = {'default_volume': 75, 'language': 'ta', 'domain': 'com'}
+        self.voice = {'default_volume': 75, 'language': 'ta', 'domain': 'co.in'}
         self.extensions_to_load =  ['cogs.general',
                                     'cogs.eve.bingo',
                                     'cogs.eve.voice']

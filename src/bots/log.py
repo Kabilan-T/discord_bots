@@ -41,25 +41,25 @@ class Logger():
         '''Logs an info message'''
         self.log.info(log_message)
         if send_log and guild is not None:
-            self.send_log_message(guild, log_message, "info")
+            self.send_log_message(log_message, guild, "info")
     
     def debug(self, log_message: str, guild: discord.Guild=None, send_log=True):
         '''Logs a debug message'''
         self.log.debug(log_message)
         if send_log and guild is not None:
-            self.send_log_message(guild, log_message, "debug")
+            self.send_log_message(log_message, guild, "debug")
     
     def warning(self, log_message: str, guild: discord.Guild=None, send_log=True):
         '''Logs a warning message'''
         self.log.warning(log_message)
         if send_log and guild is not None:
-            self.send_log_message(guild, log_message, "warning")
+            self.send_log_message(log_message, guild, "warning")
 
     def error(self, log_message: str, guild: discord.Guild=None, send_log=True):
         '''Logs an error message'''
         self.log.error(log_message)
         if send_log and guild is not None:
-            self.send_log_message(guild, log_message, "error")
+            self.send_log_message(log_message, guild, "error")
     
     def send_log_message(self, log_message: str, guild: discord.Guild=None, level: str="info"):
         '''Sends a message to the log channel'''

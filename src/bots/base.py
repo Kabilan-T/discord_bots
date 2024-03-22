@@ -17,21 +17,24 @@ from discord.ext.commands import Context
 from bots.log import Logger
 
 config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.yml')
-data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
+data = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
 class BaseBot(commands.Bot):
     ''' Base class for all bots '''
 
-    def __init__(self, config_file: str, default_color: discord.Color, extensions_to_load: list):
+    def __init__(self, bot_name: str, default_color: discord.Color, extensions_to_load: list):
         ''' Initialize the bot '''
-        self.load_config(config_file)
+        self.load_config(bot_name)
         self.prefix = dict()
         self.default_color = default_color
         self.extensions_to_load = extensions_to_load
-        self.log = Logger(self.bot_name)
-        self.log.info(f"Loaded config for {self.bot_name}")
+        self.log = Logger(self.name)
+        self.log.info(f"Loaded config for {self.name}")
+        self.data_dir = os.path.join(data, self.name)
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
         # Create discord bot
-        super().__init__(description="Discord bot : "+self.bot_name,
+        super().__init__(description="Discord bot : "+self.name,
                          command_prefix=self.get_prefix,
                          intents=discord.Intents.all(),
                          help_command=None,
@@ -43,7 +46,7 @@ class BaseBot(commands.Bot):
             config = yaml.safe_load(file).get(bot_name, None)
         if config is None:
             raise ValueError(f"Configuration not found for {bot_name}")
-        self.bot_name = config.get('name', None)
+        self.name = config.get('name', None)
         self.user_name = config.get('user_name', None)
         self.client_id = config.get('client_id', None)
         self.default_prefix = config.get('default_prefix', None)
@@ -59,7 +62,7 @@ class BaseBot(commands.Bot):
                 exception = f"{type(e).__name__}: {e}"
                 self.log.error(f"Failed to load extension {extension}\n{exception}")
     
-    async def get_prefix(self, bot, message):
+    async def get_prefix(self, message):
         '''Get the prefix for the bot'''
         if message.guild is None:
             return self.default_prefix
@@ -67,26 +70,24 @@ class BaseBot(commands.Bot):
 
     async def on_ready(self):
         ''' Called when the bot is ready '''
-        self.log.info(f"Logged in as {self.user.name} ({self.user.id})")
-        if not os.path.exists(os.path.join(data_dir, self.bot_name)):
-            os.makedirs(os.path.join(data_dir, self.bot_name))
+        self.log.info(f"Logged in as {self.user.name} ({self.user.id})")    
         for guild in self.guilds:
-            if not os.path.exists(os.path.join(data_dir, self.bot_name, str(guild.id))):
-                os.makedirs(os.path.join(data_dir, self.bot_name, str(guild.id)))
+            self.prefix[guild.id] = self.default_prefix    
+            if not os.path.exists(os.path.join(self.data_dir, str(guild.id))):
+                os.makedirs(os.path.join(self.data_dir, str(guild.id)))
                 self.log.info(f"Data directory created for {guild.name}")
             else:
                 self.log.info(f"Data directory for {guild.name} already exists")
-                if os.path.exists(os.path.join(data_dir, self.bot_name, str(guild.id), 'custom_settings.yml')):
-                    with open(os.path.join(data_dir, self.bot_name, str(guild.id), 'custom_settings.yml'), 'r') as file:
+                if os.path.exists(os.path.join(self.data_dir, str(guild.id), 'custom_settings.yml')):
+                    with open(os.path.join(self.data_dir, str(guild.id), 'custom_settings.yml'), 'r') as file:
                         guild_settings = yaml.safe_load(file)
-                        self.log.info(f"Loaded custom settings for {guild.name}")
+                    self.log.info(f"Loaded custom settings for {guild.name}")
+                    self.prefix[guild.id] = guild_settings.get('prefix', self.default_prefix) 
+                    if guild_settings.get('log_channel', None) is not None:
                         self.log.set_log_channel(guild.id, self.get_channel(guild_settings.get('log_channel', None)))
-                        self.log.info(f"{self.bot_name} is ready for {guild.name}", guild)
-                        self.prefix[guild.id] = guild_settings.get('prefix', self.default_prefix)
-                        self.log.info(f"Prefix for {guild.name} set to {self.prefix[guild.id]}", guild)
                 else:
-                    self.prefix[guild.id] = self.default_prefix
-                    self.log.info(f"Prefix for {guild.name} set to default")
+                    self.log.info(f"No custom settings found for {guild.name}")
+            self.log.info(f"{self.name} is ready in {guild.name}; prefix: {self.prefix[guild.id]}", guild)
                           
     async def close(self):
         '''Execute when bot is closed'''
@@ -96,10 +97,10 @@ class BaseBot(commands.Bot):
     def run(self, token=None):
         '''Starts the bot execution'''
         if token is not None:
-            self.log.info(f"Starting {self.bot_name} bot execution")
+            self.log.info(f"Starting {self.name} bot execution")
             super().run(token, reconnect=True)
         else:
-            self.log.error(f"Token not found for {self.bot_name}. Please set the TOKEN as environment variable.")
+            self.log.error(f"Token not found for {self.name}. Please set the TOKEN as environment variable.")
 
     async def on_command(self, context: Context):
         ''' Called when a command is used '''
@@ -115,7 +116,7 @@ class BaseBot(commands.Bot):
         if isinstance(error, commands.CommandNotFound):
             embed = discord.Embed(
                 title="Command not found :confused:",
-                description=f"Use `{self.prefix}help` to see all available commands.",
+                description=f"Use `{self.prefix[context.guild.id]}help` to see all available commands.",
                 color=self.default_color,
             )   
         elif isinstance(error, commands.MissingRole):
@@ -127,7 +128,7 @@ class BaseBot(commands.Bot):
         elif isinstance(error, commands.MissingRequiredArgument):
             embed = discord.Embed(
                 title="Missing argument :confused:",
-                description=f"Use `{self.prefix}help {context.command.name}` to see the usage.",
+                description=f"Use `{self.prefix[context.guild.id]}help {context.command.name}` to see the usage.",
                 color=self.default_color,
             )
         else:
@@ -140,15 +141,15 @@ class BaseBot(commands.Bot):
 
     async def on_connect(self):
         ''' Called when the bot connects '''
-        self.log.info(f'{self.bot_name} has connected')
+        self.log.info(f'{self.name} has connected')
     
     async def on_disconnect(self):
         ''' Called when the bot disconnects '''
-        self.log.warning(f'{self.bot_name} has disconnected')
+        self.log.warning(f'{self.name} has disconnected')
 
     async def on_resumed(self):
         ''' Called when the bot resumes '''
-        self.log.info(f'{self.bot_name} has resumed')
+        self.log.info(f'{self.name} has resumed')
 
    
 

@@ -10,21 +10,25 @@
 #-------------------------------------------------------------------------------
 
 import os
+import re
+import yaml
 import discord
 import requests
 from discord.ext import commands
 from discord.ext.commands import Context
 import instaloader
 
-tmp_download_dir = "tmp/downloads"
+tmp_download_dir = "tmp"
+instagram_regex = r'\bhttps?:\/\/(?:www\.)?instagram\.com\/(?:[a-zA-Z0-9_\.]+\/)?[a-zA-Z0-9_\.\/-]+\/?\b'
 
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):
         self.bot = bot
         self.loader = instaloader.Instaloader()
         # channels to watch for instagram links
-        self.channels_to_watch = list()
-        self.channels_to_watch.append(1183051684767871076) # axiom server - sauce-deck channel
+        self.channels_to_watch = dict()
+        self.load_channel_watch_list()
+        # self.channels_to_watch.append(1183051684767871076) # axiom server - sauce-deck channel
         # get the instagram credentials
         self.is_credentials_provided = self._get_credentials()
         # login to instagram
@@ -34,14 +38,17 @@ class Instagram(commands.Cog, name="Instagram"):
     @commands.hybrid_command( name="bio", description="Get the bio of a user.")
     async def bio(self, context: Context, username: str):
         '''Get the bio of a user'''
-        await self.send_bio(context.reply, username)
+        await self.send_bio(context.reply, username, context.guild)
 
     @commands.hybrid_command( name="set_channel", description="Set the channel to watch for instagram links.")
     async def set_channel(self, context: Context, channel: discord.TextChannel = None):
         '''Set the channel to watch for instagram links'''
         if channel == None:
             channel = context.channel
-        self.channels_to_watch.append(channel.id)
+        if str(context.guild.id) not in self.channels_to_watch.keys():
+            self.channels_to_watch[str(context.guild.id)] = list()
+        self.channels_to_watch[str(context.guild.id)].append(str(channel.id))
+        self.save_channel_watch_list()
         embed = discord.Embed(
                 title="Instagram channel set",
                 description="I will watch for instagram links in "+channel.mention+".",
@@ -55,7 +62,10 @@ class Instagram(commands.Cog, name="Instagram"):
         '''Unset the channel to watch for instagram links'''
         if channel == None:
             channel = context.channel
-        self.channels_to_watch.remove(channel.id)
+        if str(context.guild.id) not in self.channels_to_watch.keys():
+            self.channels_to_watch[str(context.guild.id)] = list()
+        self.channels_to_watch[str(context.guild.id)].remove(str(channel.id))
+        self.save_channel_watch_list()
         embed = discord.Embed(
                 title="Instagram channel unset",
                 description="I will remove "+channel.mention+" from my watch list for instagram links.",
@@ -65,27 +75,32 @@ class Instagram(commands.Cog, name="Instagram"):
         self.bot.log.info("Removed channel "+str(channel.id)+" from watch for instagram links.", context.guild)
 
     @commands.hybrid_command( name="show", description="Download a post from instagram.")
-    async def show(self, context: Context, url: str):
+    async def show(self, context: Context, message: str):
         '''Download a media from instagram and show it'''
-        await self.send_media(context.reply, url)
+        match = re.match(instagram_regex, message)
+        if match is not None:
+            url = match.group()
+            await self.send_media(context.reply, url, context.guild)
 
     @commands.Cog.listener()
     async def on_message(self, message):
         ''' Watch for instagram links and send the media'''
-        if message.channel.id in self.channels_to_watch and message.author.bot == False and message.content != "":
-            if str("https://www.instagram.com/") in message.content:
-                if len(message.content.split("/")) == 4:
+        if str(message.channel.id) in self.channels_to_watch.get(str(message.guild.id), []) and message.author.bot == False and message.content != "":
+            match = re.match(instagram_regex, message.content)
+            if match is not None:
+                instagram_url = match.group()
+                if len(instagram_url.split("/")) == 4:
                     # Link is of a profile - get the bio
                     self.bot.log.info("Got a link of a profile from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
-                    await self.send_bio(message.reply, message.content, message.guild)
-                elif len(message.content.split("/")) >= 5:
+                    await self.send_bio(message.reply, instagram_url, message.guild)
+                elif len(instagram_url.split("/")) >= 5:
                     # Link is of a media - get the media and send it
                     self.bot.log.info("Got a link of a media from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
-                    await self.send_media(message.reply, message.content, message.guild)
+                    await self.send_media(message.reply, instagram_url, message.guild)
                 else:
                     return
 
-    async def send_bio(self, reply_function, username):
+    async def send_bio(self, replier, username, guild=None):
         # send the bio of a user
         if username.startswith("@"):
             username = username[1:]
@@ -103,31 +118,31 @@ class Instagram(commands.Cog, name="Instagram"):
             embed.add_field(name="Followers", value=str(profile.followers), inline=True)
             embed.add_field(name="Following", value=str(profile.followees), inline=True)
             embed.add_field(name="Posts", value=str(profile.mediacount), inline=True)
-            await reply_function(embed=embed)
-            self.bot.log.info("Sent bio of @"+str(profile.username), reply_function.guild)
+            await replier(embed=embed)
+            self.bot.log.info("Sent bio of @"+str(profile.username), guild)
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="Possibly the username is wrong or doesn't exist.",
                     color=self.bot.default_color,
                     )
-            await reply_function(embed=embed)
-            self.bot.log.error("Failed to send bio of "+str(username), reply_function.guild)
+            await replier(embed=embed)
+            self.bot.log.error("Failed to send bio of "+str(username), guild)
     
-    async def send_media(self, reply_function, url):
+    async def send_media(self, replier, url, guild=None):
         # download a media from instagram url and send it
         if url.split("/")[3] == "p":
-            await self.send_post(reply_function, url)
+            await self.send_post(replier, url, guild)
         elif url.split("/")[3] == "reel":
-            await self.send_reel(reply_function, url)
+            await self.send_reel(replier, url, guild)
         elif url.split("/")[3] == "stories":
-            await self.send_stories(reply_function, url)
+            await self.send_stories(replier, url, guild)
 
-    async def send_post(self, reply_function, url):
+    async def send_post(self, replier, url, guild=None):
         # send a post
         try:
             #Find the post from the url
-            shortcode = url.split("/")[-2]  # (https://www.instagram.com/p/<shortcode>/<post_id>)
+            shortcode = url.split("/")[-1]  # (https://www.instagram.com/p/<shortcode>)
             post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the post
             self.loader.download_post(post, target=tmp_download_dir)
@@ -135,7 +150,10 @@ class Instagram(commands.Cog, name="Instagram"):
                             if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif")]
             os.system("rm -rf "+tmp_download_dir+"/*")
             # Send the post with caption and likes as embed message
-            short_caption = post.caption.split("\n")[0] if len(post.caption.split("\n")[0]) < 50  else post.caption.split("\n")[0][:50]+"..."
+            if post.caption is not None:
+                short_caption = post.caption.split("\n")[0] if len(post.caption.split("\n")[0]) < 50  else post.caption.split("\n")[0][:50]+"..."
+            else:
+                short_caption = "No caption"
             embed = discord.Embed(
                 title=str(post.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(post.owner_profile.username),
@@ -143,22 +161,22 @@ class Instagram(commands.Cog, name="Instagram"):
                 color=self.bot.default_color,
             )
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
-            await reply_function(embed=embed, files=media_files)
-            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post "+str(post.mediaid), reply_function.guild)
-        except instaloader.exceptions.InstaloaderException:
+            await replier(embed=embed, files=media_files)
+            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post "+str(post.mediaid), guild)
+        except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="Possibly the user is private or the post doesn't exist.",
                     color=self.bot.default_color,
                     )
-            await reply_function(embed=embed)
-            self.bot.log.error("Failed to send post from "+str(url), reply_function.guild)
+            await replier(embed=embed)
+            self.bot.log.error("Failed to send post from "+str(url), guild)
 
-    async def send_reel(self, reply_function, url):
+    async def send_reel(self, replier, url, guild=None):
         # send a reel
         try:
             #Find the reel from the url
-            shortcode = url.split("/")[-2]  # (https://www.instagram.com/reel/<shortcode>/<post_id>)
+            shortcode = url.split("/")[-1]  # (https://www.instagram.com/reel/<shortcode>)
             reel = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the reel
             self.loader.download_post(reel, target=tmp_download_dir)
@@ -166,7 +184,10 @@ class Instagram(commands.Cog, name="Instagram"):
                             if file.endswith(".mp4")]   # Reels are always mp4. jpg is for thumbnail
             os.system("rm -rf "+tmp_download_dir+"/*")
             # Send the reel with caption and likes as embed message
-            short_caption = reel.caption.split("\n")[0] if len(reel.caption.split("\n")[0]) < 50  else reel.caption.split("\n")[0][:50]+"..."
+            if reel.caption is not None:
+                short_caption = reel.caption.split("\n")[0] if len(reel.caption.split("\n")[0]) < 50  else reel.caption.split("\n")[0][:50]+"..."
+            else:
+                short_caption = "No caption"
             embed = discord.Embed(
                 title=str(reel.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(reel.owner_profile.username),
@@ -174,18 +195,18 @@ class Instagram(commands.Cog, name="Instagram"):
                 color=self.bot.default_color,
             )
             embed.set_thumbnail(url=reel.owner_profile.profile_pic_url)
-            await reply_function(embed=embed, files=media_files)
-            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel "+str(reel.mediaid), reply_function.guild)
+            await replier(embed=embed, files=media_files)
+            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel "+str(reel.mediaid), guild)
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="Possibly the user is private or the reel doesn't exist.",
                     color=self.bot.default_color,
                     )
-            await reply_function(embed=embed)
-            self.bot.log.error("Failed to send reel from "+str(url), reply_function.guild)
+            await replier(embed=embed)
+            self.bot.log.error("Failed to send reel from "+str(url), guild)
 
-    async def send_stories(self, reply_function, url):
+    async def send_stories(self, replier, url, guild=None):
         # stories requires
         if self.is_credentials_provided == False:
             embed = discord.Embed(
@@ -193,7 +214,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 description="Stories can be downloaded only if the bot is logged in. There is no login credentials provided to log in to instagram.",
                 color=self.bot.default_color,
                 )
-            await reply_function(embed=embed)
+            await replier(embed=embed)
             return
         else:
             if self._login_to_instagram() == False:
@@ -202,7 +223,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     description="I tried to log in to instagram but unfortunately I couldn't. Try again later.",
                     color=self.bot.default_color,
                     )
-                await reply_function(embed=embed)
+                await replier(embed=embed)
                 return
         # send a story
         try:
@@ -224,16 +245,16 @@ class Instagram(commands.Cog, name="Instagram"):
                 color=self.bot.default_color,
             )
             embed.set_thumbnail(url=profile.profile_pic_url)
-            await reply_function(embed=embed, files=media_files)
-            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story", reply_function.guild)
+            await replier(embed=embed, files=media_files)
+            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story", guild)
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="Possibly the user is private or the reel doesn't exist.",
                     color=self.bot.default_color,
                     )
-            await reply_function(embed=embed)
-            self.bot.log.error("Failed to send story from "+str(url), reply_function.guild)
+            await replier(embed=embed)
+            self.bot.log.error("Failed to send story from "+str(url), guild)
 
     def _get_credentials(self):
         # get the instagram credentials
@@ -243,7 +264,7 @@ class Instagram(commands.Cog, name="Instagram"):
             self.bot.log.info("Instagram credentials are provided")
             return True
         else:
-            self.bot.log.error("Instagram credentials are not provided")
+            self.bot.log.info("Instagram credentials are not provided")
             return False
     
     def _login_to_instagram(self):
@@ -265,6 +286,33 @@ class Instagram(commands.Cog, name="Instagram"):
         except instaloader.exceptions.BadCredentialsException:
             self.bot.log.error("Failed to log in to instagram. Bad credentials.")
             return False
+        
+    def load_channel_watch_list(self):
+        # load the channels to watch for instagram links
+        if os.path.exists(self.bot.data_dir):
+            guilds = os.listdir(self.bot.data_dir)
+            for guild_id in guilds:
+                if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml")):
+                    with open(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml"), 'r') as file:
+                        watch_list = yaml.safe_load(file)
+                        if watch_list is not None:
+                            if guild_id not in self.channels_to_watch.keys():
+                                self.channels_to_watch[guild_id] = list()
+                            self.channels_to_watch[guild_id].extend(watch_list.get("channels", []))
+                    self.bot.log.info("Loaded watch list for guild "+str(guild_id))
+                else:
+                    self.bot.log.info("No watch list found for guild "+str(guild_id))
+    
+    def save_channel_watch_list(self):
+        # save the channels to watch for instagram links
+        if os.path.exists(self.bot.data_dir):
+            guilds = os.listdir(self.bot.data_dir)
+            for guild_id in guilds:
+                if guild_id in self.channels_to_watch.keys():
+                    with open(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml"), 'w+') as file:
+                        yaml.dump({"channels": self.channels_to_watch[guild_id]}, file)
+                    self.bot.log.info("Saved watch list for guild "+str(guild_id))
+
     
     
 async def setup(bot):

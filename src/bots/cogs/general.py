@@ -9,6 +9,8 @@
 
 #-------------------------------------------------------------------------------
 
+import os
+import yaml
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -100,14 +102,58 @@ class General(commands.Cog, name="General"):
             )
             await context.send(embed=embed)
         else:
-            self.bot.prefix[context.guild.id] = prefix
+            if context.author.guild_permissions.administrator:
+                self.bot.prefix[context.guild.id] = prefix
+                if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml')):
+                    with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'r') as file:
+                        guild_settings = yaml.safe_load(file)
+                        guild_settings['prefix'] = prefix
+                else:
+                    guild_settings = {'prefix': prefix}
+                with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'w+') as file:
+                    yaml.dump(guild_settings, file)
+                embed = discord.Embed(
+                    title="Prefix",
+                    description=f"The prefix has been changed to `{self.bot.prefix[context.guild.id]}`",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+                self.bot.log.info(f"Prefix changed to {self.bot.prefix[context.guild.id]}", context.guild)
+            else:
+                embed = discord.Embed(
+                    title="Prefix",
+                    description="You do not have the required permissions to change the prefix.",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+
+    @commands.hybrid_command( name="setlog", description="Set the log channel for the bot.")
+    async def set_log_channel(self, context: Context, channel: discord.TextChannel):
+        '''Set the log channel for the bot'''
+        if context.author.guild_permissions.administrator:
+            self.bot.log.set_log_channel(context.guild.id, channel)
+            if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml')):
+                with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'r') as file:
+                    guild_settings = yaml.safe_load(file)
+                    guild_settings['log_channel'] = channel.id
+            else:
+                guild_settings = {'log_channel': channel.id}
+            with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'w+') as file:
+                yaml.dump(guild_settings, file)
             embed = discord.Embed(
-                title="Prefix",
-                description=f"The prefix has been changed to `{self.bot.prefix[context.guild.id]}`",
+                title="Log Channel",
+                description=f"Log channel has been set to {channel.mention}",
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
-            self.bot.log.info(f"Prefix changed to {self.bot.prefix[context.guild.id]}", context.guild)
+            self.bot.log.info(f"Log channel set to {channel.mention}", context.guild)
+        else:
+            embed = discord.Embed(
+                title="Log Channel",
+                description="You do not have the required permissions to set the log channel.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
     
 async def setup(bot):
     await bot.add_cog(General(bot))

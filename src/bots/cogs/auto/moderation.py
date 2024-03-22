@@ -10,6 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import os
+from typing import Coroutine
 import yaml
 import discord
 from discord.ext import commands
@@ -25,12 +26,11 @@ PermissionToDeafen = discord.Permissions(deafen_members=True)
 PermissionToPurge = discord.Permissions(manage_messages=True)
 PermissionBasic = discord.Permissions(send_messages=True)
 
-warn_list_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "warns.yml")
-
 class Moderation(commands.Cog, name="Moderation"):
     def __init__(self, bot):
         self.bot = bot
-        self.warns = yaml.load(open(warn_list_file, "r"), Loader=yaml.FullLoader) if os.path.exists(warn_list_file) else dict()
+        self.warns = dict()
+        self.read_warns()
 
     def check(self, context: Context, permission):
         # Check if the user has the required permissions
@@ -146,13 +146,15 @@ class Moderation(commands.Cog, name="Moderation"):
         if self.check(context, PermissionToWarn):
             self.bot.log.info(f"{context.author.name} warned {member.name} in {context.guild.name}", context.guild)
             await self.send_message(context, member, "warned :memo:", reason, True)
-            if member.id in self.warns.keys():
-                self.warns[member.id] += 1
+            if context.guild.id not in self.warns.keys():
+                self.warns[context.guild.id] = dict()
+            if member.id in self.warns[context.guild.id].keys():
+                self.warns[context.guild.id][member.id] += 1
             else:
-                self.warns[member.id] = 1
+                self.warns[context.guild.id][member.id] = 1
         # save the warns
-        with open(warn_list_file, "w+") as file:
-            yaml.dump(self.warns, file)
+        with open(os.path.join(self.bot.data_dir, str(context.guild.id), "warns.yml"), "w+") as file:
+            yaml.dump(self.warns[context.guild.id], file)
 
     
     @commands.hybrid_command( name="removewarn", description="Remove a certain number of warns of a member in the server.")
@@ -163,9 +165,12 @@ class Moderation(commands.Cog, name="Moderation"):
                 if self.warns[member.id] >= amount:
                     self.bot.log.info(f"{context.author.name} removed {amount} warns of {member.name} in {context.guild.name}", context.guild)
                     await self.send_message(context, member, "removed of " + str(amount) + " warns :arrow_down:", None, True)
-                    self.warns[member.id] -= amount
-                    with open(warn_list_file, "w+") as file:
-                        yaml.dump(self.warns, file)
+                    if context.guild.id not in self.warns.keys():
+                        self.warns[context.guild.id] = dict()
+                    if member.id in self.warns[context.guild.id].keys():
+                        self.warns[context.guild.id][member.id] -= amount 
+                    with open(os.path.join(self.bot.data_dir, str(context.guild.id), "warns.yml"), "w+") as file:
+                        yaml.dump(self.warns[context.guild.id], file)
                 else:
                     self.clearwarns(context, member)
             
@@ -177,8 +182,11 @@ class Moderation(commands.Cog, name="Moderation"):
             if member.id in self.warns.keys():
                 self.bot.log.info(f"{context.author.name} cleared all warns of {member.name} from {context.guild.name}", context.guild)
                 await self.send_message(context, member, "cleared of all warns :white_check_mark:", None, False)
-                self.warns[member.id] = 0
-                with open(warn_list_file, "w+") as file:
+                if context.guild.id not in self.warns.keys():
+                    self.warns[context.guild.id] = dict()
+                if member.id in self.warns[context.guild.id].keys():
+                    self.warns[context.guild.id][member.id] = 0
+                with open(os.path.join(self.bot.data_dir, str(context.guild.id), "warns.yml"), "w+") as file:
                     yaml.dump(self.warns, file)
             else:
                 embed = discord.Embed(
@@ -192,10 +200,10 @@ class Moderation(commands.Cog, name="Moderation"):
     async def warns(self, context: Context, member: discord.Member):
         '''Get the number of warns a member has'''
         if self.check(context, PermissionBasic):
-            if member.id in self.warns.keys():
+            if context.guild.id in self.warns.keys() and member.id in self.warns[context.guild.id].keys():
                 embed = discord.Embed(
                     title="Warns :warning:",
-                    description=f"{member.mention} has {self.warns[member.id]} warns.",
+                    description=f"{member.mention} has {self.warns[context.guild.id][member.id]} warns.",
                     color=self.bot.default_color,
                 )
             else:
@@ -205,6 +213,19 @@ class Moderation(commands.Cog, name="Moderation"):
                     color=self.bot.default_color,
                 )
             await context.send(embed=embed)
+
+    def read_warns(self):
+        '''Read the warns from the file'''
+        if os.path.exists(os.path.join(self.bot.data_dir)):
+            guilds = os.listdir(self.bot.data_dir)
+            for guild_id in guilds:
+                if os.path.exists(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml")):
+                    with open(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml"), "r") as file:
+                        if int(guild_id) not in self.warns.keys():
+                            self.warns[int(guild_id)] = dict()
+                        self.warns[int(guild_id)] = yaml.safe_load(file)
+                else:
+                    self.warns[int(guild_id)] = dict()
     
                  
 async def setup(bot):

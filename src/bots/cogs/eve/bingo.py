@@ -30,7 +30,7 @@ class Bingo(commands.Cog, name="Bingo"):
         if not 1 <= len(players):
             embed = discord.Embed(
                 title="No players mentioned",
-                description=f"Use `{self.bot.prefix}bingo <@player>...` to start a game of bingo.",
+                description=f"Use `{self.bot.prefix[context.guild.id]}bingo <@player>...` to start a game of bingo.",
                 color=self.bot.default_color,
             )
             self.bot.log.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} as no players were mentioned.", context.guild)

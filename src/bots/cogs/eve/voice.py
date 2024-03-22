@@ -31,9 +31,9 @@ class Voice(commands.Cog, name="Voice Features"):
             self.available_domains = [domain.removeprefix(".google.") for domain in response]
         except:
             self.available_domains = [self.domain]
-        self.bot.greet_messages = dict()
+        self.greet_messages = dict()
         self.load_greet_messages()
-        self.bot.log.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}", self.bot)
+        self.bot.log.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
 
     @commands.command(name="join", aliases=["j"])
     async def join(self, context: Context):
@@ -123,7 +123,6 @@ class Voice(commands.Cog, name="Voice Features"):
                               color=self.bot.default_color,
                               )
         await context.reply(embed=embed)
-        os.remove(file)
         self.bot.log.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}", context.guild)
 
     @commands.command(name="volume", aliases=["v"])
@@ -196,7 +195,9 @@ class Voice(commands.Cog, name="Voice Features"):
     @commands.command(name="setgreet", aliases=["sg"])
     async def setgreet(self, context: Context, member: discord.Member, *, text: str):
         ''' Set the greet message for the user '''
-        self.bot.greet_messages[member.id] = text
+        if context.guild.id not in self.greet_messages.keys():
+            self.greet_messages[context.guild.id] = dict()
+        self.greet_messages[context.guild.id][member.id] = text
         embed = discord.Embed(title="Greet message set :wave:",
                               description=f"Greet message for {member.mention} is set to '{text}'",
                               color=self.bot.default_color,
@@ -210,8 +211,17 @@ class Voice(commands.Cog, name="Voice Features"):
         if member == self.bot.user: return # ignore bot
         if member.guild.voice_client is None or member.guild.voice_client.is_playing(): return # ignore if bot is not in a voice channel or is speaking
         if before.channel != after.channel and after.channel == member.guild.voice_client.channel:
-            if member.id in self.bot.greet_messages.keys():
-                greet_message = self.bot.greet_messages[member.id] + f" {member.display_name}"
+            print("Member joined")
+            print(self.greet_messages)
+            print('guild id', member.guild.id)
+            print('member id', member.id)
+            # print("is key present", member.guild.id in self.greet_messages.keys())
+            # print("is key member present", member.id in self.greet_messages[member.guild.id].keys())
+            print("is key present", str(member.guild.id) in self.greet_messages.keys())
+            print("is key member present", str(member.id) in self.greet_messages[str(member.guild.id)].keys())
+            print("greets", self.greet_messages[str(member.guild.id)][str(member.id)])
+            if str(member.guild.id) in self.greet_messages.keys() and str(member.id) in self.greet_messages[str(member.guild.id)].keys():
+                greet_message = self.greet_messages[str(member.guild.id)][str(member.id)] + f" {member.display_name}"
             else:
                 greet_message = "Vanakkam " + f"{member.display_name}"
             tts = gtts.gTTS(f"{greet_message}", lang='ta', tld='co.in')
@@ -223,7 +233,6 @@ class Voice(commands.Cog, name="Voice Features"):
             member.guild.voice_client.source = discord.PCMVolumeTransformer(member.guild.voice_client.source)
             member.guild.voice_client.source.volume = self.volume / 100
             self.bot.log.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}", member.guild)
-            os.remove(file)
         elif before.channel != after.channel and before.channel == member.guild.voice_client.channel:
             if len(before.channel.members) == 1:
                 await asyncio.sleep(5)
@@ -238,21 +247,26 @@ class Voice(commands.Cog, name="Voice Features"):
     
     def save_greet_messages(self):
         ''' Save the greet messages to a file '''
-        with open("greet_messages.txt", "w+") as file:
-            for key, value in self.bot.greet_messages.items():
-                file.write(f"{key} {value}\n")
-        self.bot.log.info(f"Greet messages saved to file")
+        print("Saving greet messages", self.greet_messages)
+        for guild_id, greet_set in self.greet_messages.items():
+            with open(os.path.join(self.bot.data_dir, str(guild_id), "greet_messages.txt"), "w+") as file:
+                for member_id, message in greet_set.items():
+                    file.write(f"{member_id} {message}\n")
+            self.bot.log.info(f"Greet messages saved")
     
     def load_greet_messages(self):
         ''' Load the greet messages from a file '''
-        try:
-            with open("greet_messages.txt", "r") as file:
-                for line in file.readlines():
-                    key, value = line.split(" ", 1)
-                    self.bot.greet_messages[int(key)] = value.strip()
-            self.bot.log.info(f"Greet messages loaded from file")
-        except FileNotFoundError:
-            self.bot.log.info(f"Greet messages file not found")
+        guilds = os.listdir(self.bot.data_dir)
+        for guild_id in guilds:
+            if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "greet_messages.txt")):
+                with open(os.path.join(self.bot.data_dir, guild_id, "greet_messages.txt"), "r") as file:
+                    for line in file.readlines():
+                        print("Line", line)
+                        member_id, message = line.split(" ", 1)
+                        if guild_id not in self.greet_messages.keys():
+                            self.greet_messages[guild_id] = dict()
+                        self.greet_messages[guild_id][member_id] = message.strip()
+        self.bot.log.info(f"Greet messages loaded")
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))
