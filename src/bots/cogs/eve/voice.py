@@ -211,19 +211,10 @@ class Voice(commands.Cog, name="Voice Features"):
         if member == self.bot.user: return # ignore bot
         if member.guild.voice_client is None or member.guild.voice_client.is_playing(): return # ignore if bot is not in a voice channel or is speaking
         if before.channel != after.channel and after.channel == member.guild.voice_client.channel:
-            print("Member joined")
-            print(self.greet_messages)
-            print('guild id', member.guild.id)
-            print('member id', member.id)
-            # print("is key present", member.guild.id in self.greet_messages.keys())
-            # print("is key member present", member.id in self.greet_messages[member.guild.id].keys())
-            print("is key present", str(member.guild.id) in self.greet_messages.keys())
-            print("is key member present", str(member.id) in self.greet_messages[str(member.guild.id)].keys())
-            print("greets", self.greet_messages[str(member.guild.id)][str(member.id)])
-            if str(member.guild.id) in self.greet_messages.keys() and str(member.id) in self.greet_messages[str(member.guild.id)].keys():
-                greet_message = self.greet_messages[str(member.guild.id)][str(member.id)] + f" {member.display_name}"
-            else:
-                greet_message = "Vanakkam " + f"{member.display_name}"
+            greet_message = "Vanakkam " + f"{member.display_name}"
+            if str(member.guild.id) in self.greet_messages.keys():
+                if str(member.id) in self.greet_messages[str(member.guild.id)].keys():
+                    greet_message = self.greet_messages[str(member.guild.id)][str(member.id)] + f" {member.display_name}"
             tts = gtts.gTTS(f"{greet_message}", lang='ta', tld='co.in')
             file = os.path.join(tmp, "tts.mp3")
             os.makedirs(os.path.dirname(file), exist_ok=True)
