@@ -115,7 +115,7 @@ class Voice(commands.Cog, name="Voice Features"):
         file = os.path.join(tmp, "tts.mp3")
         os.makedirs(os.path.dirname(file), exist_ok=True)
         tts.save(file)
-        context.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: print("done", e))
+        context.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: self.bot.log.info(f"done {e}"))
         context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source)
         context.voice_client.source.volume = self.volume / 100
         embed = discord.Embed(title="Speaking :speaking_head:",
@@ -220,7 +220,7 @@ class Voice(commands.Cog, name="Voice Features"):
             os.makedirs(os.path.dirname(file), exist_ok=True)
             tts.save(file)
             await asyncio.sleep(3)
-            member.guild.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: print("done", e))
+            member.guild.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: self.bot.log.info(f"done {e}"))
             member.guild.voice_client.source = discord.PCMVolumeTransformer(member.guild.voice_client.source)
             member.guild.voice_client.source.volume = self.volume / 100
             self.bot.log.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}", member.guild)
@@ -238,7 +238,6 @@ class Voice(commands.Cog, name="Voice Features"):
     
     def save_greet_messages(self):
         ''' Save the greet messages to a file '''
-        print("Saving greet messages", self.greet_messages)
         for guild_id, greet_set in self.greet_messages.items():
             with open(os.path.join(self.bot.data_dir, str(guild_id), "greet_messages.txt"), "w+") as file:
                 for member_id, message in greet_set.items():
@@ -252,7 +251,6 @@ class Voice(commands.Cog, name="Voice Features"):
             if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "greet_messages.txt")):
                 with open(os.path.join(self.bot.data_dir, guild_id, "greet_messages.txt"), "r") as file:
                     for line in file.readlines():
-                        print("Line", line)
                         member_id, message = line.split(" ", 1)
                         if guild_id not in self.greet_messages.keys():
                             self.greet_messages[guild_id] = dict()

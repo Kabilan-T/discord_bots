@@ -26,7 +26,7 @@ class Logger():
         self.log_channel = dict()
         self.log_dir = os.path.join(base_log_dir, self.bot_name)
         os.makedirs(self.log_dir, exist_ok=True)
-        self.log_file = os.path.join(self.log_dir, f'{self.bot_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.log')
+        self.log_file = os.path.join(self.log_dir, f'{self.bot_name}_{datetime.now().strftime("%Y%m%d%H%M%S")}.log')
         logging.basicConfig(filename= self.log_file,
                             level= logging.INFO,
                             format= "%(asctime)s [%(levelname)s] %(message)s",
