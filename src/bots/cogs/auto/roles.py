@@ -98,6 +98,8 @@ class Roles(commands.Cog, name="Roles"):
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         '''Add default role to the new member'''
+        if member.bot:
+            return
         if member.guild.id in self.default_role.keys():
             role = member.guild.get_role(self.default_role[member.guild.id])
             await member.add_roles(role)
