@@ -118,6 +118,20 @@ class Roles(commands.Cog, name="Roles"):
                 member = guild.get_member(payload.user_id)
                 await member.add_roles(role)
                 self.bot.log.info(f"Role {role.name} added to {member.display_name} by reacting to the message", guild)
+    
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        '''Remove role from the member when they remove the reaction'''
+        if payload.guild_id in self.reaction_roles.keys():
+            if payload.message_id in self.reaction_roles[payload.guild_id].keys():
+                guild = self.bot.get_guild(payload.guild_id)
+                role = guild.get_role(self.reaction_roles[payload.guild_id][payload.message_id]["role"])
+                emoji = self.reaction_roles[payload.guild_id][payload.message_id]["emoji"]
+                if str(payload.emoji) != emoji:
+                    return
+                member = guild.get_member(payload.user_id)
+                await member.remove_roles(role)
+                self.bot.log.info(f"Role {role.name} removed from {member.display_name} by removing the reaction", guild)
         
     def read_config(self):
         if os.path.exists(os.path.join(self.bot.data_dir)):
