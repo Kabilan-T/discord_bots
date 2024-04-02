@@ -13,6 +13,7 @@ import os
 import asyncio
 import yaml
 import discord
+import typing
 from discord.ext import commands
 from discord.ext.commands import Context
 
@@ -194,7 +195,7 @@ class Moderation(commands.Cog, name="Moderation"):
             await member.move_to(None, reason=reason)
     
     @commands.hybrid_command( name="limit_voice", description="Limit the number of members in a voice channel.")
-    async def limit_voice(self, context: Context, limit: int = None, channel: discord.VoiceChannel = None):
+    async def limit_voice(self, context: Context,  channel: typing.Optional[discord.VoiceChannel] = None, limit: typing.Optional[int] = None):
         '''Limit the number of members in a voice channel, if limit is None, the limit is removed'''
         if self.check(context, PermissionToMove):
             if channel is None:
