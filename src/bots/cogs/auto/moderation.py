@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import os
-from typing import Coroutine
+import asyncio
 import yaml
 import discord
 from discord.ext import commands
@@ -19,10 +19,11 @@ from discord.ext.commands import Context
 
 # Default permissions : Change 
 PermissionToBan = discord.Permissions(ban_members=True)
-PermissionToWarn = discord.Permissions(ban_members=True)
+PermissionToWarn = discord.Permissions(moderate_members=True)
 PermissionToKick = discord.Permissions(kick_members=True)
 PermissionToMute = discord.Permissions(mute_members=True)
 PermissionToDeafen = discord.Permissions(deafen_members=True)
+PermissionToMove = discord.Permissions(move_members=True)
 PermissionToPurge = discord.Permissions(manage_messages=True)
 PermissionBasic = discord.Permissions(send_messages=True)
 
@@ -127,6 +128,126 @@ class Moderation(commands.Cog, name="Moderation"):
             await self.send_message(context, member, "undeafened :loud_sound:", reason, False)
             await member.edit(deafen=False, reason=reason)
     
+    @commands.hybrid_command( name="move", description="Move a member to a different voice channel.")
+    async def move(self, context: Context, member: discord.Member, channel: discord.VoiceChannel, reason: str = None):
+        '''Move a member to a different voice channel'''
+        if self.check(context, PermissionToMove):
+            self.bot.log.info(f"{context.author.name} moved {member.name} to {channel.name} in {context.guild.name}", context.guild)
+            await self.send_message(context, member, "moved to " + channel.name + " :arrow_right:", reason, False)
+            await member.move_to(channel, reason=reason)
+    
+    @commands.hybrid_command( name="moveall", description="Move all members to a different voice channel.")
+    async def moveall(self, context: Context, channel: discord.VoiceChannel, new_channel: discord.VoiceChannel, reason: str = None):
+        '''Move all members to a different voice channel'''
+        if self.check(context, PermissionToMove):
+            self.bot.log.info(f"{context.author.name} moved all members from {channel.name} to {new_channel.name} in {context.guild.name}", context.guild)
+            for member in channel.members:
+                await self.send_message(context, member, "moved to " + new_channel.name + " :arrow_right:", reason, False)
+                await member.move_to(new_channel, reason=reason)
+
+    @commands.hybrid_command( name="disconnect", description="Disconnect a member from the voice channel.")
+    async def disconnect(self, context: Context, member: discord.Member, reason: str = None):
+        '''Disconnect a member from the voice channel'''
+        if self.check(context, PermissionToMove):
+            self.bot.log.info(f"{context.author.name} disconnected {member.name} in {context.guild.name}", context.guild)
+            await self.send_message(context, member, "disconnected from voice channel :x:", reason, False)
+            await member.move_to(None, reason=reason)
+    
+    @commands.hybrid_command( name="disconnectall", description="Disconnect all members from the voice channel.")
+    async def disconnectall(self, context: Context, channel: discord.VoiceChannel, reason: str = None):
+        '''Disconnect all members from the voice channel'''
+        if self.check(context, PermissionToMove):
+            self.bot.log.info(f"{context.author.name} disconnected all members from {channel.name} in {context.guild.name}", context.guild)
+            for member in channel.members:
+                await self.send_message(context, member, "disconnected from voice channel :x:", reason, False)
+                await member.move_to(None, reason=reason)
+
+    @commands.hybrid_command( name="sleep", description="Disconnect a member from the voice channel after a certain time.")
+    async def sleep(self, context: Context, member: discord.Member, time: int, reason: str = None):
+        '''Disconnect a member from the voice channel after a certain time'''
+        if self.check(context, PermissionToMove):
+            if time < 1:
+                embed = discord.Embed(
+                    title="Sleep :zzz:",
+                    description="The time should be greater than 0.",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+                return
+            if member.voice is None:
+                embed = discord.Embed(
+                    title="Sleep :zzz:",
+                    description=f"{member.mention} is not in a voice channel.",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+                return
+            self.bot.log.info(f"{context.author.name} disconnected {member.name} in {context.guild.name} after {time} minutes", context.guild)
+            embed = discord.Embed(
+                title="Sleep :zzz:",
+                description=f"{member.mention} will be disconnected from the voice channel after {time} minutes.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+            await asyncio.sleep(time*60)
+            await self.send_message(context, member, "auto disconnected from voice channel after sleep time of " + str(time) + " minutes :zzz: set", reason, True)
+            await member.move_to(None, reason=reason)
+    
+    @commands.hybrid_command( name="limit_voice", description="Limit the number of members in a voice channel.")
+    async def limit_voice(self, context: Context, limit: int = None, channel: discord.VoiceChannel = None):
+        '''Limit the number of members in a voice channel, if limit is None, the limit is removed'''
+        if self.check(context, PermissionToMove):
+            if channel is None:
+                if context.author.voice is None:
+                    embed = discord.Embed(
+                        title="Voice Channel Limit :loud_sound:",
+                        description="Please specify a voice channel or join a voice channel to set the limit.",
+                        color=self.bot.default_color,
+                    )
+                    await context.send(embed=embed)
+                    return
+                channel = context.author.voice.channel
+            if limit is None or limit <= 0:
+                await channel.edit(user_limit=None)
+                self.bot.log.info(f"{context.author.name} removed the limit of {channel.name} in {context.guild.name}", context.guild)
+                embed = discord.Embed(
+                    title="Voice Channel Limit :loud_sound:",
+                    description=f"The limit of {channel.mention} has been removed.",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+            else:
+                await channel.edit(user_limit=limit)
+                self.bot.log.info(f"{context.author.name} set the limit of {channel.name} to {limit} in {context.guild.name}", context.guild)
+                embed = discord.Embed(
+                    title="Voice Channel Limit :loud_sound:",
+                    description=f"The limit of {channel.mention} has been set to {limit}.",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+    
+    @commands.hybrid_command( name="nick", description="Change the nickname of a member.")
+    async def nick(self, context: Context, member: discord.Member, nickname: str = None):
+        '''Change the nickname of a member, if nickname is None, the nickname is removed'''
+        if self.check(context, PermissionToMute):
+            await member.edit(nick=nickname)
+            if nickname is None:
+                self.bot.log.info(f"{context.author.name} removed the nickname of {member.name} in {context.guild.name}", context.guild)
+                embed = discord.Embed(
+                    title="Nickname :name_badge:",
+                    description=f"The nickname of {member.mention} has been removed.",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+            else:
+                self.bot.log.info(f"{context.author.name} changed the nickname of {member.name} to {nickname} in {context.guild.name}", context.guild)
+                embed = discord.Embed(
+                    title="Nickname :name_badge:",
+                    description=f"The nickname of {member.mention} has been changed to {nickname}.",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+    
     @commands.hybrid_command( name="purge", description="Purge messages from a channel.")
     async def purge(self, context: Context, amount: int):
         '''Purge messages from a channel'''
@@ -155,7 +276,6 @@ class Moderation(commands.Cog, name="Moderation"):
         # save the warns
         with open(os.path.join(self.bot.data_dir, str(context.guild.id), "warns.yml"), "w+") as file:
             yaml.dump(self.warns[context.guild.id], file)
-
     
     @commands.hybrid_command( name="removewarn", description="Remove a certain number of warns of a member in the server.")
     async def removewarn(self, context: Context, member: discord.Member, amount: int):
@@ -173,7 +293,6 @@ class Moderation(commands.Cog, name="Moderation"):
                         yaml.dump(self.warns[context.guild.id], file)
                 else:
                     self.clearwarns(context, member)
-            
 
     @commands.hybrid_command( name="clearwarns", description="Clear all warns of a member in the server.")
     async def clearwarns(self, context: Context, member: discord.Member):
