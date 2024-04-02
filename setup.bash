@@ -27,6 +27,12 @@ eval "$(conda shell.bash hook)"
 conda activate discord_bots_env
 echo "Virtual environment 'discord_bots_env' activated."
 
+# install ffmpeg if not installed
+if ! command -v ffmpeg &> /dev/null; then
+    echo "ffmpeg not found. Installing ffmpeg..."
+    conda install -c conda-forge ffmpeg
+fi
+
 # Install dependencies
 echo "Updating pip..."
 pip install --upgrade pip
