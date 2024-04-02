@@ -21,7 +21,6 @@ class MoBot(BaseBot):
         bot_name = 'mo'
         self.default_color = discord.Color.purple()
         self.extensions_to_load  = ['cogs.general',
-                                    'cogs.mo.cricket',
                                     'cogs.mo.instagram']
         super().__init__(bot_name, self.default_color, self.extensions_to_load)
     

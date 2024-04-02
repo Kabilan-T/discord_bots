@@ -23,7 +23,7 @@ class Bingo(commands.Cog, name="Bingo"):
         self.bot = bot
         self.games = {}  # Store active games
 
-    @commands.command(name="bingo", description="Start a game of bingo.")
+    @commands.hybrid_command(name="bingo", description="Start a game of bingo.")
     async def bingo(self, context: Context, add_bot: typing.Optional[bool] = False, *players: discord.Member):
         '''Starts a game of bingo'''
         self.bot.log.info(f"Bingo game requested by {context.author.name}", context.guild)
@@ -123,7 +123,7 @@ class Bingo(commands.Cog, name="Bingo"):
         del self.games[game_id]
         self.bot.log.info(f"Game ended in #{context.channel.name} of {context.guild.name}.", context.guild)
     
-    @commands.command(name="quit", description="Quit the current game of bingo.")
+    @commands.hybrid_command(name="quit", description="Quit the current game of bingo.")
     async def quit(self, context: Context):
         '''Quits the current game of bingo'''
         game_id = str(context.guild.id) + str(context.channel.id)

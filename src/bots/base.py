@@ -88,6 +88,7 @@ class BaseBot(commands.Bot):
                 else:
                     self.log.info(f"No custom settings found for {guild.name}")
             self.log.info(f"{self.name} is ready in {guild.name}; prefix: {self.prefix[guild.id]}", guild)
+        await self.tree.sync()
                           
     async def close(self):
         '''Execute when bot is closed'''

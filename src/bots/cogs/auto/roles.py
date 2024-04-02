@@ -26,7 +26,7 @@ class Roles(commands.Cog, name="Roles"):
         self.read_reaction_roles()
 
     # reaction roles
-    @commands.command(name="set_role_channel", help="Set the channel for reaction roles")
+    @commands.hybrid_command(name="set_role_channel", description="Set the channel for reaction roles")
     @commands.has_permissions(administrator=True)
     async def set_role_channel(self, context: Context, channel: discord.TextChannel):
         '''Set the channel for reaction roles'''
@@ -47,7 +47,7 @@ class Roles(commands.Cog, name="Roles"):
         await context.send(embed=embed)
         
     
-    @commands.command(name="set_default_role", help="Set the default role for the new members joining the server")
+    @commands.hybrid_command(name="set_default_role", description="Set the default role for the new members joining the server")
     @commands.has_permissions(administrator=True)
     async def set_default_role(self, context: Context, role: discord.Role):
         '''Set the default role for the new members joining the server'''
@@ -68,7 +68,7 @@ class Roles(commands.Cog, name="Roles"):
         await context.send(embed=embed)
 
     
-    @commands.command(name="add_reaction_role", help="Add a role to the reaction roles")
+    @commands.hybrid_command(name="add_reaction_role", description="Add a role to the reaction roles")
     @commands.has_permissions(administrator=True)
     async def add_role(self, context: Context, message: str, role: discord.Role, emoji: str):
         '''Add a role to the reaction roles'''
