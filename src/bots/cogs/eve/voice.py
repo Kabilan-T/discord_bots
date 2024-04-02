@@ -35,7 +35,7 @@ class Voice(commands.Cog, name="Voice Features"):
         self.load_greet_messages()
         self.bot.log.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
 
-    @commands.hybrid_command(name="join", aliases=["j"])
+    @commands.hybrid_command(name="join", aliases=["j"], description="Join the voice channel of the user")
     async def join(self, context: Context):
         ''' Join the voice channel of the user '''
         if context.author.voice is None:
@@ -75,7 +75,7 @@ class Voice(commands.Cog, name="Voice Features"):
             self.bot.log.info(f"{self.bot.name} moved to voice channel {voice_channel.name} in {context.guild.name}", context.guild)
             return True
 
-    @commands.hybrid_command(name="leave", aliases=["l"])
+    @commands.hybrid_command(name="leave", aliases=["l"], description="Leave the voice channel")
     async def leave(self, context: Context):
         ''' Leave the voice channel '''
         if context.voice_client is None:
@@ -95,7 +95,7 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.log.info(f"{self.bot.name} left voice channel {channel.name} in {context.guild.name}", context.guild)
         
-    @commands.hybrid_command(name="say", aliases=["s"])
+    @commands.hybrid_command(name="say", aliases=["s"], description="Say the text in the voice channel")
     async def say(self, context: Context, *, text: str):
         ''' Say the text in the voice channel '''
         if context.voice_client is None:
@@ -125,7 +125,7 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.log.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}", context.guild)
 
-    @commands.hybrid_command(name="volume", aliases=["v"])
+    @commands.hybrid_command(name="volume", aliases=["v"], description="Get the volume of the bot")
     async def volume(self, context: Context):
         ''' Get the volume of the bot '''
         embed = discord.Embed(title="Volume :loud_sound:",
@@ -135,7 +135,7 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.log.info(f"Current volume is {self.volume} checked by {context.author} in guild {context.guild.name}", context.guild)
 
-    @commands.hybrid_command(name="setvolume", aliases=["sv"])
+    @commands.hybrid_command(name="setvolume", aliases=["sv"], description="Set the volume of the bot")
     async def setvolume(self, context: Context, volume: int):
         ''' Set the volume of the bot '''
         if volume < 0 or volume > 100:
@@ -154,7 +154,7 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.log.info(f"{context.author} set the volume to {volume} in {context.guild.name}", context.guild)
 
-    @commands.hybrid_command(name="setlanguage", aliases=["sl"])
+    @commands.hybrid_command(name="setlanguage", aliases=["sl"], description="Set the language of the bot")
     async def setlanguage(self, context: Context, language: str):
         ''' Set the language of the bot '''
         if language not in self.available_languages.keys():
@@ -173,7 +173,7 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.log.info(f"{context.author} set the language to {language} in {context.guild.name}", context.guild)
 
-    @commands.hybrid_command(name="setdomain", aliases=["sd"])
+    @commands.hybrid_command(name="setdomain", aliases=["sd"], description="Set the domain of the google text to speech")
     async def setdomain(self, context: Context, domain: str):
         ''' Set the domain of the google text to speech '''
         if domain not in self.available_domains:
@@ -192,7 +192,7 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.log.info(f"{context.author} set the domain to {domain} in {context.guild.name}", context.guild)
 
-    @commands.hybrid_command(name="setgreet", aliases=["sg"])
+    @commands.hybrid_command(name="setgreet", aliases=["sg"], description="Set the greet message for the user")
     async def setgreet(self, context: Context, member: discord.Member, *, text: str):
         ''' Set the greet message for the user '''
         if context.guild.id not in self.greet_messages.keys():
