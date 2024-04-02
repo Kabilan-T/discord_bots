@@ -162,7 +162,7 @@ class Instagram(commands.Cog, name="Instagram"):
             )
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
-            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post "+str(post.mediaid), guild)
+            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post ", guild)
         except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
@@ -196,7 +196,7 @@ class Instagram(commands.Cog, name="Instagram"):
             )
             embed.set_thumbnail(url=reel.owner_profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
-            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel "+str(reel.mediaid), guild)
+            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel ", guild)
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
