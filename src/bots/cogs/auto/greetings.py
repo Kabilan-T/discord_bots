@@ -20,6 +20,8 @@ class Greetings(commands.Cog, name="Greetings"):
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         ''' Send welcome message when a new member joins the server '''
+        if member.bot:
+            return
         guild = member.guild
         self.bot.log.info(f"New member {member.display_name} joined {guild.name}", guild)
         if guild.system_channel is not None:
@@ -36,6 +38,8 @@ class Greetings(commands.Cog, name="Greetings"):
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         ''' Send goodbye message when a member leaves the server '''
+        if member.bot:
+            return
         guild = member.guild
         self.bot.log.info(f"Member {member.display_name} left {guild.name}", guild)
         if guild.system_channel is not None:
