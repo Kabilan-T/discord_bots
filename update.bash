@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Pull recent changes from the remote repository
-git pull origin master
+git pull origin main
 
 # Check if there are any changes
 if [ $? -eq 0 ]; then

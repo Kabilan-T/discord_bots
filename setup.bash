@@ -11,9 +11,9 @@ if crontab -l | grep -q "update.bash"; then
     echo "Cron job already exists."
 else
     current_directory=$(pwd)
-    # Add the cron job to run the update.sh script every 12 hours
-    (crontab -l ; echo "0 */12 * * * bash $current_directory/update.bash" >> logs/update.log) | crontab -
-    echo "Cron job added to run the update.sh script every 12 hours."
+    # Add the cron job to run the update.sh script every 6 hours
+    (crontab -l ; echo "0 */6 * * * bash $current_directory/update.bash" >> $current_directory/logs/update.log) | crontab -
+    echo "Cron job added to run the update.sh script every 6 hours."
 fi
 
 # Check if runtime.txt file exists
