@@ -6,6 +6,16 @@ if [[ ! $(basename "$(pwd)") == "discord_bots" ]]; then
     exit 1
 fi
 
+# Check if update.bash exists
+if crontab -l | grep -q "update.bash"; then
+    echo "Cron job already exists."
+else
+    current_directory=$(pwd)
+    # Add the cron job to run the update.sh script every 12 hours
+    (crontab -l ; echo "0 */12 * * * bash $current_directory/update.bash" >> logs/update.log) | crontab -
+    echo "Cron job added to run the update.sh script every 12 hours."
+fi
+
 # Check if runtime.txt file exists
 if [ ! -f "runtime.txt" ]; then
     echo "runtime.txt not found. Please create runtime.txt and specify the Python version."
