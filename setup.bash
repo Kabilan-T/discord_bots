@@ -12,7 +12,7 @@ if crontab -l | grep -q "update.bash"; then
 else
     current_directory=$(pwd)
     # Add the cron job to run the update.sh script every 6 hours
-    (crontab -l ; echo "0 */6 * * * bash $current_directory/update.bash" >> $current_directory/logs/update.log) | crontab -
+    (crontab -l ; echo "0 */6 * * * bash $current_directory/update.bash >> $current_directory/logs/update.log") | crontab -
     echo "Cron job added to run the update.sh script every 6 hours."
 fi
 
