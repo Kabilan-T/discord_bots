@@ -24,7 +24,8 @@ class BaseBot(commands.Bot):
 
     def __init__(self, bot_name: str):
         ''' Initialize the bot '''
-        self.load_config(bot_name)
+        self.bot_name = bot_name
+        self.load_config()
         self.prefix = dict()
         self.log = Logger(self.name)
         self.log.info(f"Loaded config for {self.name}")
@@ -38,12 +39,12 @@ class BaseBot(commands.Bot):
                          help_command=None,
                          application_id=self.client_id)
         
-    def load_config(self, bot_name: str):
+    def load_config(self):
         '''Load the configuration file'''
         with open(config_file, 'r') as file:
-            config = yaml.safe_load(file).get(bot_name, None)
+            config = yaml.safe_load(file).get(self.bot_name, None)
         if config is None:
-            raise ValueError(f"Configuration not found for {bot_name}")
+            raise ValueError(f"Configuration not found for {self.bot_name}")
         self.name = config.get('name', None)
         self.user_name = config.get('user_name', None)
         self.client_id = config.get('client_id', None)
@@ -61,6 +62,23 @@ class BaseBot(commands.Bot):
             except Exception as e:
                 exception = f"{type(e).__name__}: {e}"
                 self.log.error(f"Failed to load extension {extension}\n{exception}")
+    
+    async def reload_extensions(self):
+        '''Reload the bot cogs'''
+        self.load_config()
+        self.log.info(f"Reloading extensions for {self.name}")
+        self.succeeded = list()
+        self.failed = list()
+        for extension in self.extensions_to_load:
+            try:
+                await self.reload_extension(f"bots.{extension}")
+                self.log.info(f"Reloaded extension {extension}")
+                self.succeeded.append(extension)
+            except Exception as e:
+                exception = f"{type(e).__name__}: {e}"
+                self.log.error(f"Failed to reload extension {extension}\n{exception}")
+                self.failed.append(extension)
+        return (self.succeeded, self.failed)
     
     async def get_prefix(self, message):
         '''Get the prefix for the bot'''

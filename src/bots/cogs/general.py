@@ -10,6 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import os
+import io
 import yaml
 import discord
 from discord.ext import commands
@@ -117,6 +118,56 @@ class General(commands.Cog, name="General"):
                 )
                 await context.send(embed=embed)
 
+    @commands.command( name="invite", description="Get the bot invite link.")
+    async def invite(self, context: Context):
+        '''Send the bot invite link with permissions of admin'''
+        embed = discord.Embed(
+            title="Invite",
+            description=f"Use this link to invite the bot to your server: https://discord.com/oauth2/authorize?client_id={self.bot.client_id}&scope=bot&permissions=8",
+            color=self.bot.default_color,
+        )
+        await context.send(embed=embed)
+    
+    @commands.command( name="reload", description="Reload the bot cogs.")
+    @commands.has_permissions(administrator=True)
+    async def reload(self, context: Context):
+        '''Reload the bot cogs'''
+        (succeeded_reloads, failed_reloads) = await self.bot.reload_extensions()
+        embed = discord.Embed(
+            title="Reloading Cogs",
+            color=self.bot.default_color,
+        )
+        if len(succeeded_reloads) > 0:
+            embed.add_field(
+                name="Successful reloads :white_check_mark:",
+                value="\n".join(succeeded_reloads),
+                inline=False,
+            )
+        if len(failed_reloads) > 0:
+            embed.add_field(
+                name="Failed reloads :x:",
+                value="\n".join(failed_reloads),
+                inline=False,
+            )
+        await context.send(embed=embed)
+
+    @commands.command( name="get_logs", description="Send the recent log file.")
+    @commands.has_permissions(administrator=True)
+    async def getlogs(self, context: Context):
+        '''Get the recent log file'''
+        file_name = self.bot.log.log_file
+        with open(file_name, 'r') as f:
+            text = f.read()
+        file = discord.File(filename=file_name.split("/")[-1],
+                            fp=io.StringIO(text))
+        embed = discord.Embed(
+            title="Log File :scroll:",
+            description="Here is the recent log file. :file_folder:",
+            color=self.bot.default_color,
+        )
+        await context.reply(embed=embed, file=file)
+        self.bot.log.info(f"Log file sent to {context.author.name}", context.guild)
+
     @commands.command( name="set_log_channel", description="Set the log channel for the bot.")
     async def setlogchannel(self, context: Context, channel: discord.TextChannel):
         '''Set the log channel for the bot'''
@@ -144,16 +195,6 @@ class General(commands.Cog, name="General"):
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
-
-    @commands.command( name="invite", description="Get the bot invite link.")
-    async def invite(self, context: Context):
-        '''Send the bot invite link with permissions of admin'''
-        embed = discord.Embed(
-            title="Invite",
-            description=f"Use this link to invite the bot to your server: https://discord.com/oauth2/authorize?client_id={self.bot.client_id}&scope=bot&permissions=8",
-            color=self.bot.default_color,
-        )
-        await context.send(embed=embed)
 
 
 async def setup(bot):
