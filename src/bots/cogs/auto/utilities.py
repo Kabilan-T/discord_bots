@@ -75,6 +75,30 @@ class Utility(commands.Cog, name="Utilities"):
             )
             await context.send(embed=embed)
     
+    @commands.command( name="purge_user", description="Purge messages from a user in one or all channels.")
+    async def purgeuser(self, context: Context, member: discord.Member, amount: int, channel: typing.Optional[discord.TextChannel] = None):
+        '''Purge messages from a user in one or all channels'''
+        if self.check(context, PermissionToPurge):
+            if channel is None:
+                self.bot.log.info(f"{context.author.name} purged {amount} messages from {member.name} in all channels in {context.guild.name}", context.guild)
+                for channel in context.guild.text_channels:
+                    await channel.purge(limit=amount, check=lambda message: message.author == member)
+                embed = discord.Embed(
+                    title="Purge :wastebasket:",
+                    description=f"{amount} messages from {member.mention} have been purged from all channels.",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+            else:
+                self.bot.log.info(f"{context.author.name} purged {amount} messages from {member.name} in {channel.name} in {context.guild.name}", context.guild)
+                await channel.purge(limit=amount, check=lambda message: message.author == member)
+                embed = discord.Embed(
+                    title="Purge :wastebasket:",
+                    description=f"{amount} messages from {member.mention} have been purged from {channel.mention}",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+    
     @commands.command( name="move", description="Move a member to a different voice channel.")
     async def move(self, context: Context, member: discord.Member, channel: discord.VoiceChannel, reason: str = None):
         '''Move a member to a different voice channel'''
