@@ -25,31 +25,9 @@ class Roles(commands.Cog, name="Roles"):
         self.read_config()
         self.read_reaction_roles()
 
-    # reaction roles
-    @commands.hybrid_command(name="set_role_channel", description="Set the channel for reaction roles")
+    @commands.command(name="set_default_role", description="Set the default role for the new members joining the server")
     @commands.has_permissions(administrator=True)
-    async def set_role_channel(self, context: Context, channel: discord.TextChannel):
-        '''Set the channel for reaction roles'''
-        self.role_channel[context.guild.id] = channel.id
-        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml")):
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "r") as file:
-                config = yaml.load(file, Loader=yaml.FullLoader)
-            config["role_channel"] = channel.id
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "w+") as file:
-                yaml.dump(config, file)
-        else:
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "w+") as file:
-                yaml.dump({"role_channel": channel.id}, file)
-        self.bot.log.info(f"Role channel set to {channel.mention} by {context.author.name}", context.guild)
-        embed = discord.Embed(title="Role Channel Set",
-                              description=f"Role channel set to {channel.mention}",
-                              color=self.bot.default_color)
-        await context.send(embed=embed)
-        
-    
-    @commands.hybrid_command(name="set_default_role", description="Set the default role for the new members joining the server")
-    @commands.has_permissions(administrator=True)
-    async def set_default_role(self, context: Context, role: discord.Role):
+    async def setdefaultrole(self, context: Context, role: discord.Role):
         '''Set the default role for the new members joining the server'''
         self.default_role[context.guild.id] = role.id
         if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml")):
@@ -67,10 +45,29 @@ class Roles(commands.Cog, name="Roles"):
                               color=self.bot.default_color)
         await context.send(embed=embed)
 
-    
-    @commands.hybrid_command(name="add_reaction_role", description="Add a role to the reaction roles")
+    @commands.command(name="set_role_channel", description="Set the channel for reaction roles")
     @commands.has_permissions(administrator=True)
-    async def add_role(self, context: Context, message: str, role: discord.Role, emoji: str):
+    async def setrolechannel(self, context: Context, channel: discord.TextChannel):
+        '''Set the channel for reaction roles'''
+        self.role_channel[context.guild.id] = channel.id
+        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml")):
+            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "r") as file:
+                config = yaml.load(file, Loader=yaml.FullLoader)
+            config["role_channel"] = channel.id
+            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "w+") as file:
+                yaml.dump(config, file)
+        else:
+            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "w+") as file:
+                yaml.dump({"role_channel": channel.id}, file)
+        self.bot.log.info(f"Role channel set to {channel.mention} by {context.author.name}", context.guild)
+        embed = discord.Embed(title="Role Channel Set",
+                              description=f"Role channel set to {channel.mention}",
+                              color=self.bot.default_color)
+        await context.send(embed=embed)
+        
+    @commands.command(name="add_reaction_role", description="Add a role to the reaction roles")
+    @commands.has_permissions(administrator=True)
+    async def addrole(self, context: Context, message: str, role: discord.Role, emoji: str):
         '''Add a role to the reaction roles'''
         if context.guild.id not in self.role_channel.keys():
             embed = discord.Embed(title="Role Channel Not Set",
@@ -152,6 +149,6 @@ class Roles(commands.Cog, name="Roles"):
                         reaction_roles = yaml.load(file, Loader=yaml.FullLoader)
                     self.reaction_roles[int(guild_id)] = reaction_roles
 
+
 async def setup(bot):
     await bot.add_cog(Roles(bot))
-    

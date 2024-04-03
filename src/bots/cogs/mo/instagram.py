@@ -35,13 +35,21 @@ class Instagram(commands.Cog, name="Instagram"):
         if self.is_credentials_provided:
             self._login_to_instagram()
 
-    @commands.hybrid_command( name="bio", description="Get the bio of a user.")
+    @commands.command( name="bio", description="Get the bio of a user.")
     async def bio(self, context: Context, username: str):
         '''Get the bio of a user'''
         await self.send_bio(context.reply, username, context.guild)
 
-    @commands.hybrid_command( name="set_channel", description="Set the channel to watch for instagram links.")
-    async def set_channel(self, context: Context, channel: discord.TextChannel = None):
+    @commands.command( name="show", description="Download a post from instagram.")
+    async def show(self, context: Context, message: str):
+        '''Download a media from instagram and show it'''
+        match = re.match(instagram_regex, message)
+        if match is not None:
+            url = match.group()
+            await self.send_media(context.reply, url, context.guild)
+
+    @commands.command( name="set_channel", description="Set the channel to watch for instagram links.")
+    async def setchannel(self, context: Context, channel: discord.TextChannel = None):
         '''Set the channel to watch for instagram links'''
         if channel == None:
             channel = context.channel
@@ -57,8 +65,8 @@ class Instagram(commands.Cog, name="Instagram"):
         await context.send(embed=embed)
         self.bot.log.info("Added channel "+str(channel.id)+" to watch for instagram links.", context.guild)
 
-    @commands.hybrid_command( name="unset_channel", description="Unset the channel to watch for instagram links.")
-    async def unset_channel(self, context: Context, channel: discord.TextChannel = None):
+    @commands.command( name="unset_channel", description="Unset the channel to watch for instagram links.")
+    async def unsetchannel(self, context: Context, channel: discord.TextChannel = None):
         '''Unset the channel to watch for instagram links'''
         if channel == None:
             channel = context.channel
@@ -74,13 +82,7 @@ class Instagram(commands.Cog, name="Instagram"):
         await context.send(embed=embed)
         self.bot.log.info("Removed channel "+str(channel.id)+" from watch for instagram links.", context.guild)
 
-    @commands.hybrid_command( name="show", description="Download a post from instagram.")
-    async def show(self, context: Context, message: str):
-        '''Download a media from instagram and show it'''
-        match = re.match(instagram_regex, message)
-        if match is not None:
-            url = match.group()
-            await self.send_media(context.reply, url, context.guild)
+
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -313,7 +315,6 @@ class Instagram(commands.Cog, name="Instagram"):
                         yaml.dump({"channels": self.channels_to_watch[guild_id]}, file)
                     self.bot.log.info("Saved watch list for guild "+str(guild_id))
 
-    
-    
+
 async def setup(bot):
     await bot.add_cog(Instagram(bot))

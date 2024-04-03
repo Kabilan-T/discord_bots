@@ -2,14 +2,30 @@ auto:
   name: AUTO
   username: 'AUTO#6021'
   client_id: '1220388740678029392'
-  default_prefix: '$$'
+  default_prefix: 'auto$'
+  default_color: 0x3498DB
+  extensions:
+    - 'cogs.general'
+    - 'cogs.auto.greetings'
+    - 'cogs.auto.moderation'
+    - 'cogs.auto.utilities'
+    - 'cogs.auto.roles'
 eve:
   name: EVE
   username: 'EVE#4830'
   client_id: '1220389672291795005'
-  default_prefix: '?!'
+  default_prefix: 'eve!'
+  default_color: 0xBEBEFE
+  extensions:
+    - 'cogs.general'
+    - 'cogs.eve.voice'
+    - 'cogs.eve.bingo'
 mo:
   name: M-O
   username: 'MO#9127'
   client_id: '1220391241825648691'
-  default_prefix: '!!'
+  default_prefix: 'mo!'
+  default_color: 0x8A3AB9
+  extensions:
+    - 'cogs.general'
+    - 'cogs.mo.instagram'

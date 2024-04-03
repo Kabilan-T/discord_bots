@@ -18,11 +18,7 @@ class MoBot(BaseBot):
 
     def __init__(self):
         ''' Initialize the bot '''
-        bot_name = 'mo'
-        self.default_color = discord.Color.purple()
-        self.extensions_to_load  = ['cogs.general',
-                                    'cogs.mo.instagram']
-        super().__init__(bot_name, self.default_color, self.extensions_to_load)
+        super().__init__('mo')
     
 if __name__ == '__main__':
     # Launch the bot

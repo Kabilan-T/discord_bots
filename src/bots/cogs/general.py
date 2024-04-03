@@ -21,7 +21,27 @@ class General(commands.Cog, name="General"):
         '''Initializes the general cog'''
         self.bot = bot
     
-    @commands.hybrid_command( name="help", description="Get help on a command." , aliases=["h"])
+    @commands.command( name="hello", description="Say hello to the bot.", aliases=["hi", "hey"])
+    async def hello(self, context: Context):
+        '''Say hello to the bot'''
+        embed = discord.Embed(
+            title="Hello "+context.author.name+" :wave:",
+            description=f"I am {self.bot.name}, a discord bot. Nice to meet you! :smile:",
+            color=self.bot.default_color,
+        )
+        await context.send(embed=embed)
+
+    @commands.command( name="ping", description="Check if the bot is alive.", aliases=["p"])
+    async def ping(self, context: Context):
+        '''Check if the bot is active and send the latency'''
+        embed = discord.Embed(
+            title="🏓 Pong!",
+            description=f"The bot latency is {round(self.bot.latency * 1000)}ms.",
+            color=self.bot.default_color,
+        )
+        await context.send(embed=embed)
+    
+    @commands.command( name="help", description="Get help on a command." , aliases=["h"])
     async def help(self, context: Context, command: str = None):
         '''Get help on a command'''
         if command is None:
@@ -35,7 +55,7 @@ class General(commands.Cog, name="General"):
                 if len(cog_commands) > 0:
                     embed.add_field(
                         name=cog,
-                        value=", ".join([f"`{command.name}`" for command in cog_commands]),
+                        value="\n".join([f"***`{command.name}`*** - {command.description}" for command in cog_commands]),
                         inline=False,
                     )
             await context.send(embed=embed)
@@ -61,37 +81,7 @@ class General(commands.Cog, name="General"):
                 )
                 await context.send(embed=embed)
 
-    @commands.hybrid_command( name="hello", description="Say hello to the bot.", aliases=["hi", "hey"])
-    async def hello(self, context: Context):
-        '''Say hello to the bot'''
-        embed = discord.Embed(
-            title="Hello "+context.author.name+" :wave:",
-            description=f"I am {self.bot.name}, a discord bot. Nice to meet you! :smile:",
-            color=self.bot.default_color,
-        )
-        await context.send(embed=embed)
-
-    @commands.hybrid_command( name="ping", description="Check if the bot is alive.", aliases=["p"])
-    async def ping(self, context: Context):
-        '''Check if the bot is active and send the latency'''
-        embed = discord.Embed(
-            title="🏓 Pong!",
-            description=f"The bot latency is {round(self.bot.latency * 1000)}ms.",
-            color=self.bot.default_color,
-        )
-        await context.send(embed=embed)
-
-    @commands.hybrid_command( name="invite", description="Get the bot invite link.")
-    async def invite(self, context: Context):
-        '''Send the bot invite link with permissions of admin'''
-        embed = discord.Embed(
-            title="Invite",
-            description=f"Use this link to invite the bot to your server: https://discord.com/oauth2/authorize?client_id={self.bot.client_id}&scope=bot&permissions=8",
-            color=self.bot.default_color,
-        )
-        await context.send(embed=embed)
-
-    @commands.hybrid_command( name="prefix", description="Change the bot prefix.")
+    @commands.command( name="prefix", description="Change the bot prefix.")
     async def prefix(self, context: Context, prefix: str = None):
         '''Change or get the bot prefix'''
         if prefix is None:
@@ -127,8 +117,8 @@ class General(commands.Cog, name="General"):
                 )
                 await context.send(embed=embed)
 
-    @commands.hybrid_command( name="setlog", description="Set the log channel for the bot.")
-    async def set_log_channel(self, context: Context, channel: discord.TextChannel):
+    @commands.command( name="set_log_channel", description="Set the log channel for the bot.")
+    async def setlogchannel(self, context: Context, channel: discord.TextChannel):
         '''Set the log channel for the bot'''
         if context.author.guild_permissions.administrator:
             self.bot.log.set_log_channel(context.guild.id, channel)
@@ -154,9 +144,17 @@ class General(commands.Cog, name="General"):
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
-    
-async def setup(bot):
-    await bot.add_cog(General(bot))
-    
 
-        
+    @commands.command( name="invite", description="Get the bot invite link.")
+    async def invite(self, context: Context):
+        '''Send the bot invite link with permissions of admin'''
+        embed = discord.Embed(
+            title="Invite",
+            description=f"Use this link to invite the bot to your server: https://discord.com/oauth2/authorize?client_id={self.bot.client_id}&scope=bot&permissions=8",
+            color=self.bot.default_color,
+        )
+        await context.send(embed=embed)
+
+
+async def setup(bot):
+    await bot.add_cog(General(bot))     

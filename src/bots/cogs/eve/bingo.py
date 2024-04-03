@@ -9,12 +9,12 @@
 
 #-------------------------------------------------------------------------------
 
-import discord
-from discord.ext import commands
-from discord.ext.commands import Context
 import typing 
 import random
 import asyncio
+import discord
+from discord.ext import commands
+from discord.ext.commands import Context
 
 
 class Bingo(commands.Cog, name="Bingo"):
@@ -23,7 +23,7 @@ class Bingo(commands.Cog, name="Bingo"):
         self.bot = bot
         self.games = {}  # Store active games
 
-    @commands.hybrid_command(name="bingo", description="Start a game of bingo.")
+    @commands.command(name="bingo", description="Start a game of bingo.")
     async def bingo(self, context: Context, add_bot: typing.Optional[bool] = False, *players: discord.Member):
         '''Starts a game of bingo'''
         self.bot.log.info(f"Bingo game requested by {context.author.name}", context.guild)
@@ -106,14 +106,16 @@ class Bingo(commands.Cog, name="Bingo"):
                 )
                 await context.send(embed=embed)
             self.bot.log.info(f"Game started in #{context.channel.name} of {context.guild.name} with players {', '.join([player.name for player in self.games[game_id]['players']])}.", context.guild)
-            await self.create_game(self.games[game_id])    
+            await self.create_game(game_id)    
         
         # Play the game
-        while not self.games[game_id]["game_over"]:
-            await self.play_game(self.games[game_id])
+        while game_id in self.games and not self.games[game_id]["game_over"]:
+            await self.play_game(game_id)
+            if game_id not in self.games:
+                return
         
         # Game over
-        await self.end_game(self.games[game_id])
+        await self.end_game(game_id)
         embed = discord.Embed(
             title="Thanks for playing! :slight_smile:",
             description=f"{' '.join([player.mention for player in self.games[game_id]['players']])} \nSee you next time!",
@@ -123,7 +125,7 @@ class Bingo(commands.Cog, name="Bingo"):
         del self.games[game_id]
         self.bot.log.info(f"Game ended in #{context.channel.name} of {context.guild.name}.", context.guild)
     
-    @commands.hybrid_command(name="quit", description="Quit the current game of bingo.")
+    @commands.command(name="quit", description="Quit the current game of bingo.")
     async def quit(self, context: Context):
         '''Quits the current game of bingo'''
         game_id = str(context.guild.id) + str(context.channel.id)
@@ -134,6 +136,7 @@ class Bingo(commands.Cog, name="Bingo"):
                     description=f"{context.author.mention} quit the game.",
                     color=self.bot.default_color,
                 )
+                self.games[game_id]["game_over"] = True
                 await context.send(embed=embed)
                 del self.games[game_id]
                 self.bot.log.info(f"Game aborted in #{context.channel.name} of {context.guild.name} by {context.author.name}.", context.guild)
@@ -154,22 +157,22 @@ class Bingo(commands.Cog, name="Bingo"):
             await context.send(embed=embed)
             self.bot.log.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as there is no active game.", context.guild)
     
-    async def create_game(self, game):
-        for player in game["players"]:
-            game["chart"][player.id] = self.create_bingo_chart()
-            game["score"][player.id] = 0
+    async def create_game(self, game_id):
+        for player in self.games[game_id]["players"]:
+            self.games[game_id]["chart"][player.id] = self.create_bingo_chart()
+            self.games[game_id]["score"][player.id] = 0
             embed = discord.Embed(
                 title="Your bingo chart is ready. :smiley:",
-                description=f"{self.format_bingo_chart(game['chart'][player.id])}",
+                description=f"{self.format_bingo_chart(self.games[game_id]['chart'][player.id])}",
                 color=self.bot.default_color,
             )
             if player != self.bot.user:
                 await player.send(embed=embed)
-        game["current_player"] = game["players"][0]
+        self.games[game_id]["current_player"] = self.games[game_id]["players"][0]
 
-    async def end_game(self, game):
-        for player in game["players"]:
-            if player in game["winners"]:
+    async def end_game(self, game_id):
+        for player in self.games[game_id]["players"]:
+            if player in self.games[game_id]["winners"]:
                 embed = discord.Embed(
                     title="Congratulations! :smiley:",
                     description=f"You won the game! :tada:",
@@ -187,28 +190,28 @@ class Bingo(commands.Cog, name="Bingo"):
                     await player.send(embed=embed)
         embed = discord.Embed(
             title="Game over! :smiley:",
-            description=f"{' '.join([player.mention for player in game['winners']])} won the game! :tada:",
+            description=f"{' '.join([player.mention for player in self.games[game_id]['winners']])} won the game! :tada:",
             color=self.bot.default_color,
         )
-        await game["channel"].send(embed=embed)
-        self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} ended.", game["channel"].guild)
-        self.bot.log.info(f"Winners: {[player.name for player in game['winners']]}", game["channel"].guild)
-        self.bot.log.info(f"Players - Scores: {[(player.name, game['score'][player.id]) for player in game['players']]}", game["channel"].guild)
+        await self.games[game_id]["channel"].send(embed=embed)
+        self.bot.log.info(f"Game in #{self.games[game_id]['channel'].name} of {self.games[game_id]['channel'].guild.name} ended.", self.games[game_id]["channel"].guild)
+        self.bot.log.info(f"Winners: {[player.name for player in self.games[game_id]['winners']]}", self.games[game_id]["channel"].guild)
+        self.bot.log.info(f"Players - Scores: {[(player.name, self.games[game_id]['score'][player.id]) for player in self.games[game_id]['players']]}", self.games[game_id]["channel"].guild)
     
-    async def play_game(self, game):
+    async def play_game(self, game_id):
         embed = discord.Embed(
             title="It's your turn to play! :smiley:",
-            description=f"Your Bingo Chart:\n{self.format_bingo_chart(game['chart'][game['current_player'].id])}",
+            description=f"Your Bingo Chart:\n{self.format_bingo_chart(self.games[game_id]['chart'][self.games[game_id]['current_player'].id])}",
             color=self.bot.default_color,
         )
-        if game["current_player"] != self.bot.user:
-            await game["current_player"].send(embed=embed)
-        self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name}'s turn.", game["channel"].guild)
+        if self.games[game_id]["current_player"] != self.bot.user:
+            await self.games[game_id]["current_player"].send(embed=embed)
+        self.bot.log.info(f"Game in #{self.games[game_id]['channel'].name} of {self.games[game_id]['channel'].guild.name} - {self.games[game_id]['current_player'].name}'s turn.", self.games[game_id]["channel"].guild)
 
-        for player in game["players"]:
-            if player != game["current_player"]:
+        for player in self.games[game_id]["players"]:
+            if player != self.games[game_id]["current_player"]:
                 embed = discord.Embed(
-                    title=f"It's {game['current_player'].display_name}'s turn to play! :smiley:",
+                    title=f"It's {self.games[game_id]['current_player'].display_name}'s turn to play! :smiley:",
                     description=f"Let's wait for them to finish.",
                     color=self.bot.default_color,
                 )
@@ -216,31 +219,33 @@ class Bingo(commands.Cog, name="Bingo"):
                     await player.send(embed=embed)
         
         # Wait for the current player to call a number
-        is_number_called = await self.call_number(game["current_player"], game)
+        is_number_called = await self.call_number(self.games[game_id]["current_player"], game_id)
+        if game_id not in self.games:
+            return
         if is_number_called:
-            game["called_numbers"].append(game["current_number"])
-            self.bot.log.info(f"Game in #{game['channel'].name} of {game['channel'].guild.name} - {game['current_player'].name} called {game['current_number']}.", game["channel"].guild)
+            self.games[game_id]["called_numbers"].append(self.games[game_id]["current_number"])
+            self.bot.log.info(f"Game in #{self.games[game_id]['channel'].name} of {self.games[game_id]['channel'].guild.name} - {self.games[game_id]['current_player'].name} called {self.games[game_id]['current_number']}.", self.games[game_id]["channel"].guild)
             score_updated = False
-            for player in game["players"]:
+            for player in self.games[game_id]["players"]:
                 # strike the number from all players' charts
-                game["chart"][player.id] = self.strike_number(game["chart"][player.id], game["current_number"])
+                self.games[game_id]["chart"][player.id] = self.strike_number(self.games[game_id]["chart"][player.id], self.games[game_id]["current_number"])
                 # update the score
-                score = self.get_score(game["chart"][player.id])
-                if score > game["score"][player.id]:
-                    game["score"][player.id] = score
+                score = self.get_score(self.games[game_id]["chart"][player.id])
+                if score > self.games[game_id]["score"][player.id]:
+                    self.games[game_id]["score"][player.id] = score
                     score_updated = True
-                if player != game["current_player"]:
+                if player != self.games[game_id]["current_player"]:
                     embed = discord.Embed(
-                        title=f"{game['current_player'].display_name} called {game['current_number']}!",
-                        description=f"Your Bingo Chart:\n{self.format_bingo_chart(game['chart'][player.id])}",
+                        title=f"{self.games[game_id]['current_player'].display_name} called {self.games[game_id]['current_number']}!",
+                        description=f"Your Bingo Chart:\n{self.format_bingo_chart(self.games[game_id]['chart'][player.id])}",
                         color=self.bot.default_color,
                     )
                     if player != self.bot.user:
                         await player.send(embed=embed)
-                elif player == game["current_player"]:
+                elif player == self.games[game_id]["current_player"]:
                     embed = discord.Embed(
-                        title=f"You called {game['current_number']}!",
-                        description=f"Your Bingo Chart:\n{self.format_bingo_chart(game['chart'][player.id])}",
+                        title=f"You called {self.games[game_id]['current_number']}!",
+                        description=f"Your Bingo Chart:\n{self.format_bingo_chart(self.games[game_id]['chart'][player.id])}",
                         color=self.bot.default_color,
                     )
                     if player != self.bot.user:
@@ -249,23 +254,23 @@ class Bingo(commands.Cog, name="Bingo"):
             if score_updated:
                 embed = discord.Embed(
                     title="Scores updated! :smiley:",
-                    description=f"{self.get_scores_message(game)}",
+                    description=f"{self.get_scores_message(game_id)}",
                     color=self.bot.default_color,
                 )
-                await game["channel"].send(embed=embed)
-                for player in game["players"]:
+                await self.games[game_id]["channel"].send(embed=embed)
+                for player in self.games[game_id]["players"]:
                     if player != self.bot.user:
                         await player.send(embed=embed)
-                    if game["score"][player.id] >= game["score_limit"]:
-                        game["game_over"] = True
-                        game["winners"].append(player)
+                    if self.games[game_id]["score"][player.id] >= self.games[game_id]["score_limit"]:
+                        self.games[game_id]["game_over"] = True
+                        self.games[game_id]["winners"].append(player)
         
         # Change current player
-        game["current_player"] = game["players"][(game["players"].index(game["current_player"])+1) % len(game["players"])]
+        self.games[game_id]["current_player"] = self.games[game_id]["players"][(self.games[game_id]["players"].index(self.games[game_id]["current_player"])+1) % len(self.games[game_id]["players"])]
 
-    async def call_number(self, player, game):
+    async def call_number(self, player, game_id):
         if player == self.bot.user:
-            return self.bot_move(game)
+            return self.bot_move(game_id)
         embed = discord.Embed(  
             title="Call a number :hourglass_flowing_sand:",
             description=f"Please send a number from your chart to call it.",
@@ -273,13 +278,15 @@ class Bingo(commands.Cog, name="Bingo"):
         )
         await player.send(embed=embed)
         try:
-            message = await self.bot.wait_for("message",  timeout=60,
-                check=lambda message: message.author == player and message.channel == player.dm_channel,
-               
+            message = await self.bot.wait_for("message",
+                                              timeout=60,
+                                              check=lambda message: message.author == player and message.channel == player.dm_channel and game_id in self.games
             )
+            if game_id not in self.games:
+                return False
             number = int(message.content)
-            if self.is_number_valid(number, game):
-                game["current_number"] = number
+            if self.is_number_valid(number, game_id):
+                self.games[game_id]["current_number"] = number
                 return True
             else:
                 embed = discord.Embed(
@@ -288,8 +295,10 @@ class Bingo(commands.Cog, name="Bingo"):
                     color=self.bot.default_color,
                 )
                 await player.send(embed=embed)
-                return await self.call_number(player, game)
+                return await self.call_number(player, game_id)
         except asyncio.TimeoutError:
+            if game_id not in self.games:
+                return False
             embed = discord.Embed(
                 title="Ooops! Time's up :slight_frown:",
                 description=f"You took too long to call a number. You turn is skipped.",
@@ -298,16 +307,16 @@ class Bingo(commands.Cog, name="Bingo"):
             await player.send(embed=embed)
             return False
 
-    def bot_move(self, game):
-        chart = game["chart"][self.bot.user.id].copy()
+    def bot_move(self, game_id):
+        chart = self.games[game_id]["chart"][self.bot.user.id].copy()
         # search for a number which can increase the score
         available_moves = []
         for row in chart:
             for number in row:
-                if number > 0 and number not in game["called_numbers"]:
+                if number > 0 and number not in self.games[game_id]["called_numbers"]:
                     available_moves.append(number)
         number = self.get_wise_number(chart, available_moves)
-        game["current_number"] = number
+        self.games[game_id]["current_number"] = number
         return True
     
     def get_wise_number(self, chart, available_moves):
@@ -325,11 +334,11 @@ class Bingo(commands.Cog, name="Bingo"):
         random.shuffle(numbers)
         return [numbers[i:i + 5] for i in range(0, 25, 5)]
     
-    def is_number_valid(self, number, game):
-        if number in game["called_numbers"]:
+    def is_number_valid(self, number, game_id):
+        if number in self.games[game_id]["called_numbers"]:
             return False
         # Check if number is in the current player's chart
-        for row in game["chart"][game["current_player"].id]:
+        for row in self.games[game_id]["chart"][self.games[game_id]["current_player"].id]:
             if number in row:
                 return True
         return False
@@ -361,11 +370,11 @@ class Bingo(commands.Cog, name="Bingo"):
             chart_display += "\n" if i < 4 else ""
         return f"```\n{chart_display}```"
     
-    def get_scores_message(self, game):
+    def get_scores_message(self, game_id):
         message = str()
-        max_score = max(game["score"].values())
-        for player in game["players"]:
-            score = game["score"][player.id]
+        max_score = max(self.games[game_id]["score"].values())
+        for player in self.games[game_id]["players"]:
+            score = self.games[game_id]["score"][player.id]
             message += f'{player .mention}: ({score}) :\t'
             message += " ".join([f"***~~{letter}~~***" if i < score else f"**{letter}**" for i, letter in enumerate('BINGO')])
             if score == max_score:
@@ -373,5 +382,6 @@ class Bingo(commands.Cog, name="Bingo"):
             message += "\n"
         return message
     
+
 async def setup(bot):
     await bot.add_cog(Bingo(bot))

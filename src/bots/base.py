@@ -22,12 +22,10 @@ data = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 class BaseBot(commands.Bot):
     ''' Base class for all bots '''
 
-    def __init__(self, bot_name: str, default_color: discord.Color, extensions_to_load: list):
+    def __init__(self, bot_name: str):
         ''' Initialize the bot '''
         self.load_config(bot_name)
         self.prefix = dict()
-        self.default_color = default_color
-        self.extensions_to_load = extensions_to_load
         self.log = Logger(self.name)
         self.log.info(f"Loaded config for {self.name}")
         self.data_dir = os.path.join(data, self.name)
@@ -50,6 +48,8 @@ class BaseBot(commands.Bot):
         self.user_name = config.get('user_name', None)
         self.client_id = config.get('client_id', None)
         self.default_prefix = config.get('default_prefix', None)
+        self.default_color = config.get('default_color', discord.Color.dark_theme())
+        self.extensions_to_load = config.get('extensions', list())
 
     async def setup_hook(self):
         '''Setup hook executed before bot execution'''

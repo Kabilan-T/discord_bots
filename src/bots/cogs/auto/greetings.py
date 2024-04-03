@@ -121,5 +121,6 @@ class Greetings(commands.Cog, name="Greetings"):
         embed.color = discord.Color.red()
         return embed
 
+
 async def setup(bot):
     await bot.add_cog(Greetings(bot))
