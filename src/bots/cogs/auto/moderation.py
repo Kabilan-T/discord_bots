@@ -116,9 +116,9 @@ class Moderation(commands.Cog, name="Moderation"):
         with open(os.path.join(self.bot.data_dir, str(context.guild.id), "warns.yml"), "w+") as file:
             yaml.dump(self.warns[context.guild.id], file)
     
-    @commands.command( name="get_warns", description="Get the number of warns a member has.")
-    async def get_warns(self, context: Context, member: discord.Member):
-        '''Get the number of warns a member has'''
+    @commands.command( name="check_warns", description="Get the number of warns a member has.")
+    async def check_warns(self, context: Context, member: discord.Member):
+        '''Check the number of warns a member has'''
         if self.check(context, PermissionBasic):
             if context.guild.id in self.warns.keys() and member.id in self.warns[context.guild.id].keys():
                 embed = discord.Embed(
@@ -141,6 +141,15 @@ class Moderation(commands.Cog, name="Moderation"):
             self.bot.log.info(f"{context.author.name} kicked {member.name} from {context.guild.name}", context.guild)
             await self.send_message(context, member, "kicked :boxing_glove:", reason, False)
             await member.kick(reason=reason)
+
+    @commands.command( name="softban", description="Softban a member from the server.")
+    async def softban(self, context: Context, member: discord.Member, reason: str = None):
+        '''Softban a member from the server'''
+        if self.check(context, PermissionToBan):
+            self.bot.log.info(f"{context.author.name} softbanned {member.name} from {context.guild.name}", context.guild)
+            await self.send_message(context, member, "softbanned :no_entry:", reason, False)
+            await member.ban(reason=reason)
+            await member.unban(reason=reason)
         
     @commands.command( name="ban", description="Ban a member from the server.")
     async def ban(self, context: Context, member: discord.Member, reason: str = None):
