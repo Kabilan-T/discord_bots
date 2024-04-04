@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Change directory to the location of the script
+SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+cd "$SCRIPTPATH"
+
 # Pull recent changes from the remote repository
 git pull origin main
 
