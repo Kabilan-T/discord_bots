@@ -37,6 +37,10 @@ class Logger():
         ''' Set the log channel '''
         self.log_channel[guild_id] = log_channel
 
+    def remove_log_channel(self, guild_id: int):
+        ''' Remove the log channel '''
+        self.log_channel.pop(guild_id, None)
+
     def info(self, log_message: str, guild: discord.Guild=None, send_log=True):
         '''Logs an info message'''
         self.log.info(log_message)

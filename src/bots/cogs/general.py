@@ -83,42 +83,36 @@ class General(commands.Cog, name="General"):
                 await context.send(embed=embed)
 
     @commands.command( name="prefix", description="Change the bot prefix.")
+    @commands.has_permissions(administrator=True)
     async def prefix(self, context: Context, prefix: str = None):
         '''Change or get the bot prefix'''
         if prefix is None:
             embed = discord.Embed(
                 title="Prefix",
-                description=f"The current prefix is `{self.bot.prefix[context.guild.id]}`",
+                description=f"The current prefix is `{self.bot.prefix.get(context.guild.id, self.bot.default_prefix)}`",
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
         else:
-            if context.author.guild_permissions.administrator:
-                self.bot.prefix[context.guild.id] = prefix
-                if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml')):
-                    with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'r') as file:
-                        guild_settings = yaml.safe_load(file)
-                        guild_settings['prefix'] = prefix
-                else:
-                    guild_settings = {'prefix': prefix}
-                with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'w+') as file:
-                    yaml.dump(guild_settings, file)
-                embed = discord.Embed(
-                    title="Prefix",
-                    description=f"The prefix has been changed to `{self.bot.prefix[context.guild.id]}`",
-                    color=self.bot.default_color,
-                )
-                await context.send(embed=embed)
-                self.bot.log.info(f"Prefix changed to {self.bot.prefix[context.guild.id]}", context.guild)
+            self.bot.prefix[context.guild.id] = prefix
+            if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml')):
+                with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'r') as file:
+                    guild_settings = yaml.safe_load(file)
+                    guild_settings['prefix'] = prefix
             else:
-                embed = discord.Embed(
-                    title="Prefix",
-                    description="You do not have the required permissions to change the prefix.",
-                    color=self.bot.default_color,
-                )
-                await context.send(embed=embed)
+                guild_settings = {'prefix': prefix}
+            with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'w+') as file:
+                yaml.dump(guild_settings, file)
+            embed = discord.Embed(
+                title="Prefix",
+                description=f"The prefix has been changed to `{self.bot.prefix.get(context.guild.id, self.bot.default_prefix)}`",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+            self.bot.log.info(f"Prefix changed to {self.bot.prefix.get(context.guild.id, self.bot.default_prefix)}", context.guild)
 
     @commands.command( name="invite", description="Get the bot invite link.")
+    @commands.has_permissions(administrator=True)
     async def invite(self, context: Context):
         '''Send the bot invite link with permissions of admin'''
         embed = discord.Embed(
@@ -134,19 +128,19 @@ class General(commands.Cog, name="General"):
         '''Reload the bot cogs'''
         (succeeded_reloads, failed_reloads) = await self.bot.reload_extensions()
         embed = discord.Embed(
-            title="Reloading Cogs",
+            title="Cogs Reloaded :gear:",
             color=self.bot.default_color,
         )
         if len(succeeded_reloads) > 0:
             embed.add_field(
-                name="Successful reloads :white_check_mark:",
-                value="\n".join(succeeded_reloads),
+                name="Succeeded",
+                value=f"\n".join([f":thumbsup: `{cog}`" for cog in succeeded_reloads]),
                 inline=False,
             )
         if len(failed_reloads) > 0:
             embed.add_field(
-                name="Failed reloads :x:",
-                value="\n".join(failed_reloads),
+                name="Failed",
+                value=f"\n".join([f":thumbsdown: `{cog}`" for cog in failed_reloads]),
                 inline=False,
             )
         await context.send(embed=embed)
@@ -169,32 +163,42 @@ class General(commands.Cog, name="General"):
         self.bot.log.info(f"Log file sent to {context.author.name}", context.guild)
 
     @commands.command( name="set_log_channel", description="Set the log channel for the bot.")
+    @commands.has_permissions(administrator=True)
     async def setlogchannel(self, context: Context, channel: discord.TextChannel):
         '''Set the log channel for the bot'''
-        if context.author.guild_permissions.administrator:
-            self.bot.log.set_log_channel(context.guild.id, channel)
-            if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml')):
-                with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'r') as file:
-                    guild_settings = yaml.safe_load(file)
-                    guild_settings['log_channel'] = channel.id
-            else:
-                guild_settings = {'log_channel': channel.id}
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'w+') as file:
-                yaml.dump(guild_settings, file)
-            embed = discord.Embed(
-                title="Log Channel",
-                description=f"Log channel has been set to {channel.mention}",
-                color=self.bot.default_color,
-            )
-            await context.send(embed=embed)
-            self.bot.log.info(f"Log channel set to {channel.mention}", context.guild)
+        self.bot.log.set_log_channel(context.guild.id, channel)
+        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml')):
+            with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'r') as file:
+                guild_settings = yaml.safe_load(file)
+                guild_settings['log_channel'] = channel.id
         else:
-            embed = discord.Embed(
-                title="Log Channel",
-                description="You do not have the required permissions to set the log channel.",
-                color=self.bot.default_color,
-            )
-            await context.send(embed=embed)
+            guild_settings = {'log_channel': channel.id}
+        with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'w+') as file:
+            yaml.dump(guild_settings, file)
+        embed = discord.Embed(
+            title="Log Channel",
+            description=f"Log channel has been set to {channel.mention}",
+            color=self.bot.default_color,
+        )
+        await context.send(embed=embed)
+        self.bot.log.info(f"Log channel set to {channel.mention}", context.guild)
+
+    @commands.command( name="clear_data", description="Clear the data of the bot including custom settings.")
+    @commands.has_permissions(administrator=True)
+    async def cleardata(self, context: Context):
+        '''Clear the data of the bot'''
+        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id))):
+            for file in os.listdir(os.path.join(self.bot.data_dir, str(context.guild.id))):
+                os.remove(os.path.join(self.bot.data_dir, str(context.guild.id), file))
+        self.bot.log.info(f"Data cleared", context.guild)
+        self.bot.log.remove_log_channel(context.guild.id)
+        embed = discord.Embed(
+            title="Data Cleared :wastebasket:",
+            description="The data of the bot has been cleared. Cogs will be reloaded to apply changes.",
+            color=self.bot.default_color,
+        )
+        await context.send(embed=embed)
+        await self.reload(context)
 
 
 async def setup(bot):
