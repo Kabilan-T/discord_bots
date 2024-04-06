@@ -48,8 +48,8 @@ class Instagram(commands.Cog, name="Instagram"):
             url = match.group()
             await self.send_media(context.reply, url, context.guild)
 
-    @commands.command( name="set_channel", description="Set the channel to watch for instagram links.")
-    async def setchannel(self, context: Context, channel: discord.TextChannel = None):
+    @commands.command( name="watch_channel", description="Set the channel to watch for instagram links.")
+    async def watchchannel(self, context: Context, channel: discord.TextChannel = None):
         '''Set the channel to watch for instagram links'''
         if channel == None:
             channel = context.channel
@@ -64,9 +64,9 @@ class Instagram(commands.Cog, name="Instagram"):
                 )
         await context.send(embed=embed)
         self.bot.log.info("Added channel "+str(channel.id)+" to watch for instagram links.", context.guild)
-
-    @commands.command( name="unset_channel", description="Unset the channel to watch for instagram links.")
-    async def unsetchannel(self, context: Context, channel: discord.TextChannel = None):
+    
+    @commands.command( name="unwatch_channel", description="Unset the channel to watch for instagram links.")
+    async def unwatchchannel(self, context: Context, channel: discord.TextChannel = None): 
         '''Unset the channel to watch for instagram links'''
         if channel == None:
             channel = context.channel
@@ -82,7 +82,24 @@ class Instagram(commands.Cog, name="Instagram"):
         await context.send(embed=embed)
         self.bot.log.info("Removed channel "+str(channel.id)+" from watch for instagram links.", context.guild)
 
-
+    @commands.command( name="watch_list", description="Show the list of channels to watch for instagram links.")
+    async def watchlist(self, context: Context):
+        '''Show the list of channels to watch for instagram links'''
+        if str(context.guild.id) in self.channels_to_watch.keys():
+            channels = [context.guild.get_channel(int(channel)).mention for channel in self.channels_to_watch[str(context.guild.id)]]
+            embed = discord.Embed(
+                title="Instagram watch list",
+                description="I am watching for instagram links in the following channels: \n"+", ".join(channels.mention),
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+        else:
+            embed = discord.Embed(
+                title="Instagram watch list",
+                description="I am not watching for instagram links in any channel in this server.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message):
