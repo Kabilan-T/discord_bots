@@ -168,11 +168,12 @@ class Instagram(commands.Cog, name="Instagram"):
         except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
-                    description="Possibly the user is private or the post doesn't exist.",
+                    description="A exception occured while trying to download the post. Possibly the user is private or the post doesn't exist.",
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
             self.bot.log.error("Failed to send post from "+str(url), guild)
+            self.bot.log.error("Exception raised by instaloader: "+str(e), guild)
 
     async def send_reel(self, replier, url, guild=None):
         # send a reel
@@ -202,11 +203,12 @@ class Instagram(commands.Cog, name="Instagram"):
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
-                    description="Possibly the user is private or the reel doesn't exist.",
+                    description="A exception occured while trying to download the reel. Possibly the user is private or the reel doesn't exist.",
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
             self.bot.log.error("Failed to send reel from "+str(url), guild)
+            self.bot.log.error("Exception raised by instaloader: "+str(e), guild)
 
     async def send_stories(self, replier, url, guild=None):
         # stories requires
@@ -252,11 +254,12 @@ class Instagram(commands.Cog, name="Instagram"):
         except instaloader.exceptions.InstaloaderException:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
-                    description="Possibly the user is private or the reel doesn't exist.",
+                    description="A exception occured while trying to download the story. Possibly the user is private or the story doesn't exist.",
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
             self.bot.log.error("Failed to send story from "+str(url), guild)
+            self.bot.log.error("Exception raised by instaloader: "+str(e), guild)
 
     def _get_credentials(self):
         # get the instagram credentials
