@@ -6,6 +6,7 @@ auto:
   default_color: 0x3498DB
   extensions:
     - 'cogs.general'
+    - 'cogs.manage'
     - 'cogs.auto.greetings'
     - 'cogs.auto.moderation'
     - 'cogs.auto.utilities'
@@ -18,6 +19,7 @@ eve:
   default_color: 0xBEBEFE
   extensions:
     - 'cogs.general'
+    - 'cogs.manage'
     - 'cogs.eve.voice'
     - 'cogs.eve.bingo'
 mo:
@@ -28,4 +30,5 @@ mo:
   default_color: 0x8A3AB9
   extensions:
     - 'cogs.general'
+    - 'cogs.manage'
     - 'cogs.mo.instagram'

@@ -69,10 +69,15 @@ class BaseBot(commands.Bot):
         self.log.info(f"Reloading extensions for {self.name}")
         self.succeeded = list()
         self.failed = list()
-        for extension in self.extensions_to_load:
+        for extension_to_load in self.extensions_to_load:
             try:
-                await self.reload_extension(f"bots.{extension}")
-                self.log.info(f"Reloaded extension {extension}")
+                extension = "bots."+extension_to_load
+                if extension in self.extensions:
+                    await self.reload_extension(extension)
+                    self.log.info(f"Reloaded extension {extension}")
+                else:
+                    await self.load_extension(extension)
+                    self.log.info(f"Loaded extension {extension}")
                 self.succeeded.append(extension)
             except Exception as e:
                 exception = f"{type(e).__name__}: {e}"
