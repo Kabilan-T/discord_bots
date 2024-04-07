@@ -92,10 +92,11 @@ class Instagram(commands.Cog, name="Instagram"):
     async def watchlist(self, context: Context):
         '''Show the list of channels to watch for instagram links'''
         if str(context.guild.id) in self.channels_to_watch.keys():
-            channels = [context.guild.get_channel(int(channel)).mention for channel in self.channels_to_watch[str(context.guild.id)]]
+            watch_list = self.channels_to_watch[str(context.guild.id)]
+            channels = [context.guild.get_channel(int(channel)).mention for channel in watch_list]
             embed = discord.Embed(
                 title="Instagram watch list",
-                description="I am watching for instagram links in the following channels: \n"+", ".join(channels.mention),
+                description="I am watching for instagram links in the following channels: \n"+", ".join(channels),
                 color=self.bot.default_color,
             )
             await context.send(embed=embed)
