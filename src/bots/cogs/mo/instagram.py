@@ -19,7 +19,7 @@ from discord.ext.commands import Context
 import instaloader
 
 tmp_download_dir = "tmp"
-instagram_regex = r'\bhttps?:\/\/(?:www\.)?instagram\.com\/(?:[a-zA-Z0-9_\.]+\/)?[a-zA-Z0-9_\.\/-]+\/?\b'
+instagram_media = r'\bhttps?:\/\/(?:www\.)?instagram\.com\/(?:[a-zA-Z0-9_\.]+\/)?[a-zA-Z0-9_\.\/-]+\/?\b'
 
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):
@@ -43,10 +43,16 @@ class Instagram(commands.Cog, name="Instagram"):
     @commands.command( name="show", description="Download a post from instagram.")
     async def show(self, context: Context, message: str):
         '''Download a media from instagram and show it'''
-        match = re.match(instagram_regex, message)
+        match = re.match(instagram_media, message)
         if match is not None:
-            url = match.group()
-            await self.send_media(context.reply, url, context.guild)
+            await self.send_media(context.reply, message.content, context.guild)
+        else:
+            embed = discord.Embed(
+                    title="Sorry! There is some problem. :sweat:",
+                    description="The message doesn't contain a valid instagram link.",
+                    color=self.bot.default_color,
+                    )
+            await context.reply(embed=embed)
 
     @commands.command( name="watch_channel", description="Set the channel to watch for instagram links.")
     async def watchchannel(self, context: Context, channel: discord.TextChannel = None):
@@ -105,17 +111,16 @@ class Instagram(commands.Cog, name="Instagram"):
     async def on_message(self, message):
         ''' Watch for instagram links and send the media'''
         if str(message.channel.id) in self.channels_to_watch.get(str(message.guild.id), []) and message.author.bot == False and message.content != "":
-            match = re.match(instagram_regex, message.content)
+            match = re.match(instagram_media, message.content)
             if match is not None:
-                instagram_url = match.group()
-                if len(instagram_url.split("/")) == 4:
+                if len(message.content.split("/")) == 4:
                     # Link is of a profile - get the bio
                     self.bot.log.info("Got a link of a profile from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
-                    await self.send_bio(message.reply, instagram_url, message.guild)
-                elif len(instagram_url.split("/")) >= 5:
+                    await self.send_bio(message.reply, message.content, message.guild)
+                elif len(message.content.split("/")) >= 5:
                     # Link is of a media - get the media and send it
                     self.bot.log.info("Got a link of a media from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
-                    await self.send_media(message.reply, instagram_url, message.guild)
+                    await self.send_media(message.reply, message.content, message.guild)
                 else:
                     return
 
@@ -148,20 +153,20 @@ class Instagram(commands.Cog, name="Instagram"):
             await replier(embed=embed)
             self.bot.log.error("Failed to send bio of "+str(username), guild)
     
-    async def send_media(self, replier, url, guild=None):
+    async def send_media(self, replier, message, guild=None):
         # download a media from instagram url and send it
-        if url.split("/")[3] == "p":
-            await self.send_post(replier, url, guild)
-        elif url.split("/")[3] == "reel":
-            await self.send_reel(replier, url, guild)
-        elif url.split("/")[3] == "stories":
-            await self.send_stories(replier, url, guild)
+        if message.split("/")[3] == "p":
+            await self.send_post(replier, message, guild)
+        elif message.split("/")[3] == "reel":
+            await self.send_reel(replier, message, guild)
+        elif message.split("/")[3] == "stories":
+            await self.send_stories(replier, message, guild)
 
-    async def send_post(self, replier, url, guild=None):
+    async def send_post(self, replier, message, guild=None):
         # send a post
+        shortcode = message.split("/")[-2] # (https://www.instagram.com/p/<shortcode>/<post_id>)
         try:
             #Find the post from the url
-            shortcode = url.split("/")[-1]  # (https://www.instagram.com/p/<shortcode>)
             post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the post
             self.loader.download_post(post, target=tmp_download_dir)
@@ -189,14 +194,14 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send post from "+str(url), guild)
+            self.bot.log.error("Failed to send post.\nShortcode: '"+str(shortcode)+"'\nMessage:\n'"+str(message)+"'", guild)
             self.bot.log.error("Exception raised by instaloader: "+str(e), guild)
 
-    async def send_reel(self, replier, url, guild=None):
+    async def send_reel(self, replier, message, guild=None):
         # send a reel
+        shortcode = message.split("/")[-2] # (https://www.instagram.com/reel/<shortcode>/<post_id>)
         try:
             #Find the reel from the url
-            shortcode = url.split("/")[-1]  # (https://www.instagram.com/reel/<shortcode>)
             reel = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the reel
             self.loader.download_post(reel, target=tmp_download_dir)
@@ -217,17 +222,17 @@ class Instagram(commands.Cog, name="Instagram"):
             embed.set_thumbnail(url=reel.owner_profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
             self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel ", guild)
-        except instaloader.exceptions.InstaloaderException:
+        except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="A exception occured while trying to download the reel. Possibly the user is private or the reel doesn't exist.",
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send reel from "+str(url), guild)
+            self.bot.log.error("Failed to send reel.\nShortcode: '"+str(shortcode)+"'\nMessage:\n'"+str(message)+"'", guild)
             self.bot.log.error("Exception raised by instaloader: "+str(e), guild)
 
-    async def send_stories(self, replier, url, guild=None):
+    async def send_stories(self, replier, message, guild=None):
         # stories requires
         if self.is_credentials_provided == False:
             embed = discord.Embed(
@@ -247,8 +252,8 @@ class Instagram(commands.Cog, name="Instagram"):
                 await replier(embed=embed)
                 return
         # send a story
+        profile = instaloader.Profile.from_username(self.loader.context, message.split("/")[4])
         try:
-            profile = instaloader.Profile.from_username(self.loader.context, url.split("/")[4])
             # Download the story
             self.loader.download_stories([profile.userid],  filename_target=tmp_download_dir)
             # if there is a video and image with same name, remove the image
@@ -268,14 +273,14 @@ class Instagram(commands.Cog, name="Instagram"):
             embed.set_thumbnail(url=profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
             self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story", guild)
-        except instaloader.exceptions.InstaloaderException:
+        except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
-                    description="A exception occured while trying to download the story. Possibly the user is private or the story doesn't exist.",
+                    description="A exception occured while trying to download the story. Possibly the user is private or the story doesn't exist or the user @"+str(profile.username)+" doesn't have any stories.",
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send story from "+str(url), guild)
+            self.bot.log.error("Failed to send story.\nUsername: '"+str(profile.username)+"'\nMessage:\n'"+str(message)+"'", guild)
             self.bot.log.error("Exception raised by instaloader: "+str(e), guild)
 
     def _get_credentials(self):
