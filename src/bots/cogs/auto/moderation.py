@@ -57,7 +57,7 @@ class Moderation(commands.Cog, name="Moderation"):
         if dm:
             await self.send_dm(context, member, action, reason)
 
-    async def send_dm(self, context: Context, member: discord.Member, action: str, reason: str = None):
+    async def send_dm(self, context: Context, member: discord.Member, action: str, *, reason: str = None):
         embed = discord.Embed(
             title="Moderation activity :judge:",
             description=f"You have been {action} in **{context.guild.name}**",
@@ -85,7 +85,7 @@ class Moderation(commands.Cog, name="Moderation"):
                     self.warns[int(guild_id)] = dict()
 
     @commands.command( name="mute", description="Mute a member in the server.")
-    async def mute(self, context: Context, member: discord.Member, reason: str = None):
+    async def mute(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Mute a member in the server'''
         if self.check(context, PermissionToMute):
             self.bot.log.info(f"{context.author.name} muted {member.name} in {context.guild.name}", context.guild)
@@ -93,7 +93,7 @@ class Moderation(commands.Cog, name="Moderation"):
             await member.edit(mute=True, reason=reason)
     
     @commands.command( name="deafen", description="Deafen a member in the server.")
-    async def deafen(self, context: Context, member: discord.Member, reason: str = None):
+    async def deafen(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Deafen a member in the server'''
         if self.check(context, PermissionToDeafen):
             self.bot.log.info(f"{context.author.name} deafened {member.name} in {context.guild.name}", context.guild)
@@ -101,7 +101,7 @@ class Moderation(commands.Cog, name="Moderation"):
             await member.edit(deafen=True, reason=reason)
     
     @commands.command( name="warn", description="Warn a member in the server.")
-    async def warn(self, context: Context, member: discord.Member, reason: str = None):
+    async def warn(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Warn a member in the server'''
         if self.check(context, PermissionToWarn):
             self.bot.log.info(f"{context.author.name} warned {member.name} in {context.guild.name}", context.guild)
@@ -135,7 +135,7 @@ class Moderation(commands.Cog, name="Moderation"):
             await context.send(embed=embed)
     
     @commands.command( name="kick", description="Kick a member from the server.")
-    async def kick(self, context: Context, member: discord.Member, reason: str = None):
+    async def kick(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Kick a member from the server'''
         if self.check(context, PermissionToKick):
             self.bot.log.info(f"{context.author.name} kicked {member.name} from {context.guild.name}", context.guild)
@@ -143,7 +143,7 @@ class Moderation(commands.Cog, name="Moderation"):
             await member.kick(reason=reason)
 
     @commands.command( name="softban", description="Softban a member from the server.")
-    async def softban(self, context: Context, member: discord.Member, reason: str = None):
+    async def softban(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Softban a member from the server'''
         if self.check(context, PermissionToBan):
             self.bot.log.info(f"{context.author.name} softbanned {member.name} from {context.guild.name}", context.guild)
@@ -152,7 +152,7 @@ class Moderation(commands.Cog, name="Moderation"):
             await member.unban(reason=reason)
         
     @commands.command( name="ban", description="Ban a member from the server.")
-    async def ban(self, context: Context, member: discord.Member, reason: str = None):
+    async def ban(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Ban a member from the server'''
         if self.check(context, PermissionToBan):
             self.bot.log.info(f"{context.author.name} banned {member.name} from {context.guild.name}", context.guild)
@@ -160,7 +160,7 @@ class Moderation(commands.Cog, name="Moderation"):
             await member.ban(reason=reason)
     
     @commands.command( name="unmute", description="Unmute a member in the server.")
-    async def unmute(self, context: Context, member: discord.Member, reason: str = None):
+    async def unmute(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Unmute a member in the server'''
         if self.check(context, PermissionToMute):
             self.bot.log.info(f"{context.author.name} unmuted {member.name} in {context.guild.name}", context.guild)
@@ -168,7 +168,7 @@ class Moderation(commands.Cog, name="Moderation"):
             await member.edit(mute=False, reason=reason)
     
     @commands.command( name="undeafen", description="Undeafen a member in the server.")
-    async def undeafen(self, context: Context, member: discord.Member, reason: str = None):
+    async def undeafen(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Undeafen a member in the server'''
         if self.check(context, PermissionToDeafen):
             self.bot.log.info(f"{context.author.name} undeafened {member.name} in {context.guild.name})", context.guild)
@@ -214,7 +214,7 @@ class Moderation(commands.Cog, name="Moderation"):
                 await context.send(embed=embed)
     
     @commands.command( name="unban", description="Unban a member from the server.")
-    async def unban(self, context: Context, member: discord.Member, reason: str = None):
+    async def unban(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Unban a member from the server'''
         if self.check(context, PermissionToBan):
             self.bot.log.info(f"{context.author.name} unbanned {member.name} in {context.guild.name}", context.guild)
