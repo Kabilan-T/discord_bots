@@ -5,3 +5,4 @@ gTTS==2.5.0
 instaloader==4.10.3
 pyaml==23.9.7
 requests==2.31.0
+zipfile36==0.1.3

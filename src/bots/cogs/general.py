@@ -12,6 +12,7 @@
 import os
 import io
 import yaml
+import zipfile
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -199,6 +200,35 @@ class General(commands.Cog, name="General"):
         )
         await context.send(embed=embed)
         await self.reload(context)
+    
+    @commands.command( name="get_data", description="Send the data of the bot as zip file.")
+    @commands.has_permissions(administrator=True)
+    async def getdata(self, context: Context):
+        '''Get the data of the bot'''
+        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id))):
+            dir_path = os.path.join(self.bot.data_dir, str(context.guild.id))
+            zip_file_path = os.path.join(self.bot.data_dir, f"{context.guild.id}.zip")
+            with zipfile.ZipFile(zip_file_path, 'w') as zipf:
+                for root, dirs, files in os.walk(dir_path):
+                    for file in files:
+                        zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), dir_path))
+            file = discord.File(filename=f"{self.bot.name}_{context.guild.id}.zip",  
+                                fp=zip_file_path)
+            embed = discord.Embed(
+                title="Data :file_folder:",
+                description="Here is the data of the bot.",
+                color=self.bot.default_color,
+            )
+            await context.reply(embed=embed, file=file)
+            self.bot.log.info(f"Data sent to {context.author.name}", context.guild)
+            os.remove(zip_file_path)
+        else:
+            embed = discord.Embed(
+                title="Data",
+                description="No data found.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
 
 
 async def setup(bot):
