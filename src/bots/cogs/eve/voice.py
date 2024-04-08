@@ -128,7 +128,7 @@ class Voice(commands.Cog, name="Voice Features"):
     @commands.command(name="set_greet", aliases=["sg"], description="Set the greet message specific to a user")
     async def setgreet(self, context: Context, member: discord.Member, *, text: str):
         ''' Set the greet message for the user '''
-        if context.guild.id not in self.greet_messages.keys():
+        if str(context.guild.id) not in self.greet_messages.keys():
             self.greet_messages[str(context.guild.id)] = dict()
         self.greet_messages[str(context.guild.id)][str(member.id)] = text
         embed = discord.Embed(title="Greet message set :wave:",
