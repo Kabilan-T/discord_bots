@@ -285,10 +285,7 @@ class Bingo(commands.Cog, name="Bingo"):
             if game_id not in self.games:
                 return False
             number = int(message.content)
-            if self.is_number_valid(number, game_id):
-                self.games[game_id]["current_number"] = number
-                return True
-            else:
+            if not self.is_number_valid(number, game_id):
                 embed = discord.Embed(
                     title="Invalid number :confused:",
                     description=f"Please send a number from your chart to call it.",
@@ -296,6 +293,8 @@ class Bingo(commands.Cog, name="Bingo"):
                 )
                 await player.send(embed=embed)
                 return await self.call_number(player, game_id)
+            self.games[game_id]["current_number"] = number
+            return True
         except asyncio.TimeoutError:
             if game_id not in self.games:
                 return False
