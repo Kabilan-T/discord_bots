@@ -12,8 +12,8 @@
 import os
 import re
 import yaml
+import asyncio
 import discord
-import requests
 from discord.ext import commands
 from discord.ext.commands import Context
 import instaloader
@@ -24,16 +24,11 @@ instagram_media = r'\bhttps?:\/\/(?:www\.)?instagram\.com\/(?:[a-zA-Z0-9_\.]+\/)
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):
         self.bot = bot
-        self.loader = instaloader.Instaloader()
+        self.loader = instaloader.Instaloader(download_pictures = True, download_videos= True,
+                                              download_video_thumbnails = False, save_metadata= False)
         # channels to watch for instagram links
         self.channels_to_watch = dict()
         self.load_channel_watch_list()
-        # self.channels_to_watch.append(1183051684767871076) # axiom server - sauce-deck channel
-        # get the instagram credentials
-        self.is_credentials_provided = self._get_credentials()
-        # login to instagram
-        if self.is_credentials_provided:
-            self._login_to_instagram()
 
     @commands.command( name="bio", description="Get the bio of a user.")
     async def bio(self, context: Context, username: str):
@@ -111,7 +106,9 @@ class Instagram(commands.Cog, name="Instagram"):
     @commands.Cog.listener()
     async def on_message(self, message):
         ''' Watch for instagram links and send the media'''
-        if str(message.channel.id) in self.channels_to_watch.get(str(message.guild.id), []) and message.author.bot == False and message.content != "":
+        if message.guild is None or message.author.bot or message.content == "":
+            return
+        if str(message.channel.id) in self.channels_to_watch.get(str(message.guild.id), []):
             match = re.match(instagram_media, message.content)
             if match is not None:
                 if len(message.content.split("/")) == 4:
@@ -156,6 +153,11 @@ class Instagram(commands.Cog, name="Instagram"):
     
     async def send_media(self, replier, message, guild=None):
         # download a media from instagram url and send it
+        session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
+        if os.path.exists(session_dir):
+            session_file = os.path.join(session_dir, os.listdir(session_dir)[0])
+            username = os.listdir(session_dir)[0].split(".")[0]
+            self.loader.load_session_from_file(username, session_file)
         if message.split("/")[3] == "p":
             await self.send_post(replier, message, guild)
         elif message.split("/")[3] == "reel":
@@ -195,8 +197,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send post.\nShortcode: '"+str(shortcode)+"'\nMessage:\n'"+str(message)+"'", guild)
-            self.bot.log.error("Exception raised by instaloader: "+str(e), guild)
+            self.bot.log.error("Failed to send post.\nShortcode: '"+str(shortcode)+"'\nMessage:\n'"+str(message)+"'\nException raised by instaloader: "+str(e), guild)
 
     async def send_reel(self, replier, message, guild=None):
         # send a reel
@@ -230,28 +231,19 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send reel.\nShortcode: '"+str(shortcode)+"'\nMessage:\n'"+str(message)+"'", guild)
-            self.bot.log.error("Exception raised by instaloader: "+str(e), guild)
+            self.bot.log.error("Failed to send reel.\nShortcode: '"+str(shortcode)+"'\nMessage:\n'"+str(message)+"'\nException raised by instaloader: "+str(e), guild)
 
     async def send_stories(self, replier, message, guild=None):
         # stories requires
-        if self.is_credentials_provided == False:
+        if not self.loader.context.is_logged_in:
             embed = discord.Embed(
                 title="Sorry! There is some problem. :sweat:",
                 description="Stories can be downloaded only if the bot is logged in. There is no login credentials provided to log in to instagram.",
                 color=self.bot.default_color,
                 )
             await replier(embed=embed)
+            self.bot.log.error("Failed to send story. No login credentials provided.", guild)
             return
-        else:
-            if self._login_to_instagram() == False:
-                embed = discord.Embed(
-                    title="Sorry! There is some problem. :sweat:",
-                    description="I tried to log in to instagram but unfortunately I couldn't. Try again later.",
-                    color=self.bot.default_color,
-                    )
-                await replier(embed=embed)
-                return
         # send a story
         profile = instaloader.Profile.from_username(self.loader.context, message.split("/")[4])
         try:
@@ -281,39 +273,88 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send story.\nUsername: '"+str(profile.username)+"'\nMessage:\n'"+str(message)+"'", guild)
-            self.bot.log.error("Exception raised by instaloader: "+str(e), guild)
+            self.bot.log.error("Failed to send story.\nUsername: '"+str(profile.username)+"'\nMessage:\n'"+str(message)+"'\nException raised by instaloader: "+str(e), guild)
 
-    def _get_credentials(self):
-        # get the instagram credentials
-        if os.environ.get("INSTAGRAM_USERNAME") != None and os.environ.get("INSTAGRAM_PASSWORD") != None:
-            self._username = os.environ.get("INSTAGRAM_USERNAME")
-            self._password = os.environ.get("INSTAGRAM_PASSWORD")
-            self.bot.log.info("Instagram credentials are provided")
-            return True
-        else:
-            self.bot.log.info("Instagram credentials are not provided")
-            return False
-    
-    def _login_to_instagram(self):
-        # check if already logged in
-        if self.loader.context.is_logged_in == True:
-            self.bot.log.info("Already logged in to instagram.")
-            return True
-        # try to log in
+    @commands.command(name="login_instagram", description="Log in to instagram.")
+    @commands.has_permissions(administrator=True)
+    async def login_instagram(self, context: Context):
+        '''Get instagram credentials privately in dm and log in to instagram'''
+        embed = discord.Embed(title="Instagram credentials",
+                              description="Please open your DMs to provide your instagram credentials.",
+                              color=self.bot.default_color)
+        await context.send(embed=embed)
         try:
-            self.bot.log.info("Trying to log in to instagram ...")
-            self.loader.login(self._username, self._password)
-            # check if logged in
-            if self.loader.test_login() == self._username:
-                self.bot.log.info("Logged in to instagram successfully.")
-                return True
+            def check(message):
+                return message.author == context.author and message.channel == context.author.dm_channel
+            # Asking for username
+            embed = discord.Embed(title="Instagram credentials",
+                                  description="Please enter the username",
+                                  color=self.bot.default_color)
+            await context.author.send(embed=embed)
+            message = await self.bot.wait_for("message", timeout=60, check=check)
+            _username = str(message.content)
+            # Asking for password
+            embed = discord.Embed(title="Instagram credentials",
+                                  description="Please enter the password",
+                                  color=self.bot.default_color)
+            await context.author.send(embed=embed)
+            message = await self.bot.wait_for("message", timeout=60, check=check)
+            _password = str(message.content)
+            self.bot.log.info("Got instagram credentials from "+str(context.author.name), context.guild)
+            # Attempt to login
+            if self._login_to_instagram(_username, _password):
+                embed = discord.Embed(title="Logged in to instagram",
+                                      description="Successfully logged in to instagram.",
+                                      color=self.bot.default_color)
+                session_dir = os.path.join(self.bot.data_dir, str(context.guild.id),"session")
+                if os.path.exists(session_dir):
+                    os.system("rm -rf "+session_dir)
+                session_file = os.path.join(session_dir, f"{_username}.session")
+                self.loader.save_session_to_file(session_file)
             else:
-                self.bot.log.error("Failed to log in to instagram.")
+                embed = discord.Embed(title="Sorry! Failed to log in to instagram. :sweat:",
+                                      description="Please check the credentials and try again.",color=self.bot.default_color)
+            await context.author.send(embed=embed)
+            await context.reply(embed=embed)
+        except discord.Forbidden:
+            embed = discord.Embed(title="Ooops! I can't send you DM :slight_frown:",
+                                  description=f"Please enable DMs from server members to provide instagram credentials",
+                                  color=self.bot.default_color)
+            await context.send(embed=embed)
+            self.bot.log.error("Unable to send DM to user. User haven't enabled DMs",context.guild)
+        except asyncio.TimeoutError:
+            embed = discord.Embed(
+                title="Ooops! Time's up :slight_frown:",
+                description=f"You took too long to provide a response. Please try again",
+                color=self.bot.default_color,
+            )
+            await context.author.send(embed=embed)
+            await context.reply(embed=embed)
+            self.bot.log.warn("User too long to respond",context.guild)
+        except Exception as e:
+            embed = discord.Embed(
+                title="Sorry! There is some problem. :sweat:",
+                description="An exception occurred while trying to get the credentials. Try again later.",
+                color=self.bot.default_color,
+            )
+            await context.author.send(embed=embed)
+            self.bot.log.error(f"Exception raised while trying to get instagram credentials: {str(e)}",context.guild)
+
+    def _login_to_instagram(self, _username=None, _password=None):
+        self.bot.log.info("Attempting to log in to instagram ...")
+        if _username is not None and _password is not None:
+            try:
+                self.loader.login(_username, _password)
+                if self.loader.test_login() == _username:
+                    self.bot.log.info("Logged in to instagram.")
+                    return True
+                else:
+                    self.bot.log.error("Failed to log in to instagram.")
+                    return False
+            except instaloader.exceptions.BadCredentialsException:
+                self.bot.log.error("Failed to log in to instagram. Bad credentials.")
                 return False
-        except instaloader.exceptions.BadCredentialsException:
-            self.bot.log.error("Failed to log in to instagram. Bad credentials.")
-            return False
+        return False
         
     def load_channel_watch_list(self):
         # load the channels to watch for instagram links
