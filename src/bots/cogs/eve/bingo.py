@@ -15,6 +15,8 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
+import matplotlib.pyplot as plt
+from io import BytesIO
 
 
 class Bingo(commands.Cog, name="Bingo"):
@@ -162,12 +164,15 @@ class Bingo(commands.Cog, name="Bingo"):
             self.games[game_id]["chart"][player.id] = self.create_bingo_chart()
             self.games[game_id]["score"][player.id] = 0
             embed = discord.Embed(
-                title="Your bingo chart is ready. :smiley:",
-                description=f"{self.format_bingo_chart(self.games[game_id]['chart'][player.id])}",
+                title="Bingo charts are ready. :smiley:",
+                description=f"Your Bingo Chart:",
                 color=self.bot.default_color,
                 )
+            board = self.format_bingo_chart(self.games[game_id]['chart'][player.id])
+            file = discord.File(board, filename="bingo_chart.png")
+            embed.set_image(url="attachment://bingo_chart.png")
             if player != self.bot.user:
-                await player.send(embed=embed)
+                await player.send(embed=embed, file=file)
         self.games[game_id]["current_player"] = self.games[game_id]["players"][0]
 
     async def end_game(self, game_id):
@@ -201,11 +206,14 @@ class Bingo(commands.Cog, name="Bingo"):
     async def play_game(self, game_id):
         embed = discord.Embed(
             title="It's your turn to play! :smiley:",
-            description=f"Your Bingo Chart:\n{self.format_bingo_chart(self.games[game_id]['chart'][self.games[game_id]['current_player'].id])}",
+            description=f"Your Bingo Chart:",
             color=self.bot.default_color,
             )
+        board = self.format_bingo_chart(self.games[game_id]['chart'][self.games[game_id]['current_player'].id])
+        file = discord.File(board, filename="bingo_chart.png")
+        embed.set_image(url="attachment://bingo_chart.png")
         if self.games[game_id]["current_player"] != self.bot.user:
-            await self.games[game_id]["current_player"].send(embed=embed)
+            await self.games[game_id]["current_player"].send(embed=embed, file=file)
         self.bot.log.info(f"Game in #{self.games[game_id]['channel'].name} of {self.games[game_id]['channel'].guild.name} - {self.games[game_id]['current_player'].name}'s turn.", self.games[game_id]["channel"].guild)
 
         for player in self.games[game_id]["players"]:
@@ -237,19 +245,25 @@ class Bingo(commands.Cog, name="Bingo"):
                 if player != self.games[game_id]["current_player"]:
                     embed = discord.Embed(
                         title=f"{self.games[game_id]['current_player'].display_name} called {self.games[game_id]['current_number']}!",
-                        description=f"Your Bingo Chart:\n{self.format_bingo_chart(self.games[game_id]['chart'][player.id])}",
+                        description=f"Your Bingo Chart:",
                         color=self.bot.default_color,
                         )
+                    board = self.format_bingo_chart(self.games[game_id]['chart'][player.id])
+                    file = discord.File(board, filename="bingo_chart.png")
+                    embed.set_image(url="attachment://bingo_chart.png")
                     if player != self.bot.user:
-                        await player.send(embed=embed)
+                        await player.send(embed=embed, file=file)
                 elif player == self.games[game_id]["current_player"]:
                     embed = discord.Embed(
                         title=f"You called {self.games[game_id]['current_number']}!",
-                        description=f"Your Bingo Chart:\n{self.format_bingo_chart(self.games[game_id]['chart'][player.id])}",
+                        description=f"Your Bingo Chart:",
                         color=self.bot.default_color,
                         )
+                    board = self.format_bingo_chart(self.games[game_id]['chart'][player.id])
+                    file = discord.File(board, filename="bingo_chart.png")
+                    embed.set_image(url="attachment://bingo_chart.png")
                     if player != self.bot.user:
-                        await player.send(embed=embed)
+                        await player.send(embed=embed, file=file)
         
             if score_updated:
                 embed = discord.Embed(
@@ -279,7 +293,7 @@ class Bingo(commands.Cog, name="Bingo"):
         await player.send(embed=embed)
         try:
             message = await self.bot.wait_for("message",
-                                              timeout=60,
+                                              timeout=30,
                                               check=lambda message: message.author == player and message.channel == player.dm_channel and game_id in self.games
             )
             if game_id not in self.games:
@@ -357,17 +371,25 @@ class Bingo(commands.Cog, name="Bingo"):
         return score
     
     def format_bingo_chart(self, chart):
-        chart_display = str()
-        for i, row in enumerate(chart):
-            chart_display += "||"
-            for j, cell in enumerate(row):
-                if cell > 0:
-                    chart_display += f" {cell:2} "
-                elif cell < 0:
-                    chart_display += f"  X "
-                chart_display += " " if j < 4 else "||"
-            chart_display += "\n" if i < 4 else ""
-        return f"```\n{chart_display}```"
+        table_data = []
+        for row in chart:
+            table_data.append([str(cell) if cell > 0 else 'X' for cell in row])
+        fig, ax = plt.subplots(figsize=(2, 2))
+        ax.axis('off')
+        colors = ['#0000A0','#ADD8E6']  # Light blue and dark blue
+        table = ax.table(cellText=table_data, loc='center', cellLoc='center', colWidths=[0.1]*5, 
+                        cellColours=[[colors[0] if table_data[i][j] == 'X' else colors[1] for j in range(5)] for i in range(5)])
+        table.auto_set_font_size(False)
+        table.set_fontsize(12)
+        table.scale(2, 2)
+        # Hide axes
+        ax.axis('off')
+        # Save the figure to a buffer
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png')
+        plt.close(fig)
+        buffer.seek(0)
+        return buffer
     
     def get_scores_message(self, game_id):
         message = str()
