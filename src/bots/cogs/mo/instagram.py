@@ -59,11 +59,11 @@ class Instagram(commands.Cog, name="Instagram"):
             if match is not None:
                 if len(message.content.split("/")) == 4:
                     # Link is of a profile - get the bio
-                    self.bot.log.info("Got a link of a profile from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
+                    self.bot.log.info("Got a link of a profile from "+message.channel.name, message.guild)
                     await self.send_bio(message.reply, message.content, message.guild)
                 elif len(message.content.split("/")) >= 5:
                     # Link is of a media - get the media and send it
-                    self.bot.log.info("Got a link of a media from "+message.guild.name+" #"+message.channel.name+" sent by @"+message.author.name)
+                    self.bot.log.info("Got a link of a media from "+message.guild.name, message.guild)
                     await self.send_media(message.reply, message.content, message.guild)
                 else:
                     return
@@ -95,7 +95,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send bio of "+str(username), guild)
+            self.bot.log.warning("Failed to send bio of "+str(username), guild)
     
     async def send_media(self, replier, message, guild=None):
         # download a media from instagram url and send it
@@ -140,7 +140,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send post.\nShortcode: '"+str(shortcode)+"'\nMessage:\n'"+str(message)+"'\nException raised by instaloader: "+str(e), guild)
+            self.bot.log.warning("Failed to send post from shortcode '"+str(shortcode)+"'. Exception raised by instaloader: "+str(e), guild)
 
     async def send_reel(self, replier, message, guild=None):
         # send a reel
@@ -174,7 +174,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send reel.\nShortcode: '"+str(shortcode)+"'\nMessage:\n'"+str(message)+"'\nException raised by instaloader: "+str(e), guild)
+            self.bot.log.warning("Failed to send reel from shortcode '"+str(shortcode)+"'. Exception raised by instaloader: "+str(e), guild)
 
     async def send_stories(self, replier, message, guild=None):
         # stories requires
@@ -185,7 +185,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 color=self.bot.default_color,
                 )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send story. No login credentials provided.", guild)
+            self.bot.log.warning("Failed to send story. No login credentials provided.", guild)
             return
         # send a story
         profile = instaloader.Profile.from_username(self.loader.context, message.split("/")[4])
@@ -216,7 +216,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=self.bot.default_color,
                     )
             await replier(embed=embed)
-            self.bot.log.error("Failed to send story.\nUsername: '"+str(profile.username)+"'\nMessage:\n'"+str(message)+"'\nException raised by instaloader: "+str(e), guild)
+            self.bot.log.warning("Failed to send story of @"+str(profile.username)+"Exception raised by instaloader: "+str(e), guild)
 
     @commands.command( name="watch_channel", description="Set the channel to watch for instagram links.")
     async def watchchannel(self, context: Context, channel: discord.TextChannel = None):
@@ -385,7 +385,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 )
             await context.author.send(embed=embed)
             await context.reply(embed=embed)
-            self.bot.log.error("User took too long to provide instagram credentials.", context.guild)
+            self.bot.log.warning("User took too long to provide instagram credentials.", context.guild)
             return None, None
         except discord.Forbidden:
             embed = discord.Embed(
@@ -394,7 +394,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 color=self.bot.default_color,
                 )
             await context.reply(embed=embed)
-            self.bot.log.error("Couldn't send DM to user "+str(context.author.name), context.guild)
+            self.bot.log.warning("Couldn't send DM to user "+str(context.author.name), context.guild)
             return None, None
     
     async def _login_instagram(self, context: Context, username: str, password: str):
@@ -403,11 +403,11 @@ class Instagram(commands.Cog, name="Instagram"):
             self.loader.context.login(username, password)
             self.bot.log.info("Logged in to instagram as "+str(username), context.guild)
             if self.loader.context.test_login() != username:
-                self.bot.log.error("Test login failed. Couldn't log in to instagram as "+str(username), context.guild)
+                self.bot.log.warning("Test login failed. Couldn't log in to instagram as "+str(username), context.guild)
                 return False
             return True
         except instaloader.exceptions.InstaloaderException as e:
-            self.bot.log.error("Failed to log in to instagram as "+str(username)+". Exception raised by instaloader: "+str(e), context.guild)
+            self.bot.log.warning("Failed to log in to instagram as "+str(username)+". Exception raised by instaloader: "+str(e), context.guild)
             return False
     
     def load_session(self, guild : discord.Guild):
@@ -419,7 +419,7 @@ class Instagram(commands.Cog, name="Instagram"):
             self.loader.load_session_from_file(username, session_file)
             self.bot.log.info("Loaded session of "+str(username)+" for guild "+str(guild.name), guild)
         else:
-            self.bot.log.info("No session found for guild "+str(guild.name), guild)
+            self.bot.log.warning("No session found for guild "+str(guild.name), guild)
     
     def save_session(self, guild : discord.Guild):
         # save the session to file

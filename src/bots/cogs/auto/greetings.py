@@ -33,6 +33,7 @@ class Greetings(commands.Cog, name="Greetings"):
             await member.send(embed=embed)
             self.bot.log.info(f"Sending greeting message to {member.display_name} in DM", guild)
         except discord.Forbidden:
+            self.bot.log.warning(f"Failed to send greeting message to {member.display_name} in DM", guild)
             pass
 
     @commands.Cog.listener()
@@ -51,6 +52,7 @@ class Greetings(commands.Cog, name="Greetings"):
             await member.send(embed=embed)
             self.bot.log.info(f"Sending goodbye message to {member.display_name} in DM", guild)
         except discord.Forbidden:
+            self.bot.log.warning(f"Failed to send goodbye message to {member.display_name} in DM", guild)
             pass
 
     async def get_welcome_message(self, guild: discord.Guild,  member: discord.Member):

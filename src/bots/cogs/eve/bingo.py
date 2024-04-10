@@ -24,7 +24,7 @@ class Bingo(commands.Cog, name="Bingo"):
         self.games = {}  # Store active games
 
     @commands.command(name="bingo", description="Start a game of bingo.")
-    async def bingo(self, context: Context, add_bot: typing.Optional[bool] = False, *players: discord.Member):
+    async def bingo(self, context: Context, add_bot: typing.Optional[bool] = True, *players: discord.Member):
         '''Starts a game of bingo'''
         self.bot.log.info(f"Bingo game requested by {context.author.name}", context.guild)
         # Check if players are mentioned
@@ -34,7 +34,7 @@ class Bingo(commands.Cog, name="Bingo"):
                 description=f"Use `{self.bot.prefix[context.guild.id]}bingo <@player>...` to start a game of bingo.",
                 color=self.bot.default_color,
                 )
-            self.bot.log.info(f"Failed to start a game in #{context.channel.name} of {context.guild.name} as no players were mentioned.", context.guild)
+            self.bot.log.warning(f"Failed to start a game in #{context.channel.name} of {context.guild.name} as no players were mentioned.", context.guild)
             await context.send(embed=embed)
             return
         
@@ -47,7 +47,7 @@ class Bingo(commands.Cog, name="Bingo"):
                     color=self.bot.default_color,
                     )
                 await context.send(embed=embed)
-                self.bot.log.info(f"Game aborted. {player.name} is a bot.", context.guild)
+                self.bot.log.warning(f"Game aborted. {player.name} is a bot.", context.guild)
                 return
             try:
                 embed = discord.Embed(
@@ -63,7 +63,7 @@ class Bingo(commands.Cog, name="Bingo"):
                     color=self.bot.default_color,
                     )
                 await context.send(embed=embed)
-                self.bot.log.info(f"Game aborted. {player.name} has DMs disabled.", context.guild)
+                self.bot.log.warning(f"Game aborted. {player.name} has DMs disabled.", context.guild)
                 return
 
         # Create new game
@@ -147,7 +147,7 @@ class Bingo(commands.Cog, name="Bingo"):
                     color=self.bot.default_color,
                     )
                 await context.send(embed=embed)
-                self.bot.log.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as they are not playing.", context.guild)
+                self.bot.log.warning(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as they are not playing.", context.guild)
         else:
             embed = discord.Embed(
                 title="Ooops! :slight_frown:",
@@ -155,7 +155,7 @@ class Bingo(commands.Cog, name="Bingo"):
                 color=self.bot.default_color,
                 )
             await context.send(embed=embed)
-            self.bot.log.info(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as there is no active game.", context.guild)
+            self.bot.log.warning(f"Failed to abort game in #{context.channel.name} of {context.guild.name} by {context.author.name} as there is no active game.", context.guild)
     
     async def create_game(self, game_id):
         for player in self.games[game_id]["players"]:

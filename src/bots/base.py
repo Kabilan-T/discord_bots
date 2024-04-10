@@ -132,36 +132,40 @@ class BaseBot(commands.Bot):
         info += f" in #{context.channel.name} of {context.guild.name}" if context.guild is not None else f" in DMs."
         self.log.info(info, context.guild)
 
-    async def on_command_error(self, context : Context, error : Exception):
+    async def on_command_error(self, context : Context, e : Exception):
         '''Execute when a command error occurs'''
-        err = f"{error} - Occurred while executing '{context.message.content}' by @{context.author.name}"
-        err += f" in #{context.channel.name} of {context.guild.name}" if context.guild is not None else f" in DMs."
-        self.log.error(err, context.guild)
-        if isinstance(error, commands.CommandNotFound):
+        if isinstance(e, commands.CommandNotFound):
             embed = discord.Embed(
                 title="Command not found :confused:",
                 description=f"Use `{self.prefix[context.guild.id]}help` to see all available commands.",
                 color=self.default_color,
-            )   
-        elif isinstance(error, commands.MissingRole):
+            )
+            self.log.warning(f"Incorrect command used by @{context.author.name} in #{context.channel.name} of {context.guild.name}\nException: `{e}`", context.guild)
+            await context.send(embed=embed)
+        elif isinstance(e, commands.MissingRole):
             embed = discord.Embed(
                 title="Missing role :confused:",
                 description=f"You do not have the required role to use this command.",
                 color=self.default_color,
             )
-        elif isinstance(error, commands.MissingRequiredArgument):
+            self.log.warning(f"Missing role for command '{context.command.name}' by @{context.author.name} in #{context.channel.name} of {context.guild.name}\nException: `{e}`", context.guild)
+            await context.send(embed=embed)
+        elif isinstance(e, commands.MissingRequiredArgument):
             embed = discord.Embed(
                 title="Missing argument :confused:",
                 description=f"Use `{self.prefix[context.guild.id]}help {context.command.name}` to see the usage.",
                 color=self.default_color,
             )
+            self.log.warning(f"Missing argument for command '{context.command.name}' by @{context.author.name} in #{context.channel.name} of {context.guild.name}\nException:`{e}`", context.guild)
+            await context.send(embed=embed)
         else:
             embed = discord.Embed(
                 title="An error occurred :confused:",
                 description=f"An unexpected error occurred while executing the command.",
                 color=discord.Color.red(),
             )
-        await context.send(embed=embed)
+            self.log.error(f"Unknown error in command '{context.command.name}' by @{context.author.name} in #{context.channel.name} of {context.guild.name}\nException: `{e}`", context.guild)
+            await context.send(embed=embed)
 
     async def on_connect(self):
         ''' Called when the bot connects '''
