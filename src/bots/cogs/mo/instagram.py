@@ -48,61 +48,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     color=self.bot.default_color,
                     )
             await context.reply(embed=embed)
-
-    @commands.command( name="watch_channel", description="Set the channel to watch for instagram links.")
-    async def watchchannel(self, context: Context, channel: discord.TextChannel = None):
-        '''Set the channel to watch for instagram links'''
-        if channel == None:
-            channel = context.channel
-        if str(context.guild.id) not in self.channels_to_watch.keys():
-            self.channels_to_watch[str(context.guild.id)] = list()
-        self.channels_to_watch[str(context.guild.id)].append(str(channel.id))
-        self.save_channel_watch_list()
-        embed = discord.Embed(
-                title="Instagram channel set",
-                description="I will watch for instagram links in "+channel.mention+".",
-                color=self.bot.default_color,
-                )
-        await context.send(embed=embed)
-        self.bot.log.info("Added channel "+str(channel.id)+" to watch for instagram links.", context.guild)
     
-    @commands.command( name="unwatch_channel", description="Unset the channel to watch for instagram links.")
-    async def unwatchchannel(self, context: Context, channel: discord.TextChannel = None): 
-        '''Unset the channel to watch for instagram links'''
-        if channel == None:
-            channel = context.channel
-        if str(context.guild.id) not in self.channels_to_watch.keys():
-            self.channels_to_watch[str(context.guild.id)] = list()
-        self.channels_to_watch[str(context.guild.id)].remove(str(channel.id))
-        self.save_channel_watch_list()
-        embed = discord.Embed(
-                title="Instagram channel unset",
-                description="I will remove "+channel.mention+" from my watch list for instagram links.",
-                color=self.bot.default_color,
-                )
-        await context.send(embed=embed)
-        self.bot.log.info("Removed channel "+str(channel.id)+" from watch for instagram links.", context.guild)
-
-    @commands.command( name="watch_list", description="Show the list of channels to watch for instagram links.")
-    async def watchlist(self, context: Context):
-        '''Show the list of channels to watch for instagram links'''
-        if str(context.guild.id) in self.channels_to_watch.keys():
-            watch_list = self.channels_to_watch.get(str(context.guild.id), [])
-            channels = [context.guild.get_channel(int(channel)) for channel in watch_list]
-            embed = discord.Embed(
-                title="Instagram watch list",
-                description="I am watching for instagram links in the following channels: \n"+", ".join([channel.mention for channel in channels if channel is not None]),
-                color=self.bot.default_color,
-            )
-            await context.send(embed=embed)
-        else:
-            embed = discord.Embed(
-                title="Instagram watch list",
-                description="I am not watching for instagram links in any channel in this server.",
-                color=self.bot.default_color,
-            )
-            await context.send(embed=embed)
-
     @commands.Cog.listener()
     async def on_message(self, message):
         ''' Watch for instagram links and send the media'''
@@ -121,7 +67,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     await self.send_media(message.reply, message.content, message.guild)
                 else:
                     return
-
+    
     async def send_bio(self, replier, username, guild=None):
         # send the bio of a user
         if username.startswith("@"):
@@ -153,11 +99,8 @@ class Instagram(commands.Cog, name="Instagram"):
     
     async def send_media(self, replier, message, guild=None):
         # download a media from instagram url and send it
-        session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
-        if os.path.exists(session_dir):
-            session_file = os.path.join(session_dir, os.listdir(session_dir)[0])
-            username = os.listdir(session_dir)[0].split(".")[0]
-            self.loader.load_session_from_file(username, session_file)
+        if not self.loader.context.is_logged_in:
+            self.load_session(guild) 
         if message.split("/")[3] == "p":
             await self.send_post(replier, message, guild)
         elif message.split("/")[3] == "reel":
@@ -275,87 +218,60 @@ class Instagram(commands.Cog, name="Instagram"):
             await replier(embed=embed)
             self.bot.log.error("Failed to send story.\nUsername: '"+str(profile.username)+"'\nMessage:\n'"+str(message)+"'\nException raised by instaloader: "+str(e), guild)
 
-    @commands.command(name="login_instagram", description="Log in to instagram.")
-    @commands.has_permissions(administrator=True)
-    async def login_instagram(self, context: Context):
-        '''Get instagram credentials privately in dm and log in to instagram'''
-        embed = discord.Embed(title="Instagram credentials",
-                              description="Please open your DMs to provide your instagram credentials.",
-                              color=self.bot.default_color)
+    @commands.command( name="watch_channel", description="Set the channel to watch for instagram links.")
+    async def watchchannel(self, context: Context, channel: discord.TextChannel = None):
+        '''Set the channel to watch for instagram links'''
+        if channel == None:
+            channel = context.channel
+        if str(context.guild.id) not in self.channels_to_watch.keys():
+            self.channels_to_watch[str(context.guild.id)] = list()
+        self.channels_to_watch[str(context.guild.id)].append(str(channel.id))
+        self.save_channel_watch_list()
+        embed = discord.Embed(
+                title="Instagram channel set",
+                description="I will watch for instagram links in "+channel.mention+".",
+                color=self.bot.default_color,
+                )
         await context.send(embed=embed)
-        try:
-            def check(message):
-                return message.author == context.author and message.channel == context.author.dm_channel
-            # Asking for username
-            embed = discord.Embed(title="Instagram credentials",
-                                  description="Please enter the username",
-                                  color=self.bot.default_color)
-            await context.author.send(embed=embed)
-            message = await self.bot.wait_for("message", timeout=60, check=check)
-            _username = str(message.content)
-            # Asking for password
-            embed = discord.Embed(title="Instagram credentials",
-                                  description="Please enter the password",
-                                  color=self.bot.default_color)
-            await context.author.send(embed=embed)
-            message = await self.bot.wait_for("message", timeout=60, check=check)
-            _password = str(message.content)
-            self.bot.log.info("Got instagram credentials from "+str(context.author.name), context.guild)
-            # Attempt to login
-            if self._login_to_instagram(_username, _password):
-                embed = discord.Embed(title="Logged in to instagram",
-                                      description="Successfully logged in to instagram.",
-                                      color=self.bot.default_color)
-                session_dir = os.path.join(self.bot.data_dir, str(context.guild.id),"session")
-                if os.path.exists(session_dir):
-                    os.system("rm -rf "+session_dir)
-                session_file = os.path.join(session_dir, f"{_username}.session")
-                self.loader.save_session_to_file(session_file)
-            else:
-                embed = discord.Embed(title="Sorry! Failed to log in to instagram. :sweat:",
-                                      description="Please check the credentials and try again.",color=self.bot.default_color)
-            await context.author.send(embed=embed)
-            await context.reply(embed=embed)
-        except discord.Forbidden:
-            embed = discord.Embed(title="Ooops! I can't send you DM :slight_frown:",
-                                  description=f"Please enable DMs from server members to provide instagram credentials",
-                                  color=self.bot.default_color)
-            await context.send(embed=embed)
-            self.bot.log.error("Unable to send DM to user. User haven't enabled DMs",context.guild)
-        except asyncio.TimeoutError:
-            embed = discord.Embed(
-                title="Ooops! Time's up :slight_frown:",
-                description=f"You took too long to provide a response. Please try again",
+        self.bot.log.info("Added channel "+str(channel.id)+" to watch for instagram links.", context.guild)
+    
+    @commands.command( name="unwatch_channel", description="Unset the channel to watch for instagram links.")
+    async def unwatchchannel(self, context: Context, channel: discord.TextChannel = None): 
+        '''Unset the channel to watch for instagram links'''
+        if channel == None:
+            channel = context.channel
+        if str(context.guild.id) not in self.channels_to_watch.keys():
+            self.channels_to_watch[str(context.guild.id)] = list()
+        self.channels_to_watch[str(context.guild.id)].remove(str(channel.id))
+        self.save_channel_watch_list()
+        embed = discord.Embed(
+                title="Instagram channel unset",
+                description="I will remove "+channel.mention+" from my watch list for instagram links.",
                 color=self.bot.default_color,
-            )
-            await context.author.send(embed=embed)
-            await context.reply(embed=embed)
-            self.bot.log.warn("User too long to respond",context.guild)
-        except Exception as e:
-            embed = discord.Embed(
-                title="Sorry! There is some problem. :sweat:",
-                description="An exception occurred while trying to get the credentials. Try again later.",
-                color=self.bot.default_color,
-            )
-            await context.author.send(embed=embed)
-            self.bot.log.error(f"Exception raised while trying to get instagram credentials: {str(e)}",context.guild)
+                )
+        await context.send(embed=embed)
+        self.bot.log.info("Removed channel "+str(channel.id)+" from watch for instagram links.", context.guild)
 
-    def _login_to_instagram(self, _username=None, _password=None):
-        self.bot.log.info("Attempting to log in to instagram ...")
-        if _username is not None and _password is not None:
-            try:
-                self.loader.login(_username, _password)
-                if self.loader.test_login() == _username:
-                    self.bot.log.info("Logged in to instagram.")
-                    return True
-                else:
-                    self.bot.log.error("Failed to log in to instagram.")
-                    return False
-            except instaloader.exceptions.BadCredentialsException:
-                self.bot.log.error("Failed to log in to instagram. Bad credentials.")
-                return False
-        return False
-        
+    @commands.command( name="watch_list", description="Show the list of channels to watch for instagram links.")
+    async def watchlist(self, context: Context):
+        '''Show the list of channels to watch for instagram links'''
+        if str(context.guild.id) in self.channels_to_watch.keys():
+            watch_list = self.channels_to_watch.get(str(context.guild.id), [])
+            channels = [context.guild.get_channel(int(channel)) for channel in watch_list]
+            embed = discord.Embed(
+                title="Instagram watch list",
+                description="I am watching for instagram links in the following channels: \n"+", ".join([channel.mention for channel in channels if channel is not None]),
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+        else:
+            embed = discord.Embed(
+                title="Instagram watch list",
+                description="I am not watching for instagram links in any channel in this server.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+    
     def load_channel_watch_list(self):
         # load the channels to watch for instagram links
         if os.path.exists(self.bot.data_dir):
@@ -381,6 +297,137 @@ class Instagram(commands.Cog, name="Instagram"):
                     with open(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml"), 'w+') as file:
                         yaml.dump({"channels": self.channels_to_watch[guild_id]}, file)
                     self.bot.log.info("Saved watch list for guild "+str(guild_id))
+    
+    @commands.command(name="login_instagram", description="Log in to instagram.")
+    @commands.has_permissions(administrator=True)
+    async def login_instagram(self, context: Context):
+        '''Get instagram credentials privately in dm and log in to instagram'''
+        embed = discord.Embed(title="Instagram credentials",
+                              description="Please open your DMs to provide your instagram credentials.",
+                              color=self.bot.default_color,
+                                )
+        await context.reply(embed=embed)
+        _username, _password = await self._get_instagram_credentials(context)
+        if _username is None or _password is None:
+            return
+        embed = discord.Embed(title="Instagram credentials",
+                              description="Credentials received. Trying to log in to instagram.",
+                              color=self.bot.default_color,
+                              )
+        await context.author.send(embed=embed)
+        await context.reply(embed=embed)
+        if await self._login_instagram(context, _username, _password):
+            self.save_session(context.guild)
+            embed = discord.Embed(title="Instagram credentials",
+                                  description="Logged in to instagram as "+str(_username),
+                                  color=self.bot.default_color,
+                                  )
+            await context.reply(embed=embed)
+        else:
+            embed = discord.Embed(title="Instagram credentials",
+                                  description="Failed to log in to instagram as "+str(_username)+". Please try again.",
+                                  color=self.bot.default_color,
+                                  )
+            await context.reply(embed=embed)
+
+    @commands.command(name="logout_instagram", description="Log out from instagram.")
+    @commands.has_permissions(administrator=True)
+    async def logout_instagram(self, context: Context):
+        '''Log out from instagram'''
+        if self.loader.context.is_logged_in:
+            self.loader.context.logout()
+            self.bot.log.info("Logged out from instagram.", context.guild)
+            self.clear_session(context.guild)
+            embed = discord.Embed(title="Instagram credentials",
+                                  description="Logged out from instagram.",
+                                  color=self.bot.default_color,
+                                  )
+            await context.reply(embed=embed)
+        else:
+            embed = discord.Embed(title="Instagram credentials",
+                                  description="I am not logged in to instagram.",
+                                  color=self.bot.default_color,
+                                  )
+            await context.reply(embed=embed)
+    
+    async def _get_instagram_credentials(self, context: Context):
+        '''Get instagram credentials in dm'''
+        check = lambda message: message.author == context.author and message.channel == context.author.dm_channel
+        try:
+            embed = discord.Embed(title="Instagram credentials",
+                                  description="Please provide your instagram username.",
+                                  color=self.bot.default_color,
+                                )
+            await context.author.send(embed=embed)
+            message = await self.bot.wait_for('message', timeout=60.0, check=check)
+            _username = message.content
+            embed = discord.Embed(title="Instagram credentials",
+                                  description="Please provide your instagram password.",
+                                  color=self.bot.default_color,
+                                )
+            await context.author.send(embed=embed)
+            message = await self.bot.wait_for('message', timeout=60.0, check=check)
+            _password = message.content
+            return _username, _password
+        except asyncio.TimeoutError:
+            embed = discord.Embed(title="Instagram credentials",
+                                    description="You took too long to provide your instagram credentials. Please try again.",
+                                    color=self.bot.default_color,
+                                    )
+            await context.author.send(embed=embed)
+            await context.reply(embed=embed)
+            self.bot.log.error("User took too long to provide instagram credentials.", context.guild)
+            return None, None
+        except discord.Forbidden:
+            embed = discord.Embed(title="Instagram credentials",
+                                    description="I couldn't send you a DM. Please enable DMs from server members.",
+                                    color=self.bot.default_color,
+                                    )
+            await context.reply(embed=embed)
+            self.bot.log.error("Couldn't send DM to user "+str(context.author.name), context.guild)
+            return None, None
+    
+    async def _login_instagram(self, context: Context, username: str, password: str):
+        '''Log in to instagram'''
+        try:
+            self.loader.context.login(username, password)
+            self.bot.log.info("Logged in to instagram as "+str(username), context.guild)
+            if self.loader.context.test_login() != username:
+                self.bot.log.error("Test login failed. Couldn't log in to instagram as "+str(username), context.guild)
+                return False
+            return True
+        except instaloader.exceptions.InstaloaderException as e:
+            self.bot.log.error("Failed to log in to instagram as "+str(username)+". Exception raised by instaloader: "+str(e), context.guild)
+            return False
+    
+    def load_session(self, guild : discord.Guild):
+        # load the session from file
+        session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
+        if os.path.exists(session_dir):
+            session_file = os.path.join(session_dir, os.listdir(session_dir)[0])
+            username = os.listdir(session_dir)[0].split(".")[0]
+            self.loader.load_session_from_file(username, session_file)
+            self.bot.log.info("Loaded session of "+str(username)+" for guild "+str(guild.name), guild)
+        else:
+            self.bot.log.info("No session found for guild "+str(guild.name), guild)
+    
+    def save_session(self, guild : discord.Guild):
+        # save the session to file
+        session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
+        self.clear_session(guild)
+        username = self.loader.test_login()
+        session_file = os.path.join(session_dir, f"{username}.session")
+        self.loader.save_session_to_file(session_file)
+        self.bot.log.info("Saved session of "+str(username)+" for guild "+str(guild.name), guild)
+    
+    def clear_session(self, guild : discord.Guild):
+        # clear the session
+        session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
+        if os.path.exists(session_dir):
+            os.system("rm -rf "+session_dir)
+            self.bot.log.info("Cleared session for guild "+str(guild.name), guild)
+        else:
+            self.bot.log.info("No existing session found for guild "+str(guild.name), guild)
 
 
 async def setup(bot):
