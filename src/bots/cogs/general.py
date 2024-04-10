@@ -30,7 +30,7 @@ class General(commands.Cog, name="General"):
             title="Hello "+context.author.name+" :wave:",
             description=f"I am {self.bot.name}, a discord bot. Nice to meet you! :smile:",
             color=self.bot.default_color,
-        )
+            )
         await context.send(embed=embed)
 
     @commands.command( name="ping", description="Check if the bot is alive.", aliases=["p"])
@@ -40,7 +40,7 @@ class General(commands.Cog, name="General"):
             title="🏓 Pong!",
             description=f"The bot latency is {round(self.bot.latency * 1000)}ms.",
             color=self.bot.default_color,
-        )
+            )
         await context.send(embed=embed)
     
     @commands.command( name="help", description="Get help on a command." , aliases=["h"])
@@ -51,7 +51,7 @@ class General(commands.Cog, name="General"):
                 title="Help",
                 description=f"Use `{self.bot.prefix[context.guild.id]}help <command>` to get help on a specific command.",
                 color=self.bot.default_color,
-            )
+                )
             for cog in self.bot.cogs:
                 if cog == "Manage" and not context.author.guild_permissions.administrator:
                     continue
@@ -61,7 +61,7 @@ class General(commands.Cog, name="General"):
                         name=cog,
                         value="\n".join([f"***`{command.name}`*** - {command.description}" for command in cog_commands]),
                         inline=False,
-                    )
+                        )
             await context.send(embed=embed)
         else:
             command = self.bot.get_command(command)
@@ -70,19 +70,19 @@ class General(commands.Cog, name="General"):
                     title="Help",
                     description=f"`{command}` is not a valid command.",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
             else:
                 embed = discord.Embed(
                     title=f"Help: {command.name}",
                     description=command.description,
                     color=self.bot.default_color,
-                )
+                    )
                 embed.add_field(
                     name="Usage",
                     value=f"`{self.bot.prefix[context.guild.id]}{command.name} {command.signature}`",
                     inline=False,
-                )
+                    )
                 await context.send(embed=embed)
 
     @commands.command( name="prefix", description="Change the bot prefix.")
@@ -94,7 +94,7 @@ class General(commands.Cog, name="General"):
                 title="Prefix",
                 description=f"The current prefix is `{self.bot.prefix.get(context.guild.id, self.bot.default_prefix)}`",
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
         else:
             self.bot.prefix[context.guild.id] = prefix
@@ -110,7 +110,7 @@ class General(commands.Cog, name="General"):
                 title="Prefix",
                 description=f"The prefix has been changed to `{self.bot.prefix.get(context.guild.id, self.bot.default_prefix)}`",
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
             self.bot.log.info(f"Prefix changed to {self.bot.prefix.get(context.guild.id, self.bot.default_prefix)}", context.guild)
 
@@ -122,7 +122,7 @@ class General(commands.Cog, name="General"):
             title="Invite",
             description=f"Use this link to invite the bot to your server: https://discord.com/oauth2/authorize?client_id={self.bot.client_id}&scope=bot&permissions=8",
             color=self.bot.default_color,
-        )
+            )
         await context.send(embed=embed)
     
     @commands.command( name="reload", description="Reload the bot cogs.")
@@ -133,19 +133,19 @@ class General(commands.Cog, name="General"):
         embed = discord.Embed(
             title="Cogs Reloaded :gear:",
             color=self.bot.default_color,
-        )
+            )
         if len(succeeded_reloads) > 0:
             embed.add_field(
                 name="Succeeded",
                 value=f"\n".join([f":thumbsup: `{cog}`" for cog in succeeded_reloads]),
                 inline=False,
-            )
+                )
         if len(failed_reloads) > 0:
             embed.add_field(
                 name="Failed",
                 value=f"\n".join([f":thumbsdown: `{cog}`" for cog in failed_reloads]),
                 inline=False,
-            )
+                )
         await context.send(embed=embed)
 
 

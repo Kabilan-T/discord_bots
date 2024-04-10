@@ -39,7 +39,7 @@ class Manage(commands.Cog, name="Manage"):
             title="Log Channel",
             description=f"Log channel has been set to {channel.mention}",
             color=self.bot.default_color,
-        )
+            )
         await context.send(embed=embed)
         self.bot.log.info(f"Log channel set to {channel.mention}", context.guild)
 
@@ -56,7 +56,7 @@ class Manage(commands.Cog, name="Manage"):
             title="Log File :scroll:",
             description="Here is the recent log file. :file_folder:",
             color=self.bot.default_color,
-        )
+            )
         await context.reply(embed=embed, file=file)
         self.bot.log.info(f"Log file sent to {context.author.name}", context.guild)
 
@@ -77,7 +77,7 @@ class Manage(commands.Cog, name="Manage"):
                 title="Data :file_folder:",
                 description="Here is the data of the bot.",
                 color=self.bot.default_color,
-            )
+                )
             await context.reply(embed=embed, file=file)
             self.bot.log.info(f"Data sent to {context.author.name}", context.guild)
             os.remove(zip_file_path)
@@ -86,7 +86,7 @@ class Manage(commands.Cog, name="Manage"):
                 title="Data",
                 description="No data found.",
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
     
     @commands.command( name="clear_data", description="Clear the data of the bot including custom settings.")
@@ -102,7 +102,7 @@ class Manage(commands.Cog, name="Manage"):
             title="Data Cleared :wastebasket:",
             description="The data of the bot has been cleared. Cogs will be reloaded to apply changes.",
             color=self.bot.default_color,
-        )
+            )
         await context.send(embed=embed)
         await self.reload(context)
 

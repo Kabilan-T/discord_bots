@@ -35,7 +35,7 @@ class Utility(commands.Cog, name="Utilities"):
                 title="Sorry :confused:",
                 description="You do not have permission to use this command. You need the following permission to use this command : " + str(permission),
                 color=self.bot.default_color,
-            )
+                )
             context.send(embed=embed)
             self.bot.log.warning(f"{context.author.name} tried to use a command. But they do not have the required permissions - {permission}", context.guild)
         return has_permissions
@@ -51,7 +51,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Nickname :name_badge:",
                     description=f"The nickname of {member.mention} has been removed.",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
             else:
                 self.bot.log.info(f"{context.author.name} changed the nickname of {member.name} to {nickname} in {context.guild.name}", context.guild)
@@ -59,7 +59,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Nickname :name_badge:",
                     description=f"The nickname of {member.mention} has been changed to {nickname}.",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
     
     @commands.command( name="purge", description="Purge messages from a channel.")
@@ -72,7 +72,7 @@ class Utility(commands.Cog, name="Utilities"):
                 title="Purge :wastebasket:",
                 description=f"{amount} messages have been purged from {context.channel.mention}",
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
     
     @commands.command( name="purge_user", description="Purge messages from a user in one or all channels.")
@@ -87,7 +87,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Purge :wastebasket:",
                     description=f"{amount} messages from {member.mention} have been purged from all channels.",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
             else:
                 self.bot.log.info(f"{context.author.name} purged {amount} messages from {member.name} in {channel.name} in {context.guild.name}", context.guild)
@@ -96,7 +96,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Purge :wastebasket:",
                     description=f"{amount} messages from {member.mention} have been purged from {channel.mention}",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
     
     @commands.command( name="move", description="Move a member to a different voice channel.")
@@ -108,7 +108,7 @@ class Utility(commands.Cog, name="Utilities"):
                 title="Move :arrow_right:",
                 description=f"{member.mention} has been moved to {channel.mention}",
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
             await member.move_to(channel, reason=reason)
     
@@ -121,7 +121,7 @@ class Utility(commands.Cog, name="Utilities"):
                 title="Disconnect :x:",
                 description=f"{member.mention} has been disconnected from the voice channel.",
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
             await member.move_to(None, reason=reason)
     
@@ -134,7 +134,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Sleep :zzz:",
                     description="The time should be greater than 0.",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
                 return
             if member.voice is None:
@@ -142,7 +142,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Sleep :zzz:",
                     description=f"{member.mention} is not in a voice channel.",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
                 return
             self.bot.log.info(f"{context.author.name} disconnected {member.name} in {context.guild.name} after {time} minutes", context.guild)
@@ -150,14 +150,14 @@ class Utility(commands.Cog, name="Utilities"):
                 title="Sleep :zzz:",
                 description=f"{member.mention} will be disconnected from the voice channel after {time} minutes.",
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
             await asyncio.sleep(time*60)
             embed = discord.Embed(
                 title="Sleep :zzz:",
                 description=f"{member.mention} has been disconnected from the voice channel after {time} minutes.",
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
             await member.move_to(None, reason=reason)
     
@@ -171,7 +171,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Move :arrow_right:",
                     description=f"{member.mention} has been moved to {new_channel.mention}",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
                 await member.move_to(new_channel, reason=reason)
     
@@ -185,7 +185,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Disconnect :x:",
                     description=f"{member.mention} has been disconnected from the voice channel.",
                     color=self.bot.default_color,
-                )
+                    )
                 await member.move_to(None, reason=reason)
 
     @commands.command( name="limit_voice", description="Limit the number of members in a voice channel.")
@@ -198,7 +198,7 @@ class Utility(commands.Cog, name="Utilities"):
                         title="Voice Channel Limit :loud_sound:",
                         description="Please specify a voice channel or join a voice channel to set the limit.",
                         color=self.bot.default_color,
-                    )
+                        )
                     await context.send(embed=embed)
                     return
                 channel = context.author.voice.channel
@@ -209,7 +209,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Voice Channel Limit :loud_sound:",
                     description=f"The limit of {channel.mention} has been removed.",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
             else:
                 await channel.edit(user_limit=limit)
@@ -218,7 +218,7 @@ class Utility(commands.Cog, name="Utilities"):
                     title="Voice Channel Limit :loud_sound:",
                     description=f"The limit of {channel.mention} has been set to {limit}.",
                     color=self.bot.default_color,
-                )
+                    )
                 await context.send(embed=embed)
     
                  

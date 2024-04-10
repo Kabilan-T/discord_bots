@@ -129,7 +129,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 url="https://www.instagram.com/"+str(post.owner_profile.username),
                 description="Caption: "+str(short_caption)+"\nType: Post ("+str(len(media_files))+" files)\nLikes: "+str(post.likes)+"\n",
                 color=self.bot.default_color,
-            )
+                )
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
             self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post ", guild)
@@ -163,7 +163,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 url="https://www.instagram.com/"+str(reel.owner_profile.username),
                 description="Caption: "+str(short_caption)+"\nType: Reel \nLikes: "+str(reel.likes)+"\n",
                 color=self.bot.default_color,
-            )
+                )
             embed.set_thumbnail(url=reel.owner_profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
             self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel ", guild)
@@ -205,7 +205,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 url="https://www.instagram.com/"+str(profile.username),
                 description="Type: Story ("+str(len(media_files))+" files)\n",
                 color=self.bot.default_color,
-            )
+                )
             embed.set_thumbnail(url=profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
             self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story", guild)
@@ -262,14 +262,14 @@ class Instagram(commands.Cog, name="Instagram"):
                 title="Instagram watch list",
                 description="I am watching for instagram links in the following channels: \n"+", ".join([channel.mention for channel in channels if channel is not None]),
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
         else:
             embed = discord.Embed(
                 title="Instagram watch list",
                 description="I am not watching for instagram links in any channel in this server.",
                 color=self.bot.default_color,
-            )
+                )
             await context.send(embed=embed)
     
     def load_channel_watch_list(self):
@@ -302,32 +302,36 @@ class Instagram(commands.Cog, name="Instagram"):
     @commands.has_permissions(administrator=True)
     async def login_instagram(self, context: Context):
         '''Get instagram credentials privately in dm and log in to instagram'''
-        embed = discord.Embed(title="Instagram credentials",
-                              description="Please open your DMs to provide your instagram credentials.",
-                              color=self.bot.default_color,
-                                )
+        embed = discord.Embed(
+            title="Instagram credentials",
+            description="Please open your DMs to provide your instagram credentials.",
+            color=self.bot.default_color,
+            )
         await context.reply(embed=embed)
         _username, _password = await self._get_instagram_credentials(context)
         if _username is None or _password is None:
             return
-        embed = discord.Embed(title="Instagram credentials",
-                              description="Credentials received. Trying to log in to instagram.",
-                              color=self.bot.default_color,
-                              )
+        embed = discord.Embed(
+            title="Instagram credentials",
+            description="Credentials received. Trying to log in to instagram.",
+            color=self.bot.default_color,
+            )
         await context.author.send(embed=embed)
         await context.reply(embed=embed)
         if await self._login_instagram(context, _username, _password):
             self.save_session(context.guild)
-            embed = discord.Embed(title="Instagram credentials",
-                                  description="Logged in to instagram as "+str(_username),
-                                  color=self.bot.default_color,
-                                  )
+            embed = discord.Embed(
+                title="Instagram credentials",
+                description="Logged in to instagram as "+str(_username),
+                color=self.bot.default_color,
+                )
             await context.reply(embed=embed)
         else:
-            embed = discord.Embed(title="Instagram credentials",
-                                  description="Failed to log in to instagram as "+str(_username)+". Please try again.",
-                                  color=self.bot.default_color,
-                                  )
+            embed = discord.Embed(
+                title="Instagram credentials",
+                description="Failed to log in to instagram as "+str(_username)+". Please try again.",
+                color=self.bot.default_color,
+                )
             await context.reply(embed=embed)
 
     @commands.command(name="logout_instagram", description="Log out from instagram.")
@@ -338,51 +342,57 @@ class Instagram(commands.Cog, name="Instagram"):
             self.loader.context.logout()
             self.bot.log.info("Logged out from instagram.", context.guild)
             self.clear_session(context.guild)
-            embed = discord.Embed(title="Instagram credentials",
-                                  description="Logged out from instagram.",
-                                  color=self.bot.default_color,
-                                  )
+            embed = discord.Embed(
+                title="Instagram credentials",
+                description="Logged out from instagram.",
+                color=self.bot.default_color,
+                )
             await context.reply(embed=embed)
         else:
-            embed = discord.Embed(title="Instagram credentials",
-                                  description="I am not logged in to instagram.",
-                                  color=self.bot.default_color,
-                                  )
+            embed = discord.Embed(
+                title="Instagram credentials",
+                description="I am not logged in to instagram.",
+                color=self.bot.default_color,
+                )
             await context.reply(embed=embed)
     
     async def _get_instagram_credentials(self, context: Context):
         '''Get instagram credentials in dm'''
         check = lambda message: message.author == context.author and message.channel == context.author.dm_channel
         try:
-            embed = discord.Embed(title="Instagram credentials",
-                                  description="Please provide your instagram username.",
-                                  color=self.bot.default_color,
-                                )
+            embed = discord.Embed(
+                title="Instagram credentials",
+                description="Please provide your instagram username.",
+                color=self.bot.default_color,
+                )
             await context.author.send(embed=embed)
             message = await self.bot.wait_for('message', timeout=60.0, check=check)
             _username = message.content
-            embed = discord.Embed(title="Instagram credentials",
-                                  description="Please provide your instagram password.",
-                                  color=self.bot.default_color,
-                                )
+            embed = discord.Embed(
+                title="Instagram credentials",
+                description="Please provide your instagram password.",
+                color=self.bot.default_color,
+                )
             await context.author.send(embed=embed)
             message = await self.bot.wait_for('message', timeout=60.0, check=check)
             _password = message.content
             return _username, _password
         except asyncio.TimeoutError:
-            embed = discord.Embed(title="Instagram credentials",
-                                    description="You took too long to provide your instagram credentials. Please try again.",
-                                    color=self.bot.default_color,
-                                    )
+            embed = discord.Embed(
+                title="Instagram credentials",
+                description="You took too long to provide your instagram credentials. Please try again.",
+                color=self.bot.default_color,
+                )
             await context.author.send(embed=embed)
             await context.reply(embed=embed)
             self.bot.log.error("User took too long to provide instagram credentials.", context.guild)
             return None, None
         except discord.Forbidden:
-            embed = discord.Embed(title="Instagram credentials",
-                                    description="I couldn't send you a DM. Please enable DMs from server members.",
-                                    color=self.bot.default_color,
-                                    )
+            embed = discord.Embed(
+                title="Instagram credentials",
+                description="I couldn't send you a DM. Please enable DMs from server members.",
+                color=self.bot.default_color,
+                )
             await context.reply(embed=embed)
             self.bot.log.error("Couldn't send DM to user "+str(context.author.name), context.guild)
             return None, None
