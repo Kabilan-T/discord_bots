@@ -106,6 +106,30 @@ class Manage(commands.Cog, name="Manage"):
         await context.send(embed=embed)
         await self.reload(context)
 
+    @commands.command( name="get_update_log", description="Send the recent update log file.")
+    @commands.has_permissions(administrator=True)
+    async def getupdatelog(self, context: Context):
+        '''Get the recent update log file'''
+        file_name = os.path.join(os.path.dirname(self.bot.log.log_dir), 'update.log')
+        if os.path.exists(file_name):
+            with open(file_name, 'r') as f:
+                text = f.read()
+            file = discord.File(filename=file_name.split("/")[-1],
+                                fp=io.StringIO(text))
+            embed = discord.Embed(
+                title="Update Log File :scroll:",
+                description="Here is the recent update log file. :file_folder:",
+                color=self.bot.default_color,
+                )
+            await context.reply(embed=embed, file=file)
+            self.bot.log.info(f"Update log file sent to {context.author.name}", context.guild)
+        else:
+            embed = discord.Embed(
+                title="Update Log File",
+                description="No update log file found.",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Manage(bot))     
