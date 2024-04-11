@@ -40,7 +40,8 @@ class Instagram(commands.Cog, name="Instagram"):
         '''Download a media from instagram and show it'''
         match = re.match(instagram_media, message)
         if match is not None:
-            await self.send_media(context.reply, message.content, context.guild)
+            print("Matched")
+            await self.send_media(context.reply, message, context.guild)
         else:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
