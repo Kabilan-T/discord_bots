@@ -71,16 +71,16 @@ class Logger():
         if log_channel is not None:
             embed = discord.Embed()
             if level == "info": 
-                embed.description = f':information_source: \t `{log_message}`'
+                embed.description = f':information_source: \t {log_message}'
                 embed.color = discord.Color.dark_grey()
             elif level == "debug":
-                embed.description = f':mag: \t `{log_message}`'
+                embed.description = f':mag: \t {log_message}'
                 embed.color = discord.Color.orange()
             elif level == "warning": 
                 embed.title = ""
-                embed.description = f':warning: \t `{log_message}`'
+                embed.description = f':warning: \t {log_message}'
                 embed.color = discord.Color.yellow()
             elif level == "error": 
-                embed.description = f':interrobang: \t `{log_message}` \n{log_channel.guild.owner.mention}'
+                embed.description = f':interrobang: \t {log_message} \n{log_channel.guild.owner.mention}'
                 embed.color = discord.Color.red()
             asyncio.ensure_future(log_channel.send(embed=embed))
