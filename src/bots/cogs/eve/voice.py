@@ -133,22 +133,40 @@ class Voice(commands.Cog, name="Voice Features"):
             )
         await context.reply(embed=embed)
         self.bot.log.info(f"{self.bot.name} left voice channel {channel.name} in {context.guild.name}", context.guild)
-
-    @commands.command(name="set_greet", aliases=["sg"], description="Set the greet message specific to a user")
-    async def setgreet(self, context: Context, member: discord.Member, *, text: str):
-        ''' Set the greet message for the user '''
-        if str(context.guild.id) not in self.greet_messages.keys():
-            self.greet_messages[str(context.guild.id)] = dict()
-        self.greet_messages[str(context.guild.id)][str(member.id)] = text
-        embed = discord.Embed(
-            title="Greet message set :wave:",
-            description=f"Greet message for {member.mention} is set to '{text}'",
-            color=self.bot.default_color,
-            )
-        await context.reply(embed=embed)
-        self.save_greet_messages()
-        self.bot.log.info(f"{context.author} set the greet message for {member.display_name} to '{text}' in {context.guild.name}", context.guild)
     
+    @commands.command(name="greet", aliases=["g"], description="Get or set the greet message for the user")
+    async def greet(self, context: Context, member: discord.Member, *, text: str = None):
+        ''' Get or set the greet message for the user '''
+        if text is None:
+            if str(context.guild.id) not in self.greet_messages.keys() or str(member.id) not in self.greet_messages.get(str(context.guild.id), dict()).keys():
+                embed = discord.Embed(
+                    title="No greet message :confused:",
+                    description=f"No greet message set for {member.mention}",
+                    color=self.bot.default_color,
+                    )
+                await context.reply(embed=embed)
+                self.bot.log.info(f"No greet message set for {member.display_name} checked by {context.author} in {context.guild.name}", context.guild)
+            else:
+                embed = discord.Embed(
+                    title="Greet message :wave:",
+                    description=f"Greet message for {member.mention} is \n'{self.greet_messages[str(context.guild.id)][str(member.id)]}'",
+                    color=self.bot.default_color,
+                    )
+                await context.reply(embed=embed)
+                self.bot.log.info(f"Greet message for {member.display_name} is '{self.greet_messages[str(context.guild.id)][str(member.id)]}' checked by {context.author} in {context.guild.name}", context.guild)
+        else:
+            if str(context.guild.id) not in self.greet_messages.keys():
+                self.greet_messages[str(context.guild.id)] = dict()
+            self.greet_messages[str(context.guild.id)][str(member.id)] = text
+            embed = discord.Embed(
+                title="Greet message set :wave:",
+                description=f"Greet message for {member.mention} is set to '{text}'",
+                color=self.bot.default_color,
+                )
+            await context.reply(embed=embed)
+            self.save_greet_messages()
+            self.bot.log.info(f"{context.author} set the greet message for {member.display_name} to '{text}' in {context.guild.name}", context.guild)
+
     @commands.command(name="volume", aliases=["v"], description="Get or set the volume of the bot")
     async def volume(self, context: Context, volume: int = None):
         ''' Get or set the volume of the bot '''

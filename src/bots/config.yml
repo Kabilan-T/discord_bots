@@ -15,7 +15,7 @@ eve:
   name: EVE
   username: 'EVE#4830'
   client_id: '1220389672291795005'
-  default_prefix: 'eve!'
+  default_prefix: 'eve?'
   default_color: 0xBEBEFE
   extensions:
     - 'cogs.general'
