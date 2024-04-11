@@ -46,8 +46,10 @@ fi
 # Install dependencies
 echo "Updating pip..."
 pip install --upgrade pip
+
+# Install dependencies
 echo "Installing dependencies..."
-pip install -r requirements.txt --use-deprecated=legacy-resolver
+pip install --no-cache-dir -r requirements.txt --use-deprecated=legacy-resolver
 
 echo "Setup complete. Please fill in your bot tokens in tokens.sh and then run the bot using run.bash."
 
