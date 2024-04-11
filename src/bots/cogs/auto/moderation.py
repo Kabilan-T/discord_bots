@@ -57,7 +57,7 @@ class Moderation(commands.Cog, name="Moderation"):
         if dm:
             await self.send_dm(context, member, action, reason)
 
-    async def send_dm(self, context: Context, member: discord.Member, action: str, *, reason: str = None):
+    async def send_dm(self, context: Context, member: discord.Member, action: str, reason: str = None):
         embed = discord.Embed(
             title="Moderation activity :judge:",
             description=f"You have been {action} in **{context.guild.name}**",
