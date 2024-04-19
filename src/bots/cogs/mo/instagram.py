@@ -24,7 +24,8 @@ instagram_media = r'\bhttps?:\/\/(?:www\.)?instagram\.com\/(?:[a-zA-Z0-9_\.]+\/)
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):
         self.bot = bot
-        self.loader = instaloader.Instaloader(download_pictures = True, download_videos= True,
+        self.loader = instaloader.Instaloader(sleep=True, quiet=True, 
+                                              download_pictures = True, download_videos= True,
                                               download_video_thumbnails = False, save_metadata= False)
         # channels to watch for instagram links
         self.channels_to_watch = dict()
@@ -335,27 +336,18 @@ class Instagram(commands.Cog, name="Instagram"):
                 )
             await context.reply(embed=embed)
 
-    @commands.command(name="logout_instagram", description="Log out from instagram.")
+    @commands.command(name="clear_instagram_session", description="Remove the instagram session.")
     @commands.has_permissions(administrator=True)
-    async def logout_instagram(self, context: Context):
-        '''Log out from instagram'''
-        if self.loader.context.is_logged_in:
-            self.loader.context.logout()
-            self.bot.log.info("Logged out from instagram.", context.guild)
-            self.clear_session(context.guild)
-            embed = discord.Embed(
-                title="Instagram credentials",
-                description="Logged out from instagram.",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-        else:
-            embed = discord.Embed(
-                title="Instagram credentials",
-                description="I am not logged in to instagram.",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
+    async def clear_instagram_session(self, context: Context):
+        '''Clear the instagram session'''
+        self.clear_session(context.guild)
+        self.bot.log.info("Cleared instagram session.", context.guild)  
+        embed = discord.Embed(
+            title="Instagram session",
+            description="Cleared instagram session.",
+            color=self.bot.default_color,
+            )
+        await context.reply(embed=embed)
     
     async def _get_instagram_credentials(self, context: Context):
         '''Get instagram credentials in dm'''
