@@ -57,7 +57,7 @@ class Moderation(commands.Cog, name="Moderation"):
             embed.add_field(name="Reason", value=reason, inline=False)
         try:
             await member.send(embed=embed)
-        except discord.Forbidden:
+        except discord.DiscordException:
             self.bot.log.warning(f"Could not send DM to @{member.name} about {action} activity in {context.guild.name}", context.guild)
             pass
     
@@ -198,6 +198,11 @@ class Moderation(commands.Cog, name="Moderation"):
         with open(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml"), "w+") as file:
             yaml.dump(self.warns[guild_id], file)
     
+    def delete_warns_file(self, guild_id: int):
+        '''Delete the warns file'''
+        if os.path.exists(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml")):
+            os.remove(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml"))
+    
     @commands.command( name="warn", description="Warn a member in the server.")
     async def warn(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Warn a member in the server'''
@@ -223,8 +228,16 @@ class Moderation(commands.Cog, name="Moderation"):
     async def check_warns(self, context: Context, member: typing.Optional[discord.Member] = None):
         '''Check the number of warns of one or all members in the server'''
         if not self.check(context, PermissionBasic): return
-        guild_warns = self.warns.get(context.guild.id, None)
-        if guild_warns is None:
+        if context.guild.id in self.warns.keys():
+            guild_warns = self.warns[context.guild.id].copy()
+            for member_id, warns in guild_warns.items():
+                if warns == 0: del self.warns[context.guild.id][member_id]
+            if len(self.warns[context.guild.id]) == 0:
+                del self.warns[context.guild.id]
+                self.delete_warns_file(context.guild.id)
+            else:
+                self.save_warns(context.guild.id)
+        if context.guild.id not in self.warns.keys():
             embed = discord.Embed(
                 title="Warns :warning:",
                 description="No members have warns.",
@@ -239,26 +252,28 @@ class Moderation(commands.Cog, name="Moderation"):
             )
         if member is None:
             self.bot.log.info(f"{context.author.name} checked the warns of all members in {context.guild.name}", context.guild)
-            for member_id in guild_warns.keys():
+            for member_id in self.warns[context.guild.id].keys():
                 member = context.guild.get_member(member_id)
                 if member is not None:
-                    embed.description += f"{member.mention} has {guild_warns[member_id]} warns.\n"
+                    embed.description += f"{member.mention} has {self.warns[context.guild.id][member_id]} warns.\n"
                 else:
-                    embed.description += f"Member with ID {member_id} has {guild_warns[member_id]} warns.\n"
+                    embed.description += f"Member with ID {member_id} has {self.warns[context.guild.id][member_id]} warns.\n"
         else:
             self.bot.log.info(f"{context.author.name} checked the warns of {member.name} in {context.guild.name}", context.guild)
-            if member.id in guild_warns.keys():
-                embed.description += f"{member.mention} has {guild_warns[member.id]} warns."
+            if member.id in self.warns[context.guild.id].keys():
+                embed.description += f"{member.mention} has {self.warns[context.guild.id][member.id]} warns."
             else:
                 embed.description += f"{member.mention} has no warns."
         await context.send(embed=embed)
 
     @commands.command( name="remove_warn", description="Remove a certain number of warns of a member in the server.")
-    async def removewarn(self, context: Context, member: discord.Member, amount: int = 1, *, reason: str = None):
+    async def removewarn(self, context: Context, member: typing.Union[discord.Member, int], amount: int, *, reason: str = None):
         '''Remove a certain number of warns of a member in the server'''
         if not self.check(context, PermissionToWarn): return
         if context.guild.id not in self.warns.keys():
             self.warns[context.guild.id] = dict()
+        if isinstance(member, int):
+            member = self.bot.fetch_user(member)
         if member.id not in self.warns[context.guild.id].keys():
             embed = discord.Embed(
                 title="Warns :confused:",
@@ -267,12 +282,16 @@ class Moderation(commands.Cog, name="Moderation"):
                 )
             await context.send(embed=embed)
             return
-        if self.warns[context.guild.id][member.id] == amount:
-            await self.clearwarns(context, member, reason)
         if self.warns[context.guild.id][member.id] >= amount:
             self.warns[context.guild.id][member.id] -= amount 
+            if self.warns[context.guild.id][member.id] == 0:
+                del self.warns[context.guild.id][member.id]
+            if len(self.warns[context.guild.id]) == 0:
+                del self.warns[context.guild.id]
+                self.delete_warns_file(context.guild.id)
+            else:
+                self.save_warns(context.guild.id)
             self.bot.log.info(f"{context.author.name} removed {amount} warns of {member.name} in {context.guild.name}", context.guild)
-            self.save_warns(context.guild.id)
             embed = discord.Embed(
                 title="Moderation activity - Remove Warn :arrow_down:",
                 description=f"**{amount}** warns have been removed from **{member.mention}** by **{context.author.mention}**.",
@@ -280,7 +299,6 @@ class Moderation(commands.Cog, name="Moderation"):
                 )
             if reason is not None: embed.add_field(name="Reason", value=reason, inline=False)
             await context.send(embed=embed)
-            await self.send_dm(context, member, f"removed {amount} warns", reason)
         else:
             embed = discord.Embed(
                 title="Warns :confused:",
@@ -288,13 +306,16 @@ class Moderation(commands.Cog, name="Moderation"):
                 color=self.bot.default_color,
                 )
             await context.send(embed=embed)
+            await self.send_dm(context, member, "removed " + str(amount) + " warns", reason)
         
     @commands.command( name="clear_warns", description="Clear all warns of a member in the server.")
-    async def clearwarns(self, context: Context, member: discord.Member, *, reason: str = None):
+    async def clearwarns(self, context: Context, member: typing.Union[discord.Member, int], *, reason: str = None):
         '''Clear all warns of a member in the server'''
         if not self.check(context, PermissionToWarn): return
         if context.guild.id not in self.warns.keys():
             self.warns[context.guild.id] = dict()
+        if isinstance(member, int):
+            member = await self.bot.fetch_user(member)
         if member.id not in self.warns[context.guild.id].keys():
             embed = discord.Embed(
                 title="Warns :confused:",
@@ -305,8 +326,12 @@ class Moderation(commands.Cog, name="Moderation"):
             return
         self.warns[context.guild.id][member.id] = 0
         del self.warns[context.guild.id][member.id]
+        if len(self.warns[context.guild.id]) == 0:
+            del self.warns[context.guild.id]
+            self.delete_warns_file(context.guild.id)
+        else:
+            self.save_warns(context.guild.id)
         self.bot.log.info(f"{context.author.name} cleared all warns of {member.name} from {context.guild.name}", context.guild)
-        self.save_warns(context.guild.id)
         embed = discord.Embed(
             title="Moderation activity - Clear Warns :white_check_mark:",
             description=f"All warns have been cleared for **{member.mention}** by **{context.author.mention}**.",
