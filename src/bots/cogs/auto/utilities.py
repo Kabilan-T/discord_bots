@@ -100,9 +100,27 @@ class Utility(commands.Cog, name="Utilities"):
             await context.send(embed=embed)
     
     @commands.command( name="move", description="Move a member to a different voice channel.")
-    async def move(self, context: Context, member: discord.Member, channel: typing.Union[discord.VoiceChannel, int], *, reason: str = None):
+    async def move(self, context: Context, member: typing.Optional[discord.Member] = None, channel: typing.Union[discord.VoiceChannel, int] = None, *, reason: str = None):
         '''Move a member to a different voice channel'''
         if not self.check(context, PermissionToMove): return
+        if member is None:
+            member = context.author
+        if member.voice is None:
+            embed = discord.Embed(
+                title="Move :arrow_right:",
+                description=f"{member.mention} is not in a voice channel.",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed)
+            return
+        if channel is None:
+            embed = discord.Embed(
+                title="Move :arrow_right:",
+                description="Please specify a voice channel to move the member.",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed)
+            return
         if isinstance(channel, int):
             channel = context.guild.get_channel(channel)
         await member.move_to(channel, reason=reason)
@@ -115,9 +133,28 @@ class Utility(commands.Cog, name="Utilities"):
         await context.send(embed=embed)
 
     @commands.command( name="move_all", description="Move all members to a different voice channel.")
-    async def moveall(self, context: Context, from_channel: typing.Union[discord.VoiceChannel, int], to_channel: typing.Union[discord.VoiceChannel, int], *, reason: str = None):
+    async def moveall(self, context: Context, to_channel: typing.Union[discord.VoiceChannel, int] = None, from_channel: typing.Optional[typing.Union[discord.VoiceChannel, int]] = None, *, reason: str = None):
         '''Move all members to a different voice channel'''
         if not self.check(context, PermissionToMove): return
+        if from_channel is None:
+            if context.author.voice is not None:
+                from_channel = context.author.voice.channel
+            else:
+                embed = discord.Embed(
+                    title="Move :arrow_right:",
+                    description="Please specify a voice channel from which members should be moved.",
+                    color=self.bot.default_color,
+                    )
+                await context.send(embed=embed)
+                return
+        if to_channel is None:
+            embed = discord.Embed(
+                title="Move :arrow_right:",
+                description="Please specify a voice channel to which members should be moved.",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed)
+            return
         if isinstance(from_channel, int):
             from_channel = context.guild.get_channel(from_channel)
         if isinstance(to_channel, int):
@@ -133,9 +170,19 @@ class Utility(commands.Cog, name="Utilities"):
         self.bot.log.info(f"{context.author.name} moved all members from {from_channel.name} to {to_channel.name} in {context.guild.name}", context.guild)
     
     @commands.command( name="disconnect", description="Disconnect a member from the voice channel.")
-    async def disconnect(self, context: Context, member: discord.Member, *, reason: str = None):
+    async def disconnect(self, context: Context, member: typing.Optional[discord.Member] = None, *, reason: str = None):
         '''Disconnect a member from the voice channel'''
         if not self.check(context, PermissionToMove): return
+        if member is None:
+            member = context.author
+        if member.voice is None:
+            embed = discord.Embed(
+                title="Disconnect :x:",
+                description=f"{member.mention} is not in a voice channel.",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed)
+            return
         await member.move_to(None, reason=reason)
         self.bot.log.info(f"{context.author.name} disconnected {member.name} in {context.guild.name}", context.guild)
         embed = discord.Embed(
@@ -146,9 +193,20 @@ class Utility(commands.Cog, name="Utilities"):
         await context.send(embed=embed)    
     
     @commands.command( name="disconnect_all", description="Disconnect all members from the voice channel.")
-    async def disconnectall(self, context: Context, channel: typing.Union[discord.VoiceChannel, int], *, reason: str = None):
+    async def disconnectall(self, context: Context, channel: typing.Optional[typing.Union[discord.VoiceChannel, int]] = None, *, reason: str = None):
         '''Disconnect all members from the voice channel'''
         if not self.check(context, PermissionToMove): return
+        if channel is None:
+            if context.author.voice is not None:
+                channel = context.author.voice.channel
+            else:
+                embed = discord.Embed(
+                    title="Disconnect :x:",
+                    description="Please specify a voice channel from which members should be disconnected.",
+                    color=self.bot.default_color,
+                    )
+                await context.send(embed=embed)
+                return
         if isinstance(channel, int):
             channel = context.guild.get_channel(channel)
         for member in channel.members:
