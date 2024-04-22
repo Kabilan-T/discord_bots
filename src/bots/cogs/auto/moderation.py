@@ -267,6 +267,8 @@ class Moderation(commands.Cog, name="Moderation"):
                 )
             await context.send(embed=embed)
             return
+        if self.warns[context.guild.id][member.id] == amount:
+            await self.clearwarns(context, member, reason)
         if self.warns[context.guild.id][member.id] >= amount:
             self.warns[context.guild.id][member.id] -= amount 
             self.bot.log.info(f"{context.author.name} removed {amount} warns of {member.name} in {context.guild.name}", context.guild)
@@ -302,6 +304,7 @@ class Moderation(commands.Cog, name="Moderation"):
             await context.send(embed=embed)
             return
         self.warns[context.guild.id][member.id] = 0
+        del self.warns[context.guild.id][member.id]
         self.bot.log.info(f"{context.author.name} cleared all warns of {member.name} from {context.guild.name}", context.guild)
         self.save_warns(context.guild.id)
         embed = discord.Embed(
