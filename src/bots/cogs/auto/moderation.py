@@ -14,12 +14,14 @@ import asyncio
 import yaml
 import discord
 import typing
+import datetime
 from discord.ext import commands
 from discord.ext.commands import Context
 
 
 # Default permissions : Change 
 PermissionToBan = discord.Permissions(ban_members=True)
+PermissionToTimeOut = discord.Permissions(moderate_members=True)
 PermissionToWarn = discord.Permissions(moderate_members=True)
 PermissionToKick = discord.Permissions(kick_members=True)
 PermissionToMute = discord.Permissions(mute_members=True)
@@ -134,6 +136,15 @@ class Moderation(commands.Cog, name="Moderation"):
                     )
             await context.send(embed=embed)
     
+    @commands.command( name="timeout", description="Timeout a member in the server.")
+    async def timeout(self, context: Context, member: discord.Member, duration: int, *, reason: str = None):
+        '''Timeout a member in the server'''
+        if self.check(context, PermissionToTimeOut):
+            self.bot.log.info(f"{context.author.name} timed out {member.name} in {context.guild.name}", context.guild)
+            await self.send_message(context, member, "timed out :hourglass:", reason, False)
+            duration = datetime.timedelta(minutes=duration)
+            await member.timeout(duration, reason=reason)
+    
     @commands.command( name="kick", description="Kick a member from the server.")
     async def kick(self, context: Context, member: discord.Member, *, reason: str = None):
         '''Kick a member from the server'''
@@ -212,6 +223,14 @@ class Moderation(commands.Cog, name="Moderation"):
                     color=self.bot.default_color,
                     )
                 await context.send(embed=embed)
+    
+    @commands.command( name="remove_time_out", description="Remove the timeout of a member in the server.")
+    async def removetimeout(self, context: Context, member: discord.Member):
+        '''Remove the timeout of a member in the server'''
+        if self.check(context, PermissionToTimeOut):
+            self.bot.log.info(f"{context.author.name} removed timeout of {member.name} in {context.guild.name}", context.guild)
+            await self.send_message(context, member, "removed timeout :arrow_down:", None, True)
+            await member.timeout(None)
     
     @commands.command( name="unban", description="Unban a member from the server.")
     async def unban(self, context: Context, member: discord.Member, *, reason: str = None):
