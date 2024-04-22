@@ -117,21 +117,29 @@ class Moderation(commands.Cog, name="Moderation"):
         # save the warns
         with open(os.path.join(self.bot.data_dir, str(context.guild.id), "warns.yml"), "w+") as file:
             yaml.dump(self.warns[context.guild.id], file)
-    
-    @commands.command( name="check_warns", description="Get the number of warns a member has.")
-    async def check_warns(self, context: Context, member: discord.Member):
-        '''Check the number of warns a member has'''
+     
+    @commands.command( name="check_warns", description="Check the number of warns of one or all members in the server.")
+    async def check_warns(self, context: Context, member: typing.Optional[discord.Member] = None):
+        '''Check the number of warns of one or all members in the server'''
         if self.check(context, PermissionBasic):
-            if context.guild.id in self.warns.keys() and member.id in self.warns[context.guild.id].keys():
+            if context.guild.id in self.warns.keys():
                 embed = discord.Embed(
                     title="Warns :warning:",
-                    description=f"{member.mention} has {self.warns[context.guild.id][member.id]} warns.",
+                    description="",
                     color=self.bot.default_color,
                     )
+                if member is None:
+                    for member_id in self.warns[context.guild.id].keys():
+                        member = context.guild.get_member(member_id)
+                        embed.description += f"{member.mention} has {self.warns[context.guild.id][member_id]} warns.\n"
+                elif member.id in self.warns[context.guild.id].keys():
+                    embed.description += f"{member.mention} has {self.warns[context.guild.id][member.id]} warns."
+                else:
+                    embed.description += f"{member.mention} has no warns."
             else:
                 embed = discord.Embed(
                     title="Warns :warning:",
-                    description=f"{member.mention} has 0 warns.",
+                    description="No members have warns.",
                     color=self.bot.default_color,
                     )
             await context.send(embed=embed)
