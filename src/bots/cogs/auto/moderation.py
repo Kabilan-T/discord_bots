@@ -273,7 +273,7 @@ class Moderation(commands.Cog, name="Moderation"):
         if context.guild.id not in self.warns.keys():
             self.warns[context.guild.id] = dict()
         if isinstance(member, int):
-            member = self.bot.fetch_user(member)
+            member = await self.bot.fetch_user(member)
         if member.id not in self.warns[context.guild.id].keys():
             embed = discord.Embed(
                 title="Warns :confused:",
