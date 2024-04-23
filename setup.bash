@@ -26,7 +26,9 @@ fi
 python_version=$(cat runtime.txt)
 
 # Check if virtual environment exists
-if ! conda env list | grep -q discord_bots_env; then
+if conda env list | grep -q discord_bots_env; then
+    echo "Virtual environment 'discord_bots_env' already exists."
+else
     echo "Creating virtual environment with Python $python_version..."
     # Create virtual environment with specified Python version
     conda create -n discord_bots_env python="$python_version"
