@@ -31,5 +31,4 @@ mo:
   extensions:
     - 'cogs.general'
     - 'cogs.manage'
-    - 'cogs.mo.search'
     - 'cogs.mo.instagram'
