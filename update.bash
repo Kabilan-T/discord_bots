@@ -18,9 +18,15 @@ if [[ $PULL_OUTPUT == *"Already up to date."* ]]; then
 else
     echo "--- Changes detected ---"
     echo "Recent commit: $(git log -1 --pretty=format:"%h : '%s' - %ci" HEAD)"
-    echo "---------- Running Setup ----------"
-    bash setup.bash
-    echo "---------- Setup is done ----------"
+    echo "---------- Update package dependencies ----------"
+    # Activate virtual environment
+    eval "$(conda shell.bash hook)"
+    conda activate discord_bots_env
+    echo "Virtual environment 'discord_bots_env' activated."
+    # Install dependencies
+    echo "Installing dependencies..."
+    pip install --no-cache-dir -r requirements.txt --use-deprecated=legacy-resolver
+    echo "---------- Update package dependencies complete ----------"
 fi
 
 echo "--------------------------------------------------"
