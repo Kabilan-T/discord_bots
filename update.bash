@@ -17,7 +17,7 @@ if [[ $PULL_OUTPUT == *"Already up to date."* ]]; then
     echo "--- No changes detected ---"
 else
     echo "--- Changes detected ---"
-    # Run setup.bash
+    echo "Recent commit: $(git log -1 --pretty=format:"%h : '%s' - %ci" HEAD)"
     echo "---------- Running Setup ----------"
     bash setup.bash
     echo "---------- Setup is done ----------"
