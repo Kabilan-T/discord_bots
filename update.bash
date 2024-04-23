@@ -4,6 +4,7 @@
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 cd "$SCRIPTPATH" || exit
 
+echo
 echo "--------------------------------------------------"
 echo "Time - $(date)"
 
@@ -23,3 +24,4 @@ else
 fi
 
 echo "--------------------------------------------------"
+echo
