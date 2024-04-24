@@ -61,6 +61,21 @@ class Utility(commands.Cog, name="Utilities"):
                 color=self.bot.default_color,
                 )
             await context.send(embed=embed)
+
+    @commands.command( name="avatar", description="Get the avatar of a member.")
+    async def avatar(self, context: Context, member: typing.Optional[discord.Member] = None):
+        '''Get the avatar of a member'''
+        if not self.check(context, PermissionBasic): return
+        if member is None:
+            member = context.author
+        embed = discord.Embed(
+            title=f"{member.name}'s Avatar",
+            description=f"{member.mention}",
+            color=self.bot.default_color,
+            )
+        embed.set_image(url=member.avatar)
+        self.bot.log.info(f"{context.author.name} requested the avatar of {member.name} in {context.guild.name}", context.guild)
+        await context.send(embed=embed)
     
     @commands.command( name="purge", description="Purge messages from a channel.")
     async def purge(self, context: Context, amount: int):
