@@ -19,7 +19,16 @@ from discord.ext import tasks
 from discord.ext import commands
 from discord.ext.commands import Context
 from collections import defaultdict
-import feedparser
+try:
+    import feedparser
+except ImportError:
+    #install feedparser
+    os.system("pip install feedparser")
+try:
+    import googlesearch
+except ImportError:
+    #install googlesearch
+    os.system("pip install googlesearch-python")
 
 class RSSFeed(commands.Cog, name="RSS Feed"):
     def __init__(self, bot):
