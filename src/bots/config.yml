@@ -32,4 +32,5 @@ mo:
     - 'cogs.general'
     - 'cogs.manage'
     - 'cogs.mo.instagram'
+    - 'cogs.mo.search'
     - 'cogs.mo.rss'
