@@ -43,6 +43,31 @@ class General(commands.Cog, name="General"):
             )
         await context.send(embed=embed)
     
+    @commands.command( name="echo", description="Repeat the message.", aliases=["say"])
+    async def echo(self, context: Context, channel: discord.TextChannel = None, title: str = None, *, message: str = None):
+        '''Repeat the message'''
+        if channel is None:
+            channel = context.channel
+        if not channel.permissions_for(context.author).send_messages:
+            embed = discord.Embed(
+                title="Error",
+                description="You do not have permission to send messages in this channel.",
+                color=self.bot.error_color,
+                )
+            await context.reply(embed=embed)
+            return
+        if title is None:
+            title = ""
+        if message is None:
+            message = title
+            title = ""
+        embed = discord.Embed(
+            title=title,
+            description=message,
+            color=self.bot.default_color,
+            )
+        await channel.send(embed=embed)
+    
     @commands.command( name="help", description="Get help on a command." , aliases=["h"])
     async def help(self, context: Context, command: str = None):
         '''Get help on a command'''
