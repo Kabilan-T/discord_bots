@@ -10,6 +10,13 @@
 #-------------------------------------------------------------------------------
 
 import os
+import re
+try:
+    import regex
+except:
+    # if regex is not installed, install it
+    os.system("pip install regex")
+    import regex
 import gtts
 import asyncio
 import requests
@@ -97,6 +104,18 @@ class Voice(commands.Cog, name="Voice Features"):
             # wait for the bot to finish speaking
             while context.voice_client.is_playing():
                 await asyncio.sleep(1)
+        # Replace mentions with their display names
+        for mention in context.message.mentions:
+            text = text.replace(mention.mention, mention.display_name)
+        for role in context.message.role_mentions:
+            text = text.replace(role.mention, role.name)
+        for channel in context.message.channel_mentions:
+            text = text.replace(channel.mention, channel.name)
+        # Replace repeated emojis with a single instance
+        text = regex.sub(r'(\p{Emoji_Presentation})(\1+)', r'\1', text)
+        # Replace server emojis with their names
+        for emoji in context.message.guild.emojis:
+            text = text.replace(str(emoji), emoji.name)
         tts = gtts.gTTS(text, lang=self.language, tld=self.domain)
         file = os.path.join(tmp, "tts.mp3")
         os.makedirs(os.path.dirname(file), exist_ok=True)
