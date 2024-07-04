@@ -135,6 +135,41 @@ class Radio(commands.Cog, name="Radio FM"):
         await context.send(embed=embed)
         self.bot.log.info(f"Added radio {radio_name} to the list", context.guild)
         return
+
+    @commands.command(name="remove", aliases=["r"], description="Remove radio station from the list")
+    async def radio_remove(self, context: Context, radio_name: str):
+        ''' Remove radio station from the list '''
+        radio_list = self.get_radio_list(context.guild.id)
+        radio_name = radio_name.lower()
+        if radio_name.isdigit():
+            if int(radio_name) > len(radio_list) or int(radio_name) < 1:
+                embed = discord.Embed(
+                        title="Radio FM",
+                        description="Invalid radio number",
+                        color=self.bot.default_color,
+                        )
+                await context.send(embed=embed)
+                self.bot.log.warning(f"Invalid radio number", context.guild)
+                return
+            radio_name = list(radio_list.keys())[int(radio_name)-1]
+        if radio_name not in radio_list:
+            embed = discord.Embed(
+                    title="Radio FM",
+                    description=f"Radio {radio_name} not found",
+                    color=self.bot.default_color,
+                    )
+            await context.send(embed=embed)
+            self.bot.log.warning(f"Radio {radio_name} not found", context.guild)
+            return
+        radio_list.pop(radio_name)
+        self.save_radio_list(context.guild.id, radio_list)
+        embed = discord.Embed(
+                title="Radio FM",
+                description=f"Radio {radio_name} removed successfully from the list",
+                color=self.bot.default_color,
+                )
+        await context.send(embed=embed)
+        self.bot.log.info(f"Removed radio {radio_name} from the list", context.guild)
     
     @commands.command(name="join", aliases=["j"], description="Join the voice channel of the user")
     async def join(self, context: Context):
