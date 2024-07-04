@@ -22,7 +22,7 @@ class Radio(commands.Cog, name="Radio FM"):
         self.volume = 80
         self.called_channel = dict()
 
-    @commands.command(name="play", aliases=["fm", "pl"], help="Play radio in the voice channel")
+    @commands.command(name="play", aliases=["fm", "pl"], description="Play radio in the voice channel")
     async def radio(self, context: Context, radio_name: str):
         ''' Play radio in the voice channel '''
         radio_name = radio_name.lower()
@@ -64,7 +64,7 @@ class Radio(commands.Cog, name="Radio FM"):
         self.bot.log.info(f"Playing radio {radio_name} in {context.voice_client.channel.name}", context.guild)
         return
 
-    @commands.command(name="stop", aliases=["s"], help="Stop radio in the voice channel")
+    @commands.command(name="stop", aliases=["s"], description="Stop radio in the voice channel")
     async def radio_stop(self, context: Context):
         ''' Stop radio in the voice channel '''
         voice_client = discord.utils.get(self.bot.voice_clients, guild=context.guild)
@@ -88,7 +88,7 @@ class Radio(commands.Cog, name="Radio FM"):
         self.bot.log.info(f"Stopped radio in {voice_client.channel.name}", context.guild)
         return
 
-    @commands.command(name="list", aliases=["l"], help="List of available radio stations")
+    @commands.command(name="list", aliases=["l"], description="List of available radio stations")
     async def radio_list(self, context: Context):
         ''' List of available radio stations '''
         radio_list = self.get_radio_list(context.guild.id)
@@ -101,7 +101,7 @@ class Radio(commands.Cog, name="Radio FM"):
         await context.send(embed=embed)
         return
     
-    @commands.command(name="add", aliases=["a"], help="Add radio station to the list")
+    @commands.command(name="add", aliases=["a"], description="Add radio station to the list")
     async def radio_add(self, context: Context, radio_name: str, radio_url: str):
         ''' Add radio station to the list '''
         radio_list = self.get_radio_list(context.guild.id)
