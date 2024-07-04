@@ -69,6 +69,7 @@ class BaseBot(commands.Bot):
         self.log.info(f"Reloading extensions for {self.name}")
         self.succeeded = list()
         self.failed = list()
+        self.unloaded = list()
         for extension_to_load in self.extensions_to_load:
             try:
                 extension = "bots."+extension_to_load
@@ -83,7 +84,13 @@ class BaseBot(commands.Bot):
                 exception = f"{type(e).__name__}: {e}"
                 self.log.error(f"Failed to reload extension {extension}\n{exception}")
                 self.failed.append(extension)
-        return (self.succeeded, self.failed)
+        available_extensions = [extension for extension in self.extensions if extension.startswith('bots.')]
+        for extension in available_extensions:
+            if extension.replace('bots.', '') not in self.extensions_to_load:
+                await self.unload_extension(extension)
+                self.unloaded.append(extension)
+                self.log.info(f"Unloaded extension {extension}")
+        return (self.succeeded, self.failed, self.unloaded)
     
     async def get_prefix(self, message):
         '''Get the prefix for the bot'''

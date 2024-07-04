@@ -154,7 +154,7 @@ class General(commands.Cog, name="General"):
     @commands.has_permissions(administrator=True)
     async def reload(self, context: Context):
         '''Reload the bot cogs'''
-        (succeeded_reloads, failed_reloads) = await self.bot.reload_extensions()
+        (succeeded_reloads, failed_reloads, unloaded) = await self.bot.reload_extensions()
         embed = discord.Embed(
             title="Cogs Reloaded :gear:",
             color=self.bot.default_color,
@@ -169,6 +169,12 @@ class General(commands.Cog, name="General"):
             embed.add_field(
                 name="Failed",
                 value=f"\n".join([f":thumbsdown: `{cog}`" for cog in failed_reloads]),
+                inline=False,
+                )
+        if len(unloaded) > 0:
+            embed.add_field(
+                name="Unloaded",
+                value=f"\n".join([f":x: `{cog}`" for cog in unloaded]),
                 inline=False,
                 )
         await context.send(embed=embed)
