@@ -33,5 +33,5 @@ mo:
     - 'cogs.manage'
     - 'cogs.mo.instagram'
     - 'cogs.mo.radio'
-    - 'cogs.mo.search'
-    - 'cogs.mo.rss'
+    #- 'cogs.mo.search'
+    #- 'cogs.mo.rss'
