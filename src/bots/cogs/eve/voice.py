@@ -10,13 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import os
-import re
-try:
-    import regex
-except:
-    # if regex is not installed, install it
-    os.system("pip install regex")
-    import regex
+import regex
 import gtts
 import asyncio
 import requests
