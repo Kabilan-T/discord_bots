@@ -10,9 +10,8 @@
 #-------------------------------------------------------------------------------
 
 import os
-import re
 import yaml
-import asyncio
+import aiohttp
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -21,22 +20,14 @@ class Radio(commands.Cog, name="Radio FM"):
     def __init__(self, bot):
         self.bot = bot
         self.volume = 80
+        self.called_channel = dict()
 
-    @commands.command(name="play", aliases=["fm", "p"], help="Play radio in the voice channel")
+    @commands.command(name="play", aliases=["fm", "pl"], help="Play radio in the voice channel")
     async def radio(self, context: Context, radio_name: str):
         ''' Play radio in the voice channel '''
         radio_name = radio_name.lower()
         radio_list = self.get_radio_list(context.guild.id)
-        if radio_name not in radio_list:
-            embed = discord.Embed(
-                    title="Radio FM",
-                    description=f"Radio {radio_name} not found",
-                    color=self.bot.default_color,
-                    )
-            await context.send(embed=embed)
-            self.bot.log.warning(f"Radio {radio_name} not found", context.guild)
-            return
-        elif radio_name.isdigit():
+        if radio_name.isdigit():
             if int(radio_name) > len(radio_list) or int(radio_name) < 1:
                 embed = discord.Embed(
                         title="Radio FM",
@@ -47,6 +38,15 @@ class Radio(commands.Cog, name="Radio FM"):
                 self.bot.log.warning(f"Invalid radio number", context.guild)
                 return
             radio_name = list(radio_list.keys())[int(radio_name)-1]
+        elif radio_name not in radio_list:
+            embed = discord.Embed(
+                    title="Radio FM",
+                    description=f"Radio {radio_name} not found",
+                    color=self.bot.default_color,
+                    )
+            await context.send(embed=embed)
+            self.bot.log.warning(f"Radio {radio_name} not found", context.guild)
+            return
         radio_url = radio_list[radio_name]
         if context.voice_client is None:
             if not await self.join(context):
@@ -62,9 +62,6 @@ class Radio(commands.Cog, name="Radio FM"):
                 )
         await context.send(embed=embed)
         self.bot.log.info(f"Playing radio {radio_name} in {context.voice_client.channel.name}", context.guild)
-        while context.voice_client.is_playing():
-            await asyncio.sleep(1)
-        await context.voice_client.disconnect()
         return
 
     @commands.command(name="stop", aliases=["s"], help="Stop radio in the voice channel")
@@ -109,6 +106,25 @@ class Radio(commands.Cog, name="Radio FM"):
         ''' Add radio station to the list '''
         radio_list = self.get_radio_list(context.guild.id)
         radio_name = radio_name.lower()
+        if radio_name in radio_list:
+            embed = discord.Embed(
+                    title="Radio FM",
+                    description=f"Radio {radio_name} already exists",
+                    color=self.bot.default_color,
+                    )
+            await context.send(embed=embed)
+            self.bot.log.warning(f"Radio {radio_name} already exists", context.guild)
+            return
+        is_streaming_url_valid = await self.check_streaming_url(radio_url)
+        if not is_streaming_url_valid:
+            embed = discord.Embed(
+                    title="Radio FM",
+                    description="Invalid streaming URL",
+                    color=self.bot.default_color,
+                    )
+            await context.send(embed=embed)
+            self.bot.log.warning(f"Invalid streaming URL", context.guild)
+            return
         radio_list[radio_name] = radio_url
         self.save_radio_list(context.guild.id, radio_list)
         embed = discord.Embed(
@@ -201,27 +217,46 @@ class Radio(commands.Cog, name="Radio FM"):
     def get_radio_list(self, guild_id):
         ''' Get radio list from the config file '''
         if os.path.exists(self.bot.data_dir):
-            if guild_id in os.listdir(self.bot.data_dir):
-                if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "radio.yml")):
-                    with open(os.path.join(self.bot.data_dir, guild_id, "radio.yml"), "r") as file:
+            if str(guild_id) in os.listdir(self.bot.data_dir):
+                if os.path.exists(os.path.join(self.bot.data_dir, str(guild_id), "radio.yml")):
+                    with open(os.path.join(self.bot.data_dir, str(guild_id), "radio.yml"), "r") as file:
                         radio_list = yaml.load(file, Loader=yaml.FullLoader)
                         return radio_list
-        self.bot.log.warning(f"No radio list found for {guild_id}")
+        self.bot.log.warning(f"No radio list found for {str(guild_id)}")
         return dict()
     
     def save_radio_list(self, guild_id, radio_list):
         ''' Save radio list to the config file '''
         if os.path.exists(self.bot.data_dir):
-            if not guild_id in os.listdir(self.bot.data_dir):
-                os.mkdir(os.path.join(self.bot.data_dir, guild_id))
-            with open(os.path.join(self.bot.data_dir, guild_id, "radio.yml"), "w+") as file:
+            if not str(guild_id) in os.listdir(self.bot.data_dir):
+                os.mkdir(os.path.join(self.bot.data_dir, str(guild_id)))
+            with open(os.path.join(self.bot.data_dir, str(guild_id), "radio.yml"), "w+") as file:
                 yaml.dump(radio_list, file)
-        self.bot.log.info(f"Saved radio list for {guild_id}")
+        self.bot.log.info(f"Saved radio list for {str(guild_id)}")
         return
     
+    async def check_streaming_url(self, radio_url: str):
+        ''' Check if the streaming URL is valid '''
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(radio_url) as response:
+                    # Check if the URL responds with a status code 200 (OK)
+                    if response.status == 200:
+                        # Check the Content-Type header to ensure it's an audio stream
+                        content_type = response.headers.get('Content-Type', '').lower()
+                        if 'audio' in content_type:
+                            self.bot.log.info(f"Streaming URL {radio_url} is valid")
+                            return True
+        except Exception as e:
+            self.bot.log.warning(f"Error checking streaming URL: {e}")
+        self.bot.log.warning(f"Streaming URL {radio_url} is invalid")
+        return False
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         ''' Disconnect bot when no one is in the voice channel '''
+        if member == self.bot.user: return # ignore bot
+        if member.guild.voice_client is None or member.guild.voice_client.is_playing(): return # ignore if bot is not in a voice channel or is speaking
         if before.channel != after.channel and before.channel == member.guild.voice_client.channel:
             if len(before.channel.members) == 1:
                 await before.channel.guild.voice_client.disconnect()
