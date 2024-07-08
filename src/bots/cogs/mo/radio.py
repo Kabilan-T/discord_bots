@@ -34,7 +34,7 @@ class Radio(commands.Cog, name="Radio FM"):
                         description="Invalid radio number",
                         color=self.bot.default_color,
                         )
-                await context.send(embed=embed)
+                await context.reply(embed=embed)
                 self.bot.log.warning(f"Invalid radio number", context.guild)
                 return
             radio_name = list(radio_list.keys())[int(radio_name)-1]
@@ -44,7 +44,7 @@ class Radio(commands.Cog, name="Radio FM"):
                     description=f"Radio {radio_name} not found",
                     color=self.bot.default_color,
                     )
-            await context.send(embed=embed)
+            await context.reply(embed=embed)
             self.bot.log.warning(f"Radio {radio_name} not found", context.guild)
             return
         radio_url = radio_list[radio_name]
@@ -60,7 +60,7 @@ class Radio(commands.Cog, name="Radio FM"):
                 description=f"Playing {radio_name} in {context.voice_client.channel.mention}",
                 color=self.bot.default_color,
                 )
-        await context.send(embed=embed)
+        await context.reply(embed=embed)
         self.bot.log.info(f"Playing radio {radio_name} in {context.voice_client.channel.name}", context.guild)
         return
 
@@ -74,7 +74,7 @@ class Radio(commands.Cog, name="Radio FM"):
                     description="I am not in a voice channel",
                     color=self.bot.default_color,
                     )
-            await context.send(embed=embed)
+            await context.reply(embed=embed)
             self.bot.log.warning(f"Bot not in a voice channel", context.guild)
             return
         voice_client.stop()
@@ -84,7 +84,7 @@ class Radio(commands.Cog, name="Radio FM"):
                 description="I have stopped the radio",
                 color=self.bot.default_color,
                 )
-        await context.send(embed=embed)
+        await context.reply(embed=embed)
         self.bot.log.info(f"Stopped radio in {voice_client.channel.name}", context.guild)
         return
 
@@ -92,13 +92,13 @@ class Radio(commands.Cog, name="Radio FM"):
     async def radio_list(self, context: Context):
         ''' List of available radio stations '''
         radio_list = self.get_radio_list(context.guild.id)
-        radio_list = "\n".join([f"{idx+1}. {radio_name}" for idx, radio_name in enumerate(radio_list.keys())])
+        radio_list = "\n".join([f"{idx+1}. [{radio_name}]({radio_url})" for idx, (radio_name, radio_url) in enumerate(radio_list.items())])
         embed = discord.Embed(
                 title="Radio FM",
                 description=radio_list,
                 color=self.bot.default_color,
                 )
-        await context.send(embed=embed)
+        await context.reply(embed=embed)
         return
     
     @commands.command(name="add", aliases=["a"], description="Add radio station to the list")
@@ -112,7 +112,7 @@ class Radio(commands.Cog, name="Radio FM"):
                     description=f"Radio {radio_name} already exists",
                     color=self.bot.default_color,
                     )
-            await context.send(embed=embed)
+            await context.reply(embed=embed)
             self.bot.log.warning(f"Radio {radio_name} already exists", context.guild)
             return
         is_streaming_url_valid = await self.check_streaming_url(radio_url)
@@ -122,7 +122,7 @@ class Radio(commands.Cog, name="Radio FM"):
                     description="Invalid streaming URL",
                     color=self.bot.default_color,
                     )
-            await context.send(embed=embed)
+            await context.reply(embed=embed)
             self.bot.log.warning(f"Invalid streaming URL", context.guild)
             return
         radio_list[radio_name] = radio_url
@@ -132,7 +132,7 @@ class Radio(commands.Cog, name="Radio FM"):
                 description=f"Radio {radio_name} added successfully",
                 color=self.bot.default_color,
                 )
-        await context.send(embed=embed)
+        await context.reply(embed=embed)
         self.bot.log.info(f"Added radio {radio_name} to the list", context.guild)
         return
 
@@ -148,7 +148,7 @@ class Radio(commands.Cog, name="Radio FM"):
                         description="Invalid radio number",
                         color=self.bot.default_color,
                         )
-                await context.send(embed=embed)
+                await context.reply(embed=embed)
                 self.bot.log.warning(f"Invalid radio number", context.guild)
                 return
             radio_name = list(radio_list.keys())[int(radio_name)-1]
@@ -158,7 +158,7 @@ class Radio(commands.Cog, name="Radio FM"):
                     description=f"Radio {radio_name} not found",
                     color=self.bot.default_color,
                     )
-            await context.send(embed=embed)
+            await context.reply(embed=embed)
             self.bot.log.warning(f"Radio {radio_name} not found", context.guild)
             return
         radio_list.pop(radio_name)
@@ -168,8 +168,53 @@ class Radio(commands.Cog, name="Radio FM"):
                 description=f"Radio {radio_name} removed successfully from the list",
                 color=self.bot.default_color,
                 )
-        await context.send(embed=embed)
+        await context.reply(embed=embed)
         self.bot.log.info(f"Removed radio {radio_name} from the list", context.guild)
+
+    @commands.command(name="rename", aliases=["rn"], description="Rename radio station in the list")
+    async def radio_rename(self, context: Context, radio_name: str, new_name: str):
+        ''' Rename radio station in the list '''
+        radio_list = self.get_radio_list(context.guild.id)
+        radio_name = radio_name.lower()
+        new_name = new_name.lower()
+        if radio_name.isdigit():
+            if int(radio_name) > len(radio_list) or int(radio_name) < 1:
+                embed = discord.Embed(
+                        title="Radio FM",
+                        description="Invalid radio number",
+                        color=self.bot.default_color,
+                        )
+                await context.reply(embed=embed)
+                self.bot.log.warning(f"Invalid radio number", context.guild)
+                return
+            radio_name = list(radio_list.keys())[int(radio_name)-1]
+        if radio_name not in radio_list:
+            embed = discord.Embed(
+                    title="Radio FM",
+                    description=f"Radio {radio_name} not found",
+                    color=self.bot.default_color,
+                    )
+            await context.reply(embed=embed)
+            self.bot.log.warning(f"Radio {radio_name} not found", context.guild)
+            return
+        if new_name in radio_list:
+            embed = discord.Embed(
+                    title="Radio FM",
+                    description=f"Radio {new_name} already exists",
+                    color=self.bot.default_color,
+                    )
+            await context.reply(embed=embed)
+            self.bot.log.warning(f"Radio {new_name} already exists", context.guild)
+            return
+        radio_list[new_name] = radio_list.pop(radio_name)
+        self.save_radio_list(context.guild.id, radio_list)
+        embed = discord.Embed(
+                title="Radio FM",
+                description=f"Radio {radio_name} renamed to {new_name} successfully",
+                color=self.bot.default_color,
+                )
+        await context.reply(embed=embed)
+        self.bot.log.info(f"Renamed radio {radio_name} to {new_name}", context.guild)
     
     @commands.command(name="join", aliases=["j"], description="Join the voice channel of the user")
     async def join(self, context: Context):
@@ -291,10 +336,14 @@ class Radio(commands.Cog, name="Radio FM"):
     async def on_voice_state_update(self, member, before, after):
         ''' Disconnect bot when no one is in the voice channel '''
         if member == self.bot.user: return # ignore bot
-        if member.guild.voice_client is None or member.guild.voice_client.is_playing(): return # ignore if bot is not in a voice channel or is speaking
-        if before.channel != after.channel and before.channel == member.guild.voice_client.channel:
+        voice_client = member.guild.voice_client
+        if voice_client is None: return
+        if before.channel == voice_client.channel and (after.channel != voice_client.channel or after.channel is None):
             if len(before.channel.members) == 1:
-                await before.channel.guild.voice_client.disconnect()
+                # Stop playing if the bot is playing something
+                if voice_client.is_playing():
+                    voice_client.stop()
+                await voice_client.disconnect()
                 embed = discord.Embed(
                     title="Radio FM",
                     description="I have disconnected as no one is in the voice channel",
