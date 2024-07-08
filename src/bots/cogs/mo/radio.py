@@ -11,16 +11,21 @@
 
 import os
 import yaml
+import gtts
+import asyncio
 import aiohttp
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
+
+tmp = "tmp"
 
 class Radio(commands.Cog, name="Radio FM"):
     def __init__(self, bot):
         self.bot = bot
         self.volume = 80
         self.called_channel = dict()
+        self.now_playing = dict()
 
     @commands.command(name="play", aliases=["fm", "pl"], description="Play radio in the voice channel")
     async def radio(self, context: Context, radio_name: str):
@@ -52,7 +57,34 @@ class Radio(commands.Cog, name="Radio FM"):
             if not await self.join(context):
                 return
         elif context.voice_client.is_playing():
+            if self.now_playing.get(context.guild.id, None) is not None:
+                if radio_name == self.now_playing[context.guild.id]:
+                    embed = discord.Embed(
+                            title="Radio FM",
+                            description=f"Radio {radio_name} is already playing in {context.voice_client.channel.mention}",
+                            color=self.bot.default_color,
+                            )
+                    await context.reply(embed=embed)
+                    self.bot.log.warning(f"Radio {radio_name} is already playing in {context.voice_client.channel.name}", context.guild)
+                    return
             context.voice_client.stop()
+        # Say the radio name
+        if self.now_playing.get(context.guild.id, None) is not None:
+            now_playing = self.now_playing[context.guild.id]
+            text = f"Switching from radio station {now_playing.replace('_', ' ')} to {radio_name.replace('_', ' ')}"
+        else:
+            text = f"Playing the radio station {radio_name.replace('_', ' ')}"
+        tts = gtts.gTTS(text, lang="en", tld="com.au")
+        file = os.path.join(tmp, "tts.mp3")
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        tts.save(file)
+        context.voice_client.play(discord.FFmpegPCMAudio(file))
+        context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source)
+        while context.voice_client.is_playing():
+            await asyncio.sleep(1)
+        os.remove(file)
+        # Play the radio
+        self.now_playing[context.guild.id] = radio_name
         context.voice_client.play(discord.FFmpegPCMAudio(radio_url))
         context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source, volume=self.volume/100)
         embed = discord.Embed(
@@ -78,6 +110,7 @@ class Radio(commands.Cog, name="Radio FM"):
             self.bot.log.warning(f"Bot not in a voice channel", context.guild)
             return
         voice_client.stop()
+        self.now_playing.pop(context.guild.id, None)
         await voice_client.disconnect()
         embed = discord.Embed(
                 title="Radio FM",
@@ -343,6 +376,7 @@ class Radio(commands.Cog, name="Radio FM"):
                 # Stop playing if the bot is playing something
                 if voice_client.is_playing():
                     voice_client.stop()
+                    self.now_playing.pop(before.channel.guild.id, None)
                 await voice_client.disconnect()
                 embed = discord.Embed(
                     title="Radio FM",
