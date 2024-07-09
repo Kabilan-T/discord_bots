@@ -71,7 +71,7 @@ class Radio(commands.Cog, name="Radio FM"):
         # Say the radio name
         if self.now_playing.get(context.guild.id, None) is not None:
             now_playing = self.now_playing[context.guild.id]
-            text = f"Switching from radio station {now_playing.replace('_', ' ')} to {radio_name.replace('_', ' ')}"
+            text = f"Switching from {now_playing.replace('_', ' ')} to {radio_name.replace('_', ' ')} radio station"
         else:
             text = f"Playing the radio station {radio_name.replace('_', ' ')}"
         tts = gtts.gTTS(text, lang="en", tld="com.au")
@@ -89,7 +89,7 @@ class Radio(commands.Cog, name="Radio FM"):
         context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source, volume=self.volume/100)
         embed = discord.Embed(
                 title="Radio FM",
-                description=f"Playing {radio_name} in {context.voice_client.channel.mention}",
+                description=f"{text} in {context.voice_client.channel.mention} :radio:",
                 color=self.bot.default_color,
                 )
         await context.reply(embed=embed)
