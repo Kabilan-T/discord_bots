@@ -7,10 +7,10 @@ auto:
   extensions:
     - 'cogs.general'
     - 'cogs.manage'
-    - 'cogs.auto.greetings'
     - 'cogs.auto.moderation'
     - 'cogs.auto.utilities'
     - 'cogs.auto.roles'
+    - 'cogs.auto.announcements'
 eve:
   name: EVE
   username: 'EVE#4830'

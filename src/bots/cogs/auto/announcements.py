@@ -5,23 +5,24 @@
 # E-mail: kavikabilan37@gmail.com
 # Github: Kabilan-T
 
-''' Greeting messages features such as welcome and goodbye messages'''
+''' Announcements messages for server and DMs '''
 
 #-------------------------------------------------------------------------------
 
 import discord
+import typing
+import datetime
 from discord.ext import commands
 from discord.ext.commands import Context
 
-class Greetings(commands.Cog, name="Greetings"):
+class Announcements(commands.Cog, name="Announcements"):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         ''' Send welcome message when a new member joins the server '''
-        if member.bot:
-            return
+        if member.bot: return
         guild = member.guild
         self.bot.log.info(f"New member {member.display_name} joined {guild.name}", guild)
         if guild.system_channel is not None:
@@ -39,8 +40,7 @@ class Greetings(commands.Cog, name="Greetings"):
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         ''' Send goodbye message when a member leaves the server '''
-        if member.bot:
-            return
+        if member.bot: return
         guild = member.guild
         self.bot.log.info(f"Member {member.display_name} left {guild.name}", guild)
         if guild.system_channel is not None:
@@ -57,7 +57,6 @@ class Greetings(commands.Cog, name="Greetings"):
 
     async def get_welcome_message(self, guild: discord.Guild,  member: discord.Member):
         ''' Get welcome message for a member '''
-
         embed = discord.Embed()
         embed.set_author(name=self.bot.name+", The Autopilot",
                          icon_url=self.bot.user.avatar.url)
@@ -79,7 +78,6 @@ class Greetings(commands.Cog, name="Greetings"):
     
     async def get_goodbye_message(self, guild: discord.Guild,  member: discord.Member):
         ''' Get goodbye message for a member '''
-
         embed = discord.Embed()
         embed.set_author(name=self.bot.name+", The Autopilot",
                             icon_url=self.bot.user.avatar.url)
@@ -94,7 +92,6 @@ class Greetings(commands.Cog, name="Greetings"):
         embed.add_field(name= f" :crystal_ball: Journey Duration:",
                         value=f"{(discord.utils.utcnow() - member.joined_at).days} days",
                         inline=True)
-        
         embed.set_footer(text=f"We will miss you @{member.name}")
         return embed
     
@@ -125,4 +122,4 @@ class Greetings(commands.Cog, name="Greetings"):
 
 
 async def setup(bot):
-    await bot.add_cog(Greetings(bot))
+    await bot.add_cog(Announcements(bot))
