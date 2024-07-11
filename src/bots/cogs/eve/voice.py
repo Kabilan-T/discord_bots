@@ -111,7 +111,7 @@ class Voice(commands.Cog, name="Voice Features"):
         for emoji in context.message.guild.emojis:
             text = text.replace(str(emoji), emoji.name)
         tts = gtts.gTTS(text, lang=self.language, tld=self.domain)
-        file = os.path.join(tmp, "tts.mp3")
+        file = os.path.join(tmp, "message.mp3")
         os.makedirs(os.path.dirname(file), exist_ok=True)
         tts.save(file)
         context.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: self.bot.log.info(f"Speaking done '{e}'", context.guild))
@@ -269,15 +269,17 @@ class Voice(commands.Cog, name="Voice Features"):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        if member == self.bot.user: return # ignore bot
+        if member.bot: return
         if member.guild.voice_client is None or member.guild.voice_client.is_playing(): return # ignore if bot is not in a voice channel or is speaking
         if before.channel != after.channel and after.channel == member.guild.voice_client.channel:
             greet_message = "Vanakkam " + f"{member.display_name}"
             if str(member.guild.id) in self.greet_messages.keys():
                 if str(member.id) in self.greet_messages[str(member.guild.id)].keys():
-                    greet_message = self.greet_messages[str(member.guild.id)][str(member.id)] + f" {member.display_name}"
+                    name = member.display_name.replace('_', ' ')
+                    name = name.replace('.', ' ')
+                    greet_message = self.greet_messages[str(member.guild.id)][str(member.id)] + f" {name}"
             tts = gtts.gTTS(f"{greet_message}", lang='ta', tld='co.in')
-            file = os.path.join(tmp, "tts.mp3")
+            file = os.path.join(tmp, "greet.mp3")
             os.makedirs(os.path.dirname(file), exist_ok=True)
             tts.save(file)
             await asyncio.sleep(3)

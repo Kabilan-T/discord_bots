@@ -75,7 +75,7 @@ class Radio(commands.Cog, name="Radio FM"):
         else:
             text = f"Playing the radio station {radio_name.replace('_', ' ')}"
         tts = gtts.gTTS(text, lang="en", tld="com.au")
-        file = os.path.join(tmp, "tts.mp3")
+        file = os.path.join(tmp, "radio_welcome.mp3")
         os.makedirs(os.path.dirname(file), exist_ok=True)
         tts.save(file)
         context.voice_client.play(discord.FFmpegPCMAudio(file))
@@ -265,6 +265,7 @@ class Radio(commands.Cog, name="Radio FM"):
         self.called_channel[context.guild.id] = context.channel
         if context.voice_client is None:
             await voice_channel.connect()
+            self.now_playing.pop(context.guild.id, None)
             embed = discord.Embed(
                 title=f"Joined {voice_channel.name} :microphone:",
                 description="I have joined the voice channel",
