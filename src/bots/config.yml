@@ -22,6 +22,7 @@ eve:
     - 'cogs.manage'
     - 'cogs.eve.voice'
     - 'cogs.eve.bingo'
+    - 'cogs.eve.watchlist'
 mo:
   name: M-O
   username: 'MO#9127'
