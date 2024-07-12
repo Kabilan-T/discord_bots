@@ -9,6 +9,8 @@
 
 #-------------------------------------------------------------------------------
 
+import os
+import yaml
 import asyncio
 import typing
 import discord
@@ -21,6 +23,8 @@ class Watchlist(commands.Cog, name='Watchlist'):
     def __init__(self, bot):
         self.bot = bot
         self.watchlist = dict()
+        self.announcement_config = dict()
+        self.load_watchlist()
         self.api_key = '99fff185'  # OMDb API key (free) -# Hide this key later
 
     @commands.command(name='add_to_watchlist', aliases=['add', 'a'], description="Add a movie or show to the watchlist")
@@ -41,7 +45,183 @@ class Watchlist(commands.Cog, name='Watchlist'):
             return
         selected_item = await self.prompt_user_to_select(context, search_results)
         if selected_item is None: return
-        detailed_info = self.get_movie_details(selected_item['imdbID'])
+        entry = {'name': f"{selected_item['Title']} ({selected_item['Year']})",
+                 'imdb_id': selected_item['imdbID'],
+                 'poster': selected_item['Poster'],
+                 'suggested_by': context.author.id}
+        if context.guild.id not in self.watchlist:
+            self.watchlist[str(context.guild.id)] = list()
+        self.watchlist[str(context.guild.id)].append(entry)
+        self.save_watchlist()
+        await self.show_detailed_info(context, selected_item['imdbID'], f"Added {entry['name']} to the watchlist :white_check_mark:")
+    
+    @commands.command(name='checked', aliases=['c', 'remove', 'check'], description="Remove a movie or show from the watchlist")
+    async def remove_from_watchlist(self, context: Context, index: int):
+        ''' Remove a movie or show from the watchlist '''
+        if context.guild.id not in self.watchlist or not self.watchlist[str(context.guild.id)]:
+            embed = discord.Embed(
+                title="Watchlist is empty :confused:",
+                description="Add some movies or shows to the watchlist first.",
+                color=self.bot.default_color
+            )
+            await context.send(embed=embed)
+            return
+        if 1 <= index <= len(self.watchlist[str(context.guild.id)]):
+            entry = self.watchlist[str(context.guild.id)].pop(index - 1)
+            self.save_watchlist()
+            await self.show_detailed_info(context, entry['imdb_id'], f"Removed {entry['name']} from the watchlist :white_check_mark:")
+        else:
+            embed = discord.Embed(
+                title="Invalid index :confused:",
+                description="Please enter a valid index.",
+                color=self.bot.default_color
+            )
+            await context.send(embed=embed)
+
+    @commands.command(name='search', aliases=['sm'], description="Search for a movie or show")
+    async def search_movie(self, context: Context, *title: str, year: typing.Optional[int] = None):
+        ''' Search for a movie or show '''
+        title = ' '.join(title)
+        if year and 1900 <= year <= 2100:
+            search_results = self.search_movie(title, year)
+        else:
+            search_results = self.search_movie(title)
+        if not search_results:
+            embed = discord.Embed(
+                title="Sorry :confused:",
+                description="I couldn't find any movie or show with that title.",
+                color=self.bot.default_color
+            )
+            await context.send(embed=embed)
+            return
+        selected_item = await self.prompt_user_to_select(context, search_results)
+        if selected_item is None: return
+        await self.show_detailed_info(context, selected_item['imdbID'], f"Search results for {title}")
+
+    @commands.command(name='watchlist', aliases=['wl', 'list'], description="Show the watchlist")
+    async def show_watchlist(self, context: Context):
+        ''' Show the watchlist '''
+        if context.guild.id not in self.watchlist or not self.watchlist[str(context.guild.id)]:
+            embed = discord.Embed(
+                title="Watchlist is empty :confused:",
+                description="Add some movies or shows to the watchlist first.",
+                color=self.bot.default_color
+            )
+            await context.send(embed=embed)
+            return
+        embed = discord.Embed(
+                title="Watchlist",
+                description=f"Total movies/shows: {n_movies}",
+                color=self.bot.default_color
+            )
+        n_movies = len(self.watchlist[str(context.guild.id)])
+        for idx, entry in enumerate(self.watchlist[str(context.guild.id)]):
+            embed.add_field(name=f"{idx + 1}. {entry['name']}", value=f"Suggested by: <@{entry['suggested_by']}>", inline=False)
+        await context.send(embed=embed)
+    
+    @commands.command(name='show_details', aliases=['show', 'details', 'sd'], description="Show detailed information about a movie or show")
+    async def show_detailed_info(self, context: Context, index: int):
+        ''' Show detailed information about a movie or show '''
+        if context.guild.id not in self.watchlist or not self.watchlist[str(context.guild.id)]:
+            embed = discord.Embed(
+                title="Watchlist is empty :confused:",
+                description="Add some movies or shows to the watchlist first.",
+                color=self.bot.default_color
+            )
+            await context.send(embed=embed)
+            return
+        if 1 <= index <= len(self.watchlist[str(context.guild.id)]):
+            entry = self.watchlist[str(context.guild.id)][index - 1]
+            await self.show_detailed_info(context, entry['imdb_id'], f"Details of {entry['name']}")
+        else:
+            embed = discord.Embed(
+                title="Invalid index :confused:",
+                description="Please enter a valid index.",
+                color=self.bot.default_color
+            )
+            await context.send(embed=embed)
+    
+    @commands.command(name='set_announcement', aliases=['sa'], description="Set the channel to announce movies or shows and the role to ping")
+    async def set_announcement_channel(self, context: Context, channel: discord.TextChannel = None, role: discord.Role = None):
+        ''' Set the channel to announce movies or shows '''
+        if channel is None:
+            channel = context.channel
+        if context.guild.id not in self.announcement_config:
+            self.announcement_config[str(context.guild.id)] = dict()
+        self.announcement_config[str(context.guild.id)]['channel'] = channel.id
+        if role is not None:
+            self.announcement_config[str(context.guild.id)]['role'] = role.id
+        self.save_watchlist()
+        embed = discord.Embed(
+            title="Announcement channel set :white_check_mark:",
+            description=f"Movies or shows will be announced in {channel.mention}",
+            color=self.bot.default_color
+        )
+        await context.send(embed=embed)
+
+    @commands.command(name='announce', aliases=['an'], description="Announce a movie or show streaming in the server")
+    async def announce_movie(self, context: Context, index: int, time: typing.Optional[str] = None):
+        ''' Announce a movie or show streaming in the server '''
+        if context.guild.id not in self.watchlist or not self.watchlist[str(context.guild.id)]:
+            embed = discord.Embed(
+                title="Watchlist is empty :confused:",
+                description="Add some movies or shows to the watchlist first.",
+                color=self.bot.default_color
+            )
+            await context.send(embed=embed)
+            return
+        if 1 <= index <= len(self.watchlist[str(context.guild.id)]):
+            entry = self.watchlist[str(context.guild.id)][index - 1]
+            if context.guild.id not in self.announcement_config or 'channel' not in self.announcement_config[str(context.guild.id)]:
+                embed = discord.Embed(
+                    title="Announcement channel not set :confused:",
+                    description="Please set the announcement channel first.",
+                    color=self.bot.default_color
+                )
+                await context.send(embed=embed)
+                return
+            channel = context.guild.get_channel(self.announcement_config[str(context.guild.id)]['channel'])
+            if channel is None:
+                embed = discord.Embed(
+                    title="Invalid announcement channel :confused:",
+                    description="Please set the announcement channel again.",
+                    color=self.bot.default_color
+                )
+                await context.send(embed=embed)
+                return
+            if 'role' in self.announcement_config[str(context.guild.id)]:
+                role = context.guild.get_role(self.announcement_config[str(context.guild.id)]['role'])
+                if role is None:
+                    embed = discord.Embed(
+                        title="Invalid role :confused:",
+                        description="Please set the role to ping again.",
+                        color=self.bot.default_color
+                    )
+                    await context.send(embed=embed)
+                    return
+                if time:
+                    message = f"{role.mention} {entry['name']} is starting in {time} minutes in {context.guild.name}! :popcorn:"
+                else:
+                    message = f"{role.mention} {entry['name']} is starting in {context.guild.name} in few minutes! :popcorn:"
+            else:
+                if time:
+                    message = f"{entry['name']} is starting in {time} minutes in {context.guild.name}! :popcorn:"
+                else:
+                    message = f"{entry['name']} is starting in {context.guild.name} in few minutes! :popcorn:"
+            detailed_info = self.get_movie_details(entry['imdb_id'])
+            if detailed_info is None:
+                embed = discord.Embed(
+                    title="Failed to retrieve detailed information :confused:",
+                    description="Please try again.",
+                    color=self.bot.default_color
+                )
+                await context.send(embed=embed)
+                return
+            embed = self.embed_movie_details(detailed_info)
+            await channel.send(message, embed=embed)
+
+    async def show_detailed_info(self, context: Context, imdbID, embed_title=None):
+        detailed_info = self.get_movie_details(imdbID)
         if detailed_info is None:
             embed = discord.Embed(
                 title="Failed to retrieve detailed information :confused:",
@@ -50,34 +230,10 @@ class Watchlist(commands.Cog, name='Watchlist'):
             )
             await context.send(embed=embed)
             return
-        if context.guild.id not in self.watchlist:
-            self.watchlist[context.guild.id] = list()
-        entry = {'name': f"{detailed_info['Title']} ({detailed_info['Year']})",
-                 'details': detailed_info, 
-                 'suggested_by': context.author.id}
-        self.watchlist[context.guild.id].append(entry)
-        embed = self.embed_watchlist_entry(entry, f"Added {entry['name']} to the watchlist :white_check_mark:")
+        embed = self.embed_movie_details(detailed_info, embed_title)
         await context.send(embed=embed)
-    
-    @commands.command(name='show_watchlist', aliases=['list'], description="Show the watchlist")
-    async def show_watchlist(self, context: Context):
-        ''' Show the watchlist '''
-        if context.guild.id not in self.watchlist or not self.watchlist[context.guild.id]:
-            embed = discord.Embed(
-                title="Watchlist is empty :confused:",
-                description="Add some movies or shows to the watchlist first.",
-                color=self.bot.default_color
-            )
-            await context.send(embed=embed)
-            return
-        embeds = []
-        for idx, entry in enumerate(self.watchlist[context.guild.id], start=1):
-            embed = self.embed_watchlist_entry(entry, f"Entry {idx}")
-            embeds.append(embed)
-        await context.send(embeds=embeds)
-                
-    def embed_watchlist_entry(self, entry, embed_title=None):
-        detailed_info = entry['details']
+
+    def embed_movie_details(self, detailed_info, embed_title=None):
         embed = discord.Embed()
         if embed_title:
             embed.title = embed_title
@@ -95,23 +251,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
             embed.set_image(url=detailed_info['Poster'])
         embed.color = self.bot.default_color
         return embed
-    
-    def search_movie(self, title, year=None):
-        if year:
-            url = f'http://www.omdbapi.com/?s={title}&y={year}&apikey={self.api_key}'
-        else:
-            url = f'http://www.omdbapi.com/?s={title}&apikey={self.api_key}'
-        response = requests.get(url).json()
-        if response.get('Response') == 'True':
-            return response.get('Search')
-        return None
-    
-    def get_movie_details(self, imdb_id):
-        url = f'http://www.omdbapi.com/?i={imdb_id}&apikey={self.api_key}'
-        response = requests.get(url).json()
-        if response.get('Response') == 'True':
-            return response
-        return None
+                
 
     async def prompt_user_to_select(self, context: Context, search_results):
         embeds = []
@@ -159,10 +299,60 @@ class Watchlist(commands.Cog, name='Watchlist'):
             )
             await context.send(embed=embed)
             return None
+        
+    def search_movie(self, title, year=None):
+        if year:
+            url = f'http://www.omdbapi.com/?s={title}&y={year}&apikey={self.api_key}'
+        else:
+            url = f'http://www.omdbapi.com/?s={title}&apikey={self.api_key}'
+        response = requests.get(url).json()
+        if response.get('Response') == 'True':
+            return response.get('Search')
+        return None
     
+    def get_movie_details(self, imdb_id):
+        url = f'http://www.omdbapi.com/?i={imdb_id}&apikey={self.api_key}'
+        response = requests.get(url).json()
+        if response.get('Response') == 'True':
+            return response
+        return None
+        
+    def save_watchlist(self):
+        # Save the watchlist to a file
+        if os.path.exists(self.bot.data_dir):
+            guilds = os.listdir(self.bot.data_dir)
+            for guild_id in guilds:
+                if guild_id in self.watchlist.keys():
+                    with open(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml'), 'w+') as file:
+                        yaml.dump(self.watchlist[guild_id], file)
+                    with open(os.path.join(self.bot.data_dir, guild_id, 'announcement_config.yaml'), 'w+') as file:
+                        yaml.dump(self.announcement_config[guild_id], file)
+                    self.bot.log.info(f"Saved watchlist for guild {guild_id}")
+    
+    def load_watchlist(self):
+        # Load the watchlist from a file
+        if os.path.exists(self.bot.data_dir):
+            guilds = os.listdir(self.bot.data_dir)
+            for guild_id in guilds:
+                if os.path.exists(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml')):
+                    with open(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml'), 'r') as file:
+                        watchlist = yaml.load(file, Loader=yaml.FullLoader)
+                        if watchlist is not None:
+                            if guild_id not in self.watchlist:
+                                self.watchlist[guild_id] = list()
+                            self.watchlist[guild_id] = watchlist
+                            self.bot.log.info(f"Loaded watchlist for guild {guild_id}")
+                else:
+                    self.bot.log.info(f"No watchlist found for guild {guild_id}")
+                if os.path.exists(os.path.join(self.bot.data_dir, guild_id, 'announcement_config.yaml')):
+                    with open(os.path.join(self.bot.data_dir, guild_id, 'announcement_config.yaml'), 'r') as file:
+                        announcement_config = yaml.load(file, Loader=yaml.FullLoader)
+                        if announcement_config is not None:
+                            if guild_id not in self.announcement_config:
+                                self.announcement_config[guild_id] = dict()
+                            self.announcement_config[guild_id] = announcement_config
+                            self.bot.log.info(f"Loaded announcement config for guild {guild_id}")
 
-
-             
 
 async def setup(bot):
     await bot.add_cog(Watchlist(bot))
