@@ -213,9 +213,9 @@ class Watchlist(commands.Cog, name='Watchlist'):
                     await context.send(embed=embed)
                     return
                 if time:
-                    message = f"{role.mention} {entry['name']} is starting in {time} minutes in {context.guild.name}! :popcorn:"
+                    message = f"{role.mention}\n{entry['name']} is starting in {time} minutes in {context.guild.name}! :popcorn:"
                 else:
-                    message = f"{role.mention} {entry['name']} is starting in {context.guild.name} in few minutes! :popcorn:"
+                    message = f"{role.mention}\n{entry['name']} is starting in {context.guild.name} in few minutes! :popcorn:"
             else:
                 if time:
                     message = f"{entry['name']} is starting in {time} minutes in {context.guild.name}! :popcorn:"
