@@ -141,6 +141,19 @@ class Watchlist(commands.Cog, name='Watchlist'):
             embed.add_field(name=f"{idx + 1}. {entry['name']}", value=f"Suggested by: <@{entry['suggested_by']}>", inline=False)
         await context.send(embed=embed)
     
+    @commands.command(name='clear_watchlist', aliases=['clear', 'cw'], description="Clear the watchlist")
+    async def clear_watchlist(self, context: Context):
+        ''' Clear the watchlist '''
+        self.delete_watchlist(str(context.guild.id))
+        self.save_watchlist()
+        embed = discord.Embed(
+            title="Watchlist cleared :white_check_mark:",
+            description="The watchlist is now empty.",
+            color=self.bot.default_color
+        )
+        await context.send(embed=embed)
+
+    
     @commands.command(name='set_announcement', aliases=['sa'], description="Set the channel to announce movies or shows and the role to ping")
     async def set_announcement_channel(self, context: Context, channel: discord.TextChannel = None, role: discord.Role = None):
         ''' Set the channel to announce movies or shows '''
@@ -325,6 +338,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
                 if guild_id in self.watchlist.keys():
                     with open(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml'), 'w+') as file:
                         yaml.dump(self.watchlist[guild_id], file)
+                if guild_id in self.announcement_config.keys():
                     with open(os.path.join(self.bot.data_dir, guild_id, 'announcement_config.yaml'), 'w+') as file:
                         yaml.dump(self.announcement_config[guild_id], file)
                     self.bot.log.info(f"Saved watchlist for guild {guild_id}")
@@ -352,6 +366,13 @@ class Watchlist(commands.Cog, name='Watchlist'):
                                 self.announcement_config[guild_id] = dict()
                             self.announcement_config[guild_id] = announcement_config
                             self.bot.log.info(f"Loaded announcement config for guild {guild_id}")
+    
+    def delete_watchlist(self, guild_id):
+        # Delete the watchlist for a guild
+        if os.path.exists(os.path.join(self.bot.data_dir, guild_id)):
+            os.remove(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml'))
+            self.bot.log.info(f"Deleted watchlist for guild {guild_id}")
+        self.watchlist.pop(guild_id, None)
 
 
 async def setup(bot):
