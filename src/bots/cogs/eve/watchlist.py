@@ -28,13 +28,10 @@ class Watchlist(commands.Cog, name='Watchlist'):
         self.api_key = '99fff185'  # OMDb API key (free) -# Hide this key later
 
     @commands.command(name='search', aliases=['sm'], description="Search for a movie or show")
-    async def search_key(self, context: Context, *title: str, year: typing.Optional[int] = None):
+    async def search_key(self, context: Context, *title: str):
         ''' Search for a movie or show '''
         title = ' '.join(title)
-        if year and 1900 <= year <= 2100:
-            search_results = self.search_movie(title, year)
-        else:
-            search_results = self.search_movie(title)
+        search_results = self.search_movie(title)
         if not search_results:
             embed = discord.Embed(
                 title="Sorry :confused:",
@@ -48,23 +45,34 @@ class Watchlist(commands.Cog, name='Watchlist'):
         await self.show_detailed_info(context, selected_item['imdbID'], f"Search results for {title}")
 
     @commands.command(name='add_to_watchlist', aliases=['add', 'a'], description="Add a movie or show to the watchlist")
-    async def add_to_watchlist(self, context: Context, *title: str, year: typing.Optional[int] = None):
+    async def add_to_watchlist(self, context: Context, *title: str):
         ''' Add a movie or show to the watchlist'''
+        # if title is a imdb link
         title = ' '.join(title)
-        if year and 1900 <= year <= 2100:
-            search_results = self.search_movie(title, year)
+        if title.startswith('https://www.imdb.com/title/'):
+            imdb_id = title.split('/')[4]
+            detailed_info = self.get_movie_details(imdb_id)
+            if detailed_info is None:
+                embed = discord.Embed(
+                    title="Failed to retrieve detailed information :confused:",
+                    description="Please try again.",
+                    color=self.bot.default_color
+                )
+                await context.send(embed=embed)
+                return
+            selected_item = {'Title': detailed_info['Title'], 'Year': detailed_info['Year'], 'imdbID': imdb_id, 'Poster': detailed_info['Poster']}
         else:
             search_results = self.search_movie(title)
-        if not search_results:
-            embed = discord.Embed(
-                title="Sorry :confused:",
-                description="I couldn't find any movie or show with that title.",
-                color=self.bot.default_color
-            )
-            await context.send(embed=embed)
-            return
-        selected_item = await self.prompt_user_to_select(context, search_results)
-        if selected_item is None: return
+            if not search_results:
+                embed = discord.Embed(
+                    title="Sorry :confused:",
+                    description="I couldn't find any movie or show with that title.",
+                    color=self.bot.default_color
+                )
+                await context.send(embed=embed)
+                return
+            selected_item = await self.prompt_user_to_select(context, search_results)
+            if selected_item is None: return
         entry = {'name': f"{selected_item['Title']} ({selected_item['Year']})",
                  'imdb_id': selected_item['imdbID'],
                  'poster': selected_item['Poster'],
