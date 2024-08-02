@@ -80,7 +80,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
             self.watchlist[str(context.guild.id)] = list()
         self.watchlist[str(context.guild.id)].append(entry)
         self.save_watchlist()
-        self.bot.log.info(f"Added {entry['name']} to the watchlist in guild {context.guild.name} by {context.author.name}", context)
+        self.bot.log.info(f"Added {entry['name']} to the watchlist in guild {context.guild.name} by {context.author.name}", context.guild)
         await self.show_detailed_info(context, selected_item['imdbID'], f"Added {entry['name']} to the watchlist :white_check_mark:")
     
     @commands.command(name='checked', aliases=['c', 'remove', 'check'], description="Remove a movie or show from the watchlist")
@@ -97,7 +97,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
         if 1 <= index <= len(self.watchlist[str(context.guild.id)]):
             entry = self.watchlist[str(context.guild.id)].pop(index - 1)
             self.save_watchlist()
-            self.bot.log.info(f"Removed {entry['name']} from the watchlist in guild {context.guild.name} by {context.author.name}", context)
+            self.bot.log.info(f"Removed {entry['name']} from the watchlist in guild {context.guild.name} by {context.author.name}", context.guild)
             await self.show_detailed_info(context, entry['imdb_id'], f"Removed {entry['name']} from the watchlist :white_check_mark:")
         else:
             embed = discord.Embed(
@@ -139,7 +139,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
                 color=self.bot.default_color
             )
             await context.send(embed=embed)
-            self.bot.log.info(f"Watchlist is empty in guild {context.guild.name}", context)
+            self.bot.log.info(f"Watchlist is empty in guild {context.guild.name}", context.guild)
             return
         n_movies = len(self.watchlist[str(context.guild.id)])
         embed = discord.Embed(
@@ -150,7 +150,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
         for idx, entry in enumerate(self.watchlist[str(context.guild.id)]):
             embed.add_field(name=f"{idx + 1}. {entry['name']}", value=f"Suggested by: <@{entry['suggested_by']}>", inline=False)
         await context.send(embed=embed)
-        self.bot.log.info(f"Watchlist shown in guild {context.guild.name}", context)
+        self.bot.log.info(f"Watchlist shown in guild {context.guild.name}", context.guild)
     
     @commands.command(name='clear_watchlist', aliases=['clear', 'cw'], description="Clear the watchlist")
     async def clear_watchlist(self, context: Context):
@@ -163,7 +163,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
             color=self.bot.default_color
         )
         await context.send(embed=embed)
-        self.bot.log.info(f"Watchlist cleared in guild {context.guild.name} by {context.author.name}", context)
+        self.bot.log.info(f"Watchlist cleared in guild {context.guild.name} by {context.author.name}", context.guild)
 
     
     @commands.command(name='set_announcement', aliases=['sa'], description="Set the channel to announce movies or shows and the role to ping")
@@ -183,7 +183,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
             color=self.bot.default_color
         )
         await context.send(embed=embed)
-        self.bot.log.info(f"Announcement channel set to {channel.name} in guild {context.guild.name}", context)
+        self.bot.log.info(f"Announcement channel set to {channel.name} in guild {context.guild.name}", context.guild)
 
     @commands.command(name='announce', aliases=['an'], description="Announce a movie or show streaming in the server")
     async def announce_movie(self, context: Context, index: int, time: typing.Optional[str] = None):
@@ -195,7 +195,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
                 color=self.bot.default_color
             )
             await context.send(embed=embed)
-            self.bot.log.info(f"Watchlist is empty in guild {context.guild.name}", context)
+            self.bot.log.info(f"Watchlist is empty in guild {context.guild.name}", context.guild)
             return
         if 1 <= index <= len(self.watchlist[str(context.guild.id)]):
             entry = self.watchlist[str(context.guild.id)][index - 1]
@@ -206,7 +206,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
                     color=self.bot.default_color
                 )
                 await context.send(embed=embed)
-                self.bot.log.info(f"Announcement channel not set in guild {context.guild.name}", context)
+                self.bot.log.info(f"Announcement channel not set in guild {context.guild.name}", context.guild)
                 return
             channel = context.guild.get_channel(self.announcement_config[str(context.guild.id)]['channel'])
             if channel is None:
@@ -216,7 +216,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
                     color=self.bot.default_color
                 )
                 await context.send(embed=embed)
-                self.bot.log.info(f"Invalid announcement channel in guild {context.guild.name}", context)
+                self.bot.log.info(f"Invalid announcement channel in guild {context.guild.name}", context.guild)
                 return
             if 'role' in self.announcement_config[str(context.guild.id)]:
                 role = context.guild.get_role(self.announcement_config[str(context.guild.id)]['role'])
@@ -227,7 +227,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
                         color=self.bot.default_color
                     )
                     await context.send(embed=embed)
-                    self.bot.log.info(f"Invalid role in guild {context.guild.name}", context)
+                    self.bot.log.info(f"Invalid role in guild {context.guild.name}", context.guild)
                     return
                 if time:
                     message = f"{role.mention}\n{entry['name']} is starting in {time} minutes in {context.guild.name}! :popcorn:"
@@ -249,7 +249,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
                 return
             embed = self.embed_movie_details(detailed_info)
             await channel.send(message, embed=embed)
-            self.bot.log.info(f"Announced {entry['name']} in guild {context.guild.name}", context)
+            self.bot.log.info(f"Announced {entry['name']} in guild {context.guild.name}", context.guild)
 
     async def show_detailed_info(self, context: Context, imdbID, embed_title=None):
         detailed_info = self.get_movie_details(imdbID)
@@ -260,7 +260,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
                 color=self.bot.default_color
             )
             await context.send(embed=embed)
-            self.bot.log.info(f"Failed to retrieve detailed information for {entry['name']} in guild {context.guild.name}", context)
+            self.bot.log.info(f"Failed to retrieve detailed information for {entry['name']} in guild {context.guild.name}", context.guild)
             return
         embed = self.embed_movie_details(detailed_info, embed_title)
         await context.send(embed=embed)
