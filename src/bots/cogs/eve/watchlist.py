@@ -30,8 +30,13 @@ class Watchlist(commands.Cog, name='Watchlist'):
     @commands.command(name='search', aliases=['sm'], description="Search for a movie or show")
     async def search_key(self, context: Context, *title: str):
         ''' Search for a movie or show '''
-        title = ' '.join(title)
-        search_results = self.search_movie(title)
+        if len(title) > 1 and title[-1].isdigit() and len(title[-1]) == 4:
+            year = title[-1]
+            title = title[:-1]
+        else:
+            year = None
+            title = ' '.join(title)
+        search_results = self.search_movie(title, year)
         if not search_results:
             embed = discord.Embed(
                 title="Sorry :confused:",
@@ -60,8 +65,13 @@ class Watchlist(commands.Cog, name='Watchlist'):
                 await context.send(embed=embed)
                 return
         else:
-            title = ' '.join(title_or_link)
-            search_results = self.search_movie(title)
+            if len(title_or_link) > 1 and title_or_link[-1].isdigit() and len(title_or_link[-1]) == 4:
+                year = title_or_link[-1]
+                title = ' '.join(title_or_link[:-1])
+            else:
+                year = None
+                title = ' '.join(title_or_link)
+            search_results = self.search_movie(title, year)
             if not search_results:
                 embed = discord.Embed(
                     title="Sorry :confused:",
