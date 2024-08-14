@@ -12,6 +12,7 @@
 import os
 import yaml
 import gtts
+from pydub import AudioSegment
 import asyncio
 import aiohttp
 import discord
@@ -146,6 +147,30 @@ class Radio(commands.Cog, name="Radio FM"):
                 )
         await context.reply(embed=embed)
         self.bot.log.info(f"Disconnected from voice channel {voice_client.channel.name}", context.guild)
+        return
+
+    @commands.command(name="repeat", aliases=["rpt"], description="Repeat the text in the voice channel")
+    async def repeat(self, context: Context, *, text: str):
+        ''' Repeat the text in the voice channel '''
+        if context.voice_client is None:
+            if not await self.join(context):
+                return
+        # Generate TTS audio
+        tts = gtts.gTTS(text, lang="en", tld="com.au")
+        file = os.path.join(tmp, "repeat.mp3")
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        tts.save(file)
+        context.voice_client.play(discord.FFmpegPCMAudio(file))
+        while context.voice_client.is_playing():
+            await asyncio.sleep(1)
+        os.remove(file)
+        embed = discord.Embed(
+                title="Radio FM",
+                description=f"Repeating the text in {context.voice_client.channel.mention} :loud_sound:",
+                color=self.bot.default_color,
+                )
+        await context.reply(embed=embed)
+        self.bot.log.info(f"Repeating the text in {context.voice_client.channel.name}", context.guild)
         return
 
     @commands.command(name="list", aliases=["l"], description="List of available radio stations")
