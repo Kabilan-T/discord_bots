@@ -12,7 +12,6 @@
 import os
 import yaml
 import gtts
-from pydub import AudioSegment
 import asyncio
 import aiohttp
 import discord
