@@ -26,6 +26,8 @@ class Radio(commands.Cog, name="Radio FM"):
         self.volume = 80
         self.called_channel = dict()
         self.now_playing = dict()
+        # stop any radio playing when bot is restarted
+
 
     @commands.command(name="play", aliases=["fm", "pl"], description="Play radio in the voice channel")
     async def radio(self, context: Context, radio_name: str):
@@ -111,7 +113,7 @@ class Radio(commands.Cog, name="Radio FM"):
             return
         voice_client.stop()
         self.now_playing.pop(context.guild.id, None)
-        await voice_client.disconnect()
+        await voice_client.disconnect(force=True)
         embed = discord.Embed(
                 title="Radio FM",
                 description="I have stopped the radio",
@@ -119,6 +121,31 @@ class Radio(commands.Cog, name="Radio FM"):
                 )
         await context.reply(embed=embed)
         self.bot.log.info(f"Stopped radio in {voice_client.channel.name}", context.guild)
+        return
+    
+    @commands.command(name="disconnect", aliases=["dc"], description="Disconnect the bot from the voice channel")
+    async def disconnect(self, context: Context, force: bool = False):
+        ''' Disconnect the bot from the voice channel '''
+        voice_client = discord.utils.get(self.bot.voice_clients, guild=context.guild)
+        if voice_client is None:
+            embed = discord.Embed(
+                    title="Radio FM",
+                    description="I am not in a voice channel",
+                    color=self.bot.default_color,
+                    )
+            await context.reply(embed=embed)
+            self.bot.log.warning(f"Bot not in a voice channel", context.guild)
+            return
+        voice_client.stop()
+        self.now_playing.pop(context.guild.id, None)
+        await voice_client.disconnect(force=force)
+        embed = discord.Embed(
+                title="Radio FM",
+                description="I have disconnected from the voice channel",
+                color=self.bot.default_color,
+                )
+        await context.reply(embed=embed)
+        self.bot.log.info(f"Disconnected from voice channel {voice_client.channel.name}", context.guild)
         return
 
     @commands.command(name="list", aliases=["l"], description="List of available radio stations")
