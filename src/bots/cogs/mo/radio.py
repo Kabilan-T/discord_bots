@@ -46,6 +46,7 @@ class Radio(commands.Cog, name="Radio FM"):
                 self.bot.log.warning(f"Invalid radio number", context.guild)
                 return
             radio_name = list(radio_list.keys())[int(radio_name)-1]
+            self.bot.log.info(f"{context.author} selected radio {radio_name} to play in {context.guild.name}", context.guild)
         elif radio_name not in radio_list:
             embed = discord.Embed(
                     title="Radio FM",
