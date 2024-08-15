@@ -38,18 +38,19 @@ class Voice(commands.Cog, name="Voice Features"):
         self.bot.log.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
 
     @commands.command(name="join", aliases=["j"], description="Join the voice channel of the user")
-    async def join(self, context: Context):
+    async def join(self, context: Context, voice_channel: discord.VoiceChannel = None):
         ''' Join the voice channel of the user '''
-        if context.author.voice is None:
-            embed = discord.Embed(
-                title="You are not in a voice channel :confused:",
-                description="Please join a voice channel and try again",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.warning(f"{context.author} tried to use join command without being in a voice channel", context.guild)
-            return False
-        voice_channel = context.author.voice.channel
+        if voice_channel is None:
+            if context.author.voice is None:
+                embed = discord.Embed(
+                    title="You are not in a voice channel :confused:",
+                    description="Please join a voice channel and try again",
+                    color=self.bot.default_color,
+                    )
+                await context.reply(embed=embed)
+                self.bot.log.warning(f"{context.author} tried to use join command without being in a voice channel", context.guild)
+                return False
+            voice_channel = context.author.voice.channel
         self.called_channel[context.guild.id] = context.channel
         if context.voice_client is None:
             await voice_channel.connect()
