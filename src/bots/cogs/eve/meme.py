@@ -14,11 +14,7 @@ import yaml
 import regex
 import asyncio
 import discord
-try:
-    from fuzzywuzzy import process
-except ImportError:
-    os.system("pip install fuzzywuzzy")
-    from fuzzywuzzy import process
+from fuzzywuzzy import process
 from discord.ext import commands
 from discord.ext.commands import Context
 
