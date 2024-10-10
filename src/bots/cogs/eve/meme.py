@@ -110,6 +110,30 @@ class Meme(commands.Cog, name="Meme Maintainer"):
         )
         await context.reply(embed=embed)
         self.bot.log.info(f"Added new meme template: {meme_name} in guild {guild_id}", context.guild)
+    
+    @commands.command(name="list_memes", description="List all meme templates in the collection")
+    async def list_memes(self, context: Context):
+        """List all meme templates."""
+        guild_id = str(context.guild.id)
+        # Check if the guild has any meme templates
+        if guild_id not in self.meme_templates or not self.meme_templates[guild_id]:
+            embed = discord.Embed(
+                title="No memes found :confused:",
+                description=f"Sorry, there are no meme templates available for this guild.",
+                color=self.bot.default_color
+            )
+            await context.reply(embed=embed)
+            self.bot.log.warning(f"No meme templates found for guild {guild_id}", context.guild)
+            return
+        embed = discord.Embed(
+            title="Meme templates",
+            description="Here are all the meme templates available in this guild:",
+            color=self.bot.default_color
+        )
+        for meme_name in self.meme_templates[guild_id]:
+            embed.add_field(name=meme_name, value=self.meme_templates[guild_id][meme_name], inline=False)
+        await context.reply(embed=embed)
+        self.bot.log.info(f"Listed meme templates for guild {guild_id}", context.guild)
 
     @commands.command(name="remove_meme", description="Remove an existing meme from the collection")
     async def remove_meme(self, context: Context, *, meme_name: str):
