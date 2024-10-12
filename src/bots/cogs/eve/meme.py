@@ -111,7 +111,7 @@ class Meme(commands.Cog, name="Meme Maintainer"):
         await context.reply(embed=embed)
         self.bot.log.info(f"Added new meme template: {meme_name} in guild {guild_id}", context.guild)
     
-    @commands.command(name="list_memes", description="List all meme templates in the collection")
+    @commands.command(name="list_all_meme", description="List all meme templates in the collection")
     async def list_memes(self, context: Context):
         """List all meme templates."""
         guild_id = str(context.guild.id)
@@ -130,9 +130,20 @@ class Meme(commands.Cog, name="Meme Maintainer"):
             description="Here are all the meme templates available in this guild:",
             color=self.bot.default_color
         )
+        await context.send(embed=embed)
         for meme_name in self.meme_templates[guild_id]:
-            embed.add_field(name=meme_name, value=self.meme_templates[guild_id][meme_name], inline=False)
-        await context.reply(embed=embed)
+            embed = discord.Embed(
+                title=meme_name,
+                color=self.bot.default_color
+            )
+            if self.meme_templates[guild_id][meme_name].startswith("http"):
+                embed.set_image(url=self.meme_templates[guild_id][meme_name])
+                await context.send(embed=embed)
+            else:
+                file = discord.File(self.meme_templates[guild_id][meme_name], filename="meme.png")
+                embed.set_thumbnail(url=f"attachment://meme.png")
+                await context.send(embed=embed, files = [file])
+                continue
         self.bot.log.info(f"Listed meme templates for guild {guild_id}", context.guild)
 
     @commands.command(name="remove_meme", description="Remove an existing meme from the collection")
