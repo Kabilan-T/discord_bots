@@ -33,7 +33,7 @@ mo:
   extensions:
     - 'cogs.general'
     - 'cogs.manage'
-    #- 'cogs.mo.instagram'
+    - 'cogs.mo.instagram'
     - 'cogs.mo.radio'
     #- 'cogs.mo.search'
     #- 'cogs.mo.rss'
