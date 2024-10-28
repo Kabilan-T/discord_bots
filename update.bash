@@ -29,34 +29,5 @@ else
     echo "---------- Update package dependencies complete ----------"
 fi
 
-# check if the date is 26 Oct 2024 and apply temporary patch for instaloader
-if [[ $(date +%Y-%m-%d) == "2024-10-26" ]]; then
-    # Convert the current time to Eastern Time (ET)
-    CURRENT_HOUR_ET=$(TZ="America/New_York" date +%H)
-        
-    if [[ $CURRENT_HOUR_ET -ge 12 && $CURRENT_HOUR_ET -lt 23 ]]; then
-        echo "----- Temporary patch for instaloader - Applies only on 26 Oct 2024 -----"
-        # Temporary patch for instaloader --- remove when the issue is fixed
-        echo "Applying temporary instaloader patch..."
-        PATCH_URL="https://github.com/user-attachments/files/17509648/instaloader.zip"
-        SITE_PACKAGES_DIR=$(python -c "import site; print(site.getsitepackages()[0])")
-        INSTALOADER_PATH="$SITE_PACKAGES_DIR/instaloader"
-        
-        # Remove existing instaloader package and apply patch
-        if [ -d "$INSTALOADER_PATH" ]; then
-            echo "Removing old instaloader package..."
-            rm -rf "$INSTALOADER_PATH"
-        fi
-        
-        echo "Downloading and unzipping patch..."
-        curl -L -o instaloader.zip "$PATCH_URL"
-        unzip -o instaloader.zip -d "$SITE_PACKAGES_DIR"
-        rm instaloader.zip
-        echo "Instaloader patch applied successfully."
-        ##### --- Temporary patch for instaloader ends here --- #####
-    else
-        echo "Patch time window not met (12:00-23:00 ET). Patch will not be applied."
-    fi
-fi
 echo "--------------------------------------------------"
 echo

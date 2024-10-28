@@ -7,9 +7,9 @@ auto:
   extensions:
     - 'cogs.general'
     - 'cogs.manage'
+    - 'cogs.auto.roles'
     - 'cogs.auto.moderation'
     - 'cogs.auto.utilities'
-    - 'cogs.auto.roles'
     - 'cogs.auto.announcements'
 eve:
   name: EVE
@@ -20,10 +20,10 @@ eve:
   extensions:
     - 'cogs.general'
     - 'cogs.manage'
+    - 'cogs.eve.meme'
     - 'cogs.eve.voice'
     - 'cogs.eve.bingo'
     - 'cogs.eve.watchlist'
-    - 'cogs.eve.meme'
 mo:
   name: M-O
   username: 'MO#9127'
@@ -33,7 +33,7 @@ mo:
   extensions:
     - 'cogs.general'
     - 'cogs.manage'
-    - 'cogs.mo.instagram'
     - 'cogs.mo.radio'
-    #- 'cogs.mo.search'
+    - 'cogs.mo.instagram'
+    - 'cogs.mo.search'
     #- 'cogs.mo.rss'
