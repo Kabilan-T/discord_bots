@@ -14,7 +14,7 @@ PULL_OUTPUT=$(git pull origin main)
 
 # Check if there were actual changes pulled
 if [[ $PULL_OUTPUT == *"Already up to date."* ]]; then
-    echo "--- No changes detected ---"
+    echo "--- No changes detected ----"
 else
     echo "--- Changes detected ---"
     echo "Recent commit: $(git log -1 --pretty=format:"%h : '%s' - %ci" HEAD)"
