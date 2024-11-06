@@ -18,6 +18,8 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Context
 
+tmp = "tmp"
+
 class Manage(commands.Cog, name="Manage"):
     def __init__(self, bot):
         '''Initializes the bot management cog'''
@@ -140,12 +142,26 @@ class Manage(commands.Cog, name="Manage"):
             result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
         except subprocess.CalledProcessError as e:
             result = e.output
-        embed = discord.Embed(
-            title="Command Output :computer:",
-            description=f"```{result}```",
-            color=self.bot.default_color,
-            )
-        await context.send(embed=embed)
+        
+        # embed can have only 4096 characters
+        if len(result) < 4096:
+            embed = discord.Embed(
+                title="Command Output :computer:",
+                description=f"```{result}```",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed)
+        else:
+            with open(f"{tmp}/command_output.txt", "w") as f:
+                f.write(result)
+            file = discord.File(f"{tmp}/command_output.txt")
+            embed = discord.Embed(
+                title="Command Output :computer:",
+                description=f"Output is too long to send as text *[{len(result)} characters]*.\n Here is the file.",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed, file=file)
+            os.remove(f"{tmp}/command_output.txt")
         self.bot.log.info(f"Command '{command}' executed", context.guild)
 
 async def setup(bot):
