@@ -13,6 +13,7 @@ import os
 import io
 import yaml
 import zipfile
+import subprocess
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -136,9 +137,9 @@ class Manage(commands.Cog, name="Manage"):
     async def runcommand(self, context: Context, *, command: str):
         '''Run a command in the terminal'''
         try:
-            result = os.popen(command).read()
-        except Exception as e:
-            result = str(e)
+            result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
+        except subprocess.CalledProcessError as e:
+            result = e.output
         embed = discord.Embed(
             title="Command Output :computer:",
             description=f"```{result}```",
