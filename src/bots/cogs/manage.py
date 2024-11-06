@@ -130,6 +130,22 @@ class Manage(commands.Cog, name="Manage"):
                 color=self.bot.default_color,
                 )
             await context.send(embed=embed)
+    
+    @commands.command( name="run_command", description="Run a command in the terminal.")
+    @commands.has_permissions(administrator=True)
+    async def runcommand(self, context: Context, *, command: str):
+        '''Run a command in the terminal'''
+        try:
+            result = os.popen(command).read()
+        except Exception as e:
+            result = str(e)
+        embed = discord.Embed(
+            title="Command Output :computer:",
+            description=f"```{result}```",
+            color=self.bot.default_color,
+            )
+        await context.send(embed=embed)
+        self.bot.log.info(f"Command '{command}' executed", context.guild)
 
 async def setup(bot):
     await bot.add_cog(Manage(bot))     
