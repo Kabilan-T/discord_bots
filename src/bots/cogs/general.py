@@ -82,11 +82,10 @@ class General(commands.Cog, name="General"):
                     continue
                 cog_commands = self.bot.get_cog(cog).get_commands()
                 if len(cog_commands) > 0:
-                    embed.add_field(
-                        name=cog,
-                        value="\n".join([f"***`{command.name}`*** - {command.description}" for command in cog_commands]),
-                        inline=False,
-                        )
+                    embed.add_field(name=cog,
+                                    value="\n".join([f"***`{command.name}`*** {' | '.join([f'**(`{alias}`)**' for alias in command.aliases]) if command.aliases else ''} - {command.description}"for command in cog_commands]),
+                                    inline=False,
+                                    )
             await context.send(embed=embed)
         else:
             command = self.bot.get_command(command)
