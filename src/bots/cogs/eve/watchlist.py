@@ -151,15 +151,26 @@ class Watchlist(commands.Cog, name='Watchlist'):
             await context.send(embed=embed)
             self.bot.log.info(f"Watchlist is empty in guild {context.guild.name}", context.guild)
             return
-        n_movies = len(self.watchlist[str(context.guild.id)])
-        embed = discord.Embed(
+        n_movies = len(self.watchlist[str(context.guild.id)])    
+        if n_movies < 25:
+            embed = discord.Embed(
                 title="Watchlist",
                 description=f"Total movies/shows: {n_movies}",
                 color=self.bot.default_color
             )
-        for idx, entry in enumerate(self.watchlist[str(context.guild.id)]):
-            embed.add_field(name=f"{idx + 1}. {entry['name']}", value=f"Suggested by: <@{entry['suggested_by']}>", inline=False)
-        await context.send(embed=embed)
+            for idx, entry in enumerate(self.watchlist[str(context.guild.id)]):
+                embed.add_field(name=f"{idx + 1}. {entry['name']}", value=f"Suggested by: <@{entry['suggested_by']}>", inline=False)
+                await context.send(embed=embed)
+        else:
+            for page in range(0, n_movies, 25):
+                embed = discord.Embed(
+                    title="Watchlist",
+                    description=f"Total movies/shows: {n_movies} | (Page {page//25 + 1} of {n_movies//25 + 1})",
+                    color=self.bot.default_color
+                )
+                for idx, entry in enumerate(self.watchlist[str(context.guild.id)][page:page+25]):
+                    embed.add_field(name=f"{page + idx + 1}. {entry['name']}", value=f"Suggested by: <@{entry['suggested_by']}>", inline=False)
+                await context.send(embed=embed)
         self.bot.log.info(f"Watchlist shown in guild {context.guild.name}", context.guild)
     
     @commands.command(name='clear_watchlist', aliases=['clear', 'cw'], description="Clear the watchlist")
