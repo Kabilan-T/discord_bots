@@ -6,11 +6,11 @@ auto:
   default_color: 0x3498DB
   extensions:
     - 'cogs.general'
-    - 'cogs.manage'
-    - 'cogs.auto.roles'
-    - 'cogs.auto.moderation'
     - 'cogs.auto.utilities'
+    - 'cogs.auto.moderation'
+    - 'cogs.auto.roles'
     - 'cogs.auto.announcements'
+    - 'cogs.manage'
 eve:
   name: EVE
   username: 'EVE#4830'
@@ -19,11 +19,11 @@ eve:
   default_color: 0xBEBEFE
   extensions:
     - 'cogs.general'
-    - 'cogs.manage'
-    - 'cogs.eve.meme'
     - 'cogs.eve.voice'
-    - 'cogs.eve.bingo'
     - 'cogs.eve.watchlist'
+    - 'cogs.eve.meme'
+    - 'cogs.eve.bingo'
+    - 'cogs.manage'
 mo:
   name: M-O
   username: 'MO#9127'
@@ -32,8 +32,8 @@ mo:
   default_color: 0x8A3AB9
   extensions:
     - 'cogs.general'
-    - 'cogs.manage'
     - 'cogs.mo.radio'
     - 'cogs.mo.instagram'
     - 'cogs.mo.search'
     #- 'cogs.mo.rss'
+    - 'cogs.manage'

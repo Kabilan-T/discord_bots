@@ -29,7 +29,7 @@ class Radio(commands.Cog, name="Radio FM"):
         # stop any radio playing when bot is restarted
 
 
-    @commands.command(name="play", aliases=["fm", "pl"], description="Play radio in the voice channel")
+    @commands.command(name="play", description="Play radio in the voice channel", aliases=["fm", "pl"])
     async def radio(self, context: Context, radio_name: str):
         ''' Play radio in the voice channel '''
         radio_name = radio_name.lower()
@@ -99,7 +99,38 @@ class Radio(commands.Cog, name="Radio FM"):
         self.bot.log.info(f"Playing radio {radio_name} in {context.voice_client.channel.name}", context.guild)
         return
 
-    @commands.command(name="stop", aliases=["s"], description="Stop radio in the voice channel")
+    @commands.command(name="volume", description="Get or set the volume of the bot", aliases=["v"])
+    async def volume(self, context: Context, volume: int = None):
+        ''' Get or set the volume of the bot '''
+        if volume is None:
+            embed = discord.Embed(
+                title="Volume :loud_sound:",
+                description=f"Volume is {self.volume}",
+                color=self.bot.default_color,
+                )
+            await context.reply(embed=embed)
+            self.bot.log.info(f"Current volume is {self.volume} checked by {context.author} in {context.guild.name}", context.guild)
+        elif volume < 0 or volume > 100:
+            embed = discord.Embed(
+                title="Invalid volume :confused:",
+                description="Please enter a volume between 0 and 100",
+                color=self.bot.default_color,
+                )
+            await context.reply(embed=embed)
+            self.bot.log.warning(f"{context.author} tried to set the volume to invalid volume {volume} in {context.guild.name}", context.guild)
+        else:
+            self.volume = volume
+            if context.voice_client is not None:
+                context.voice_client.source.volume = volume/100
+            embed = discord.Embed(
+                title="Volume set :loud_sound:",
+                description=f"Volume set to {self.volume}",
+                color=self.bot.default_color,
+                )
+            await context.reply(embed=embed)
+            self.bot.log.info(f"{context.author} set the volume to {volume} in {context.guild.name}", context.guild)
+
+    @commands.command(name="stop_radio", description="Stop radio in the voice channel", aliases=["stop", "st"])
     async def radio_stop(self, context: Context):
         ''' Stop radio in the voice channel '''
         voice_client = discord.utils.get(self.bot.voice_clients, guild=context.guild)
@@ -124,56 +155,7 @@ class Radio(commands.Cog, name="Radio FM"):
         self.bot.log.info(f"Stopped radio in {voice_client.channel.name}", context.guild)
         return
     
-    @commands.command(name="disconnect", aliases=["dc"], description="Disconnect the bot from the voice channel")
-    async def disconnect(self, context: Context, force: bool = False):
-        ''' Disconnect the bot from the voice channel '''
-        voice_client = discord.utils.get(self.bot.voice_clients, guild=context.guild)
-        if voice_client is None:
-            embed = discord.Embed(
-                    title="Radio FM",
-                    description="I am not in a voice channel",
-                    color=self.bot.default_color,
-                    )
-            await context.reply(embed=embed)
-            self.bot.log.warning(f"Bot not in a voice channel", context.guild)
-            return
-        voice_client.stop()
-        self.now_playing.pop(context.guild.id, None)
-        await voice_client.disconnect(force=force)
-        embed = discord.Embed(
-                title="Radio FM",
-                description="I have disconnected from the voice channel",
-                color=self.bot.default_color,
-                )
-        await context.reply(embed=embed)
-        self.bot.log.info(f"Disconnected from voice channel {voice_client.channel.name}", context.guild)
-        return
-
-    @commands.command(name="repeat", aliases=["rpt"], description="Repeat the text in the voice channel")
-    async def repeat(self, context: Context, *, text: str):
-        ''' Repeat the text in the voice channel '''
-        if context.voice_client is None:
-            if not await self.join(context):
-                return
-        # Generate TTS audio
-        tts = gtts.gTTS(text, lang="en", tld="com.au")
-        file = os.path.join(tmp, "repeat.mp3")
-        os.makedirs(os.path.dirname(file), exist_ok=True)
-        tts.save(file)
-        context.voice_client.play(discord.FFmpegPCMAudio(file))
-        while context.voice_client.is_playing():
-            await asyncio.sleep(1)
-        os.remove(file)
-        embed = discord.Embed(
-                title="Radio FM",
-                description=f"Repeating the text in {context.voice_client.channel.mention} :loud_sound:",
-                color=self.bot.default_color,
-                )
-        await context.reply(embed=embed)
-        self.bot.log.info(f"Repeating the text in {context.voice_client.channel.name}", context.guild)
-        return
-
-    @commands.command(name="list", aliases=["l"], description="List of available radio stations")
+    @commands.command(name="list_station", description="List of available radio stations", aliases=["list", "ls"])
     async def radio_list(self, context: Context):
         ''' List of available radio stations '''
         radio_list = self.get_radio_list(context.guild.id)
@@ -186,7 +168,7 @@ class Radio(commands.Cog, name="Radio FM"):
         await context.reply(embed=embed)
         return
     
-    @commands.command(name="add", aliases=["a"], description="Add radio station to the list")
+    @commands.command(name="add_station", description="Add radio station to the list", aliases=["add", "as"])
     async def radio_add(self, context: Context, radio_name: str, radio_url: str):
         ''' Add radio station to the list '''
         radio_list = self.get_radio_list(context.guild.id)
@@ -221,7 +203,7 @@ class Radio(commands.Cog, name="Radio FM"):
         self.bot.log.info(f"Added radio {radio_name} to the list", context.guild)
         return
 
-    @commands.command(name="remove", aliases=["r"], description="Remove radio station from the list")
+    @commands.command(name="remove_station", description="Remove radio station from the list", aliases=["remove", "rs"])
     async def radio_remove(self, context: Context, radio_name: str):
         ''' Remove radio station from the list '''
         radio_list = self.get_radio_list(context.guild.id)
@@ -256,7 +238,7 @@ class Radio(commands.Cog, name="Radio FM"):
         await context.reply(embed=embed)
         self.bot.log.info(f"Removed radio {radio_name} from the list", context.guild)
 
-    @commands.command(name="rename", aliases=["rn"], description="Rename radio station in the list")
+    @commands.command(name="rename_station", description="Rename radio station in the list", aliases=["rename", "rn"])
     async def radio_rename(self, context: Context, radio_name: str, new_name: str):
         ''' Rename radio station in the list '''
         radio_list = self.get_radio_list(context.guild.id)
@@ -301,7 +283,7 @@ class Radio(commands.Cog, name="Radio FM"):
         await context.reply(embed=embed)
         self.bot.log.info(f"Renamed radio {radio_name} to {new_name}", context.guild)
     
-    @commands.command(name="join", aliases=["j"], description="Join the voice channel of the user")
+    @commands.command(name="join", description="Join the voice channel of the user", aliases=["j"])
     async def join(self, context: Context, voice_channel: discord.VoiceChannel = None):
         ''' Join the voice channel of the user '''
         if voice_channel is None:
@@ -346,40 +328,55 @@ class Radio(commands.Cog, name="Radio FM"):
             await context.reply(embed=embed)
             self.bot.log.info(f"{self.bot.name} moved to voice channel {voice_channel.name} in {context.guild.name}", context.guild)
             return True
-        
-
-    @commands.command(name="volume", aliases=["v"], description="Get or set the volume of the bot")
-    async def volume(self, context: Context, volume: int = None):
-        ''' Get or set the volume of the bot '''
-        if volume is None:
+    
+    @commands.command(name="leave", description="Disconnect the bot from the voice channel", aliases=["l"])
+    async def disconnect(self, context: Context, force: bool = False):
+        ''' Disconnect the bot from the voice channel '''
+        voice_client = discord.utils.get(self.bot.voice_clients, guild=context.guild)
+        if voice_client is None:
             embed = discord.Embed(
-                title="Volume :loud_sound:",
-                description=f"Volume is {self.volume}",
+                    title="Radio FM",
+                    description="I am not in a voice channel",
+                    color=self.bot.default_color,
+                    )
+            await context.reply(embed=embed)
+            self.bot.log.warning(f"Bot not in a voice channel", context.guild)
+            return
+        voice_client.stop()
+        self.now_playing.pop(context.guild.id, None)
+        await voice_client.disconnect(force=force)
+        embed = discord.Embed(
+                title="Radio FM",
+                description="I have disconnected from the voice channel",
                 color=self.bot.default_color,
                 )
-            await context.reply(embed=embed)
-            self.bot.log.info(f"Current volume is {self.volume} checked by {context.author} in {context.guild.name}", context.guild)
-        elif volume < 0 or volume > 100:
-            embed = discord.Embed(
-                title="Invalid volume :confused:",
-                description="Please enter a volume between 0 and 100",
+        await context.reply(embed=embed)
+        self.bot.log.info(f"Disconnected from voice channel {voice_client.channel.name}", context.guild)
+        return
+
+    @commands.command(name="say", description="Repeat the text in the voice channel", aliases=["s"])
+    async def repeat(self, context: Context, *, text: str):
+        ''' Repeat the text in the voice channel '''
+        if context.voice_client is None:
+            if not await self.join(context):
+                return
+        # Generate TTS audio
+        tts = gtts.gTTS(text, lang="en", tld="com.au")
+        file = os.path.join(tmp, "repeat.mp3")
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        tts.save(file)
+        context.voice_client.play(discord.FFmpegPCMAudio(file))
+        while context.voice_client.is_playing():
+            await asyncio.sleep(1)
+        os.remove(file)
+        embed = discord.Embed(
+                title="Radio FM",
+                description=f"Repeating the text in {context.voice_client.channel.mention} :loud_sound:",
                 color=self.bot.default_color,
                 )
-            await context.reply(embed=embed)
-            self.bot.log.warning(f"{context.author} tried to set the volume to invalid volume {volume} in {context.guild.name}", context.guild)
-        else:
-            self.volume = volume
-            if context.voice_client is not None:
-                context.voice_client.source.volume = volume/100
-
-
-            embed = discord.Embed(
-                title="Volume set :loud_sound:",
-                description=f"Volume set to {self.volume}",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.info(f"{context.author} set the volume to {volume} in {context.guild.name}", context.guild)
+        await context.reply(embed=embed)
+        self.bot.log.info(f"Repeating the text in {context.voice_client.channel.name}", context.guild)
+        return
         
     def get_radio_list(self, guild_id):
         ''' Get radio list from the config file '''

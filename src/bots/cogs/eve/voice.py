@@ -37,7 +37,7 @@ class Voice(commands.Cog, name="Voice Features"):
         self.load_greet_messages()
         self.bot.log.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
 
-    @commands.command(name="join", aliases=["j"], description="Join the voice channel of the user")
+    @commands.command(name="join", description="Join the voice channel of the user", aliases=["j"])
     async def join(self, context: Context, voice_channel: discord.VoiceChannel = None):
         ''' Join the voice channel of the user '''
         if voice_channel is None:
@@ -82,7 +82,7 @@ class Voice(commands.Cog, name="Voice Features"):
             self.bot.log.info(f"{self.bot.name} moved to voice channel {voice_channel.name} in {context.guild.name}", context.guild)
             return True
     
-    @commands.command(name="say", aliases=["s"], description="Say the text in the voice channel")
+    @commands.command(name="say", description="Say the text in the voice channel",  aliases=["s"])
     async def say(self, context: Context, *, text: str):
         ''' Say the text in the voice channel '''
         if context.voice_client is None:
@@ -126,7 +126,7 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.log.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}", context.guild)
 
-    @commands.command(name="leave", aliases=["l"], description="Leave the voice channel")
+    @commands.command(name="leave", description="Leave the voice channel", aliases=["l"])
     async def leave(self, context: Context):
         ''' Leave the voice channel '''
         if context.voice_client is None:
@@ -148,7 +148,7 @@ class Voice(commands.Cog, name="Voice Features"):
         await context.reply(embed=embed)
         self.bot.log.info(f"{self.bot.name} left voice channel {channel.name} in {context.guild.name}", context.guild)
     
-    @commands.command(name="greet", aliases=["g"], description="Get or set the greet message for the user")
+    @commands.command(name="greet", description="Get or set the greet message for the user", aliases=["g"])
     async def greet(self, context: Context, member: discord.Member, *, text: str = None):
         ''' Get or set the greet message for the user '''
         if text is None:
@@ -181,7 +181,7 @@ class Voice(commands.Cog, name="Voice Features"):
             self.save_greet_messages()
             self.bot.log.info(f"{context.author} set the greet message for {member.display_name} to '{text}' in {context.guild.name}", context.guild)
 
-    @commands.command(name="volume", aliases=["v"], description="Get or set the volume of the bot")
+    @commands.command(name="volume", description="Get or set the volume of the bot", aliases=["v"])
     async def volume(self, context: Context, volume: int = None):
         ''' Get or set the volume of the bot '''
         if volume is None:
