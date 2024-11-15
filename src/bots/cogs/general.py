@@ -13,6 +13,7 @@ import os
 import io
 import yaml
 import zipfile
+import typing
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -32,41 +33,6 @@ class General(commands.Cog, name="General"):
             color=self.bot.default_color,
             )
         await context.send(embed=embed)
-
-    @commands.command( name="ping", description="Check if the bot is alive.", aliases=["p"])
-    async def ping(self, context: Context):
-        '''Check if the bot is active and send the latency'''
-        embed = discord.Embed(
-            title="🏓 Pong!",
-            description=f"The bot latency is {round(self.bot.latency * 1000)}ms.",
-            color=self.bot.default_color,
-            )
-        await context.send(embed=embed)
-    
-    @commands.command( name="echo", description="Repeat the message.", aliases=["e"])
-    async def echo(self, context: Context, channel: discord.TextChannel = None, title: str = None, *, message: str = None):
-        '''Repeat the message'''
-        if channel is None:
-            channel = context.channel
-        if not channel.permissions_for(context.author).send_messages:
-            embed = discord.Embed(
-                title="Error",
-                description="You do not have permission to send messages in this channel.",
-                color=self.bot.error_color,
-                )
-            await context.reply(embed=embed)
-            return
-        if title is None:
-            title = ""
-        if message is None:
-            message = title
-            title = ""
-        embed = discord.Embed(
-            title=title,
-            description=message,
-            color=self.bot.default_color,
-            )
-        await channel.send(embed=embed)
     
     @commands.command( name="help", description="Get help on a command." , aliases=["h"])
     async def help(self, context: Context, command: str = None):
@@ -109,6 +75,71 @@ class General(commands.Cog, name="General"):
                     )
                 await context.send(embed=embed)
 
+    @commands.command( name="ping", description="Check if the bot is alive.", aliases=["p"])
+    async def ping(self, context: Context):
+        '''Check if the bot is active and send the latency'''
+        embed = discord.Embed(
+            title="🏓 Pong!",
+            description=f"The bot latency is {round(self.bot.latency * 1000)}ms.",
+            color=self.bot.default_color,
+            )
+        await context.send(embed=embed)
+    
+    @commands.command( name="echo", description="Repeat the message.", aliases=["e"])
+    async def echo(self, context: Context, channel: typing.Optional[discord.TextChannel], *, message: str,):
+        '''Repeat the message'''
+        if isinstance(channel, str):
+            message = channel+" "+message
+            channel = None
+        if channel is None:
+            channel = context.channel
+        if not channel.permissions_for(context.author).send_messages:
+            embed = discord.Embed(
+                title="Error",
+                description="You do not have permission to send messages in this channel.",
+                color=self.bot.error_color,
+                )
+            await context.reply(embed=embed)
+            return
+        embed = discord.Embed(
+            description=message,
+            color=self.bot.default_color,
+            )
+        await channel.send(embed=embed)
+    
+    @commands.command( name="dm", description="Send a direct message to a user.")
+    async def dm(self, context: Context, user: typing.Optional[typing.Union[discord.Member, int]], *, message: str):
+        if not context.author.guild_permissions.administrator:
+            embed = discord.Embed(
+                title="Error",
+                description="You do not have permission to use this command.",
+                color=self.bot.error_color,
+                )
+            await context.reply(embed=embed)
+            return
+        if isinstance(user, int):
+            user = self.bot.get_user(user)
+        try:
+            embed = discord.Embed(
+                description=message,
+                color=self.bot.default_color,
+                )
+            await user.send(embed=embed)
+        except discord.Forbidden:
+            embed = discord.Embed(
+                title="Error",
+                description="The user has disabled direct messages.",
+                color=self.bot.error_color,
+                )
+            await context.reply(embed=embed)
+            return 
+        embed = discord.Embed(
+            title="DM Sent",
+            description=f"The message has been sent to {user.mention}.",
+            color=self.bot.default_color,
+            )
+        await context.reply(embed=embed)
+    
     @commands.command( name="prefix", description="Change the bot prefix.")
     @commands.has_permissions(administrator=True)
     async def prefix(self, context: Context, prefix: str = None):
