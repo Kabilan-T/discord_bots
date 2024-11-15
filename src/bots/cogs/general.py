@@ -113,7 +113,7 @@ class General(commands.Cog, name="General"):
             embed = discord.Embed(
                 title="Error",
                 description="You do not have permission to use this command.",
-                color=self.bot.error_color,
+                color=self.bot.default_color,
                 )
             await context.reply(embed=embed)
             return
@@ -129,13 +129,13 @@ class General(commands.Cog, name="General"):
             embed = discord.Embed(
                 title="Error",
                 description="The user has disabled direct messages.",
-                color=self.bot.error_color,
+                color=self.bot.default_color,
                 )
             await context.reply(embed=embed)
             return 
         embed = discord.Embed(
             title="DM Sent",
-            description=f"The message has been sent to {user.mention}.",
+            description=f"The message has been sent to {user.name}.",
             color=self.bot.default_color,
             )
         await context.reply(embed=embed)
