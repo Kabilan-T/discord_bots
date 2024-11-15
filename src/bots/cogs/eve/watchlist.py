@@ -15,6 +15,7 @@ import asyncio
 import typing
 import discord
 import requests
+from fuzzywuzzy import process
 from discord.ext import commands
 from discord.ext.commands import Context
 
@@ -106,7 +107,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
         await self.show_detailed_info(context, selected_item['imdbID'], f"Added {entry['name']} to the watchlist :white_check_mark:")
     
     @commands.command(name='announce', description="Announce a movie or show streaming in the server", aliases=['an'])
-    async def announce_movie(self, context: Context, index: int):
+    async def announce_movie(self, context: Context, *, name_or_index: typing.Union[int, str]):
         ''' Announce a movie or show streaming in the server '''
         if str(context.guild.id) not in self.watchlist.keys() or not self.watchlist[str(context.guild.id)]:
             embed = discord.Embed(
@@ -117,49 +118,73 @@ class Watchlist(commands.Cog, name='Watchlist'):
             await context.send(embed=embed)
             self.bot.log.info(f"Watchlist is empty in guild {context.guild.name}", context.guild)
             return
-        if 1 <= index <= len(self.watchlist[str(context.guild.id)]):
-            entry = self.watchlist[str(context.guild.id)][index - 1]
-            channel = context.channel
-            role = None
-            if str(context.guild.id) in self.announcement_config.keys():
-                if 'channel' in self.announcement_config[str(context.guild.id)]:
-                    channel = context.guild.get_channel(self.announcement_config[str(context.guild.id)]['channel'])
-                    if channel is None:
-                        embed = discord.Embed(
-                            title="Missing announcement channel :confused:",
-                            description="Please set again the announcement channel using the `set_announcement` command.",
-                            color=self.bot.default_color
-                        )
-                        await context.send(embed=embed)
-                        self.bot.log.info(f"Invalid announcement channel in guild {context.guild.name}", context.guild)
-                        return
-                if 'role' in self.announcement_config[str(context.guild.id)]:
-                    role = context.guild.get_role(self.announcement_config[str(context.guild.id)]['role'])
-                    if role is None:
-                        embed = discord.Embed(
-                            title="Missing role :confused:",
-                            description="Please set again the role to ping using the `set_announcement` command.",
-                            color=self.bot.default_color
-                        )
-                        await context.send(embed=embed)
-                        self.bot.log.info(f"Invalid role in guild {context.guild.name}", context.guild)
-                        return
-            if role is not None:
-                message = f"{role.mention}\n{entry['name']} is starting in {context.guild.name} in few minutes! :popcorn:"
+        if isinstance(name_or_index, int):
+            index = name_or_index
+            if 1 <= index <= len(self.watchlist[str(context.guild.id)]):
+               watch_item = self.watchlist[str(context.guild.id)][index - 1]
             else:
-                message = f"{entry['name']} is starting in {context.guild.name} in few minutes! :popcorn:"
-            detailed_info = self.get_movie_details(entry['imdb_id'])
-            if detailed_info is None:
                 embed = discord.Embed(
-                    title="Failed to retrieve detailed information :confused:",
-                    description="Please try again.",
+                    title="Invalid index :confused:",
+                    description="Please enter a valid index.",
                     color=self.bot.default_color
                 )
                 await context.send(embed=embed)
+                self.bot.log.info(f"Invalid index in guild {context.guild.name}", context.guild)
                 return
-            embed = self.embed_movie_details(detailed_info)
-            await channel.send(message, embed=embed)
-            self.bot.log.info(f"Announced {entry['name']} in guild {context.guild.name}", context.guild)
+        else:
+            title = name_or_index
+            closest_match = process.extractOne(title, [entry['name'] for entry in self.watchlist[str(context.guild.id)]])
+            if closest_match[1] < 70:
+                embed = discord.Embed(
+                    title="Sorry :confused:",
+                    description="I couldn't find any movie or show with that name.",
+                    color=self.bot.default_color
+                )
+                await context.send(embed=embed)
+                self.bot.log.info(f"Failed to find a match in guild {context.guild.name}", context.guild)
+                return
+            watch_item = self.watchlist[str(context.guild.id)][[entry['name'] for entry in self.watchlist[str(context.guild.id)]].index(closest_match[0])]
+        channel = context.channel
+        role = None
+        if str(context.guild.id) in self.announcement_config.keys():
+            if 'channel' in self.announcement_config[str(context.guild.id)]:
+                channel = context.guild.get_channel(self.announcement_config[str(context.guild.id)]['channel'])
+                if channel is None:
+                    embed = discord.Embed(
+                        title="Missing announcement channel :confused:",
+                        description="Please set again the announcement channel using the `set_announcement` command.",
+                        color=self.bot.default_color
+                    )
+                    await context.send(embed=embed)
+                    self.bot.log.info(f"Invalid announcement channel in guild {context.guild.name}", context.guild)
+                    return
+            if 'role' in self.announcement_config[str(context.guild.id)]:
+                role = context.guild.get_role(self.announcement_config[str(context.guild.id)]['role'])
+                if role is None:
+                    embed = discord.Embed(
+                        title="Missing role :confused:",
+                        description="Please set again the role to ping using the `set_announcement` command.",
+                        color=self.bot.default_color
+                    )
+                    await context.send(embed=embed)
+                    self.bot.log.info(f"Invalid role in guild {context.guild.name}", context.guild)
+                    return
+        if role is not None:
+            message = f"{role.mention}\n{watch_item['name']} is starting in {context.guild.name} in few minutes! :popcorn:"
+        else:
+            message = f"{watch_item['name']} is starting in {context.guild.name} in few minutes! :popcorn:"
+        detailed_info = self.get_movie_details(watch_item['imdb_id'])
+        if detailed_info is None:
+            embed = discord.Embed(
+                title="Failed to retrieve detailed information :confused:",
+                description="Please try again.",
+                color=self.bot.default_color
+            )
+            await context.send(embed=embed)
+            return
+        embed = self.embed_movie_details(detailed_info)
+        await channel.send(message, embed=embed)
+        self.bot.log.info(f"Announced {watch_item['name']} in guild {context.guild.name}", context.guild)
     
     @commands.command(name='checked', description="Remove a movie or show from the watchlist", aliases=['check', 'remove'])
     async def remove_from_watchlist(self, context: Context, index: int):
@@ -255,6 +280,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
                 color=self.bot.default_color
             )
             await context.send(embed=embed)
+            self.save_watchlist()
             self.bot.log.info(f"Announcement settings cleared for guild {context.guild.name}", context.guild)
             return
         channel = context.guild.get_channel(channel.id)
