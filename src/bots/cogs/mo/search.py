@@ -17,11 +17,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Context
 from googlesearch import search
-try:
-    from bs4 import BeautifulSoup
-except ImportError:
-    os.system("pip install beautifulsoup4")
-    from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import requests
 
 class Search(commands.Cog, name="Search"):
