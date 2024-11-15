@@ -52,18 +52,13 @@ class Meme(commands.Cog, name="Meme Maintainer"):
             return
         meme_data = self.meme_templates[guild_id][closest_match[0]]
         embed = discord.Embed(color=self.bot.default_color)
-        if meme_data.startswith("http"):
-            embed.set_image(url=meme_data)
-        else:
-            file = discord.File(meme_data, filename="meme.png")
-            embed.set_image(url=f"attachment://meme.png")
-            await context.reply(embed=embed, file=file)
-            return
-        await context.reply(embed=embed)
+        file = discord.File(meme_data, filename="meme.png")
+        embed.set_image(url=f"attachment://meme.png")
+        await context.reply(embed=embed, file=file)
         self.bot.log.info(f"Inserted meme template: {meme_name} in {context.channel} for guild {guild_id}", context.guild)
 
-    @commands.command(name="add_meme", description="Add a new meme template either by URL or by attaching an image")
-    async def add_meme(self, context: Context, meme_name: str, meme_url: str = None):
+    @commands.command(name="add_meme", description="Add a new meme template by attaching an image")
+    async def add_meme(self, context: Context, *,meme_name: str):
         """Add a new meme template."""
         guild_id = str(context.guild.id)
         meme_name = meme_name.lower()
@@ -85,9 +80,7 @@ class Meme(commands.Cog, name="Meme Maintainer"):
         if not os.path.exists(meme_dir):
             os.makedirs(meme_dir)
         # Check if a URL is provided or an image is attached
-        if meme_url:
-            self.meme_templates[guild_id][meme_name] = meme_url
-        elif context.message.attachments:
+        if context.message.attachments:
             attachment = context.message.attachments[0]
             file_path = os.path.join(meme_dir, f"{meme_name}.png")
             # Download and save the image
@@ -96,7 +89,7 @@ class Meme(commands.Cog, name="Meme Maintainer"):
         else:
             embed = discord.Embed(
                 title="Invalid input",
-                description="Please provide a meme URL or attach an image.",
+                description="Please attach an image.",
                 color=self.bot.default_color
             )
             await context.reply(embed=embed)
@@ -136,14 +129,10 @@ class Meme(commands.Cog, name="Meme Maintainer"):
                 title=meme_name,
                 color=self.bot.default_color
             )
-            if self.meme_templates[guild_id][meme_name].startswith("http"):
-                embed.set_image(url=self.meme_templates[guild_id][meme_name])
-                await context.send(embed=embed)
-            else:
-                file = discord.File(self.meme_templates[guild_id][meme_name], filename="meme.png")
-                embed.set_thumbnail(url=f"attachment://meme.png")
-                await context.send(embed=embed, files = [file])
-                continue
+            file = discord.File(self.meme_templates[guild_id][meme_name], filename="meme.png")
+            embed.set_thumbnail(url=f"attachment://meme.png")
+            await context.send(embed=embed, files = [file])
+            continue
         self.bot.log.info(f"Listed meme templates for guild {guild_id}", context.guild)
 
     @commands.command(name="remove_meme", description="Remove an existing meme from the collection")
