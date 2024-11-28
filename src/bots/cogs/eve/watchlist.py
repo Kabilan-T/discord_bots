@@ -49,7 +49,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
             )
             for idx, entry in enumerate(self.watchlist[str(context.guild.id)]):
                 embed.add_field(name=f"{idx + 1}. {entry['name']}", value=f"Suggested by: <@{entry['suggested_by']}>", inline=False)
-                await context.send(embed=embed)
+            await context.send(embed=embed)
         else:
             for page in range(0, n_movies, 25):
                 embed = discord.Embed(
