@@ -360,6 +360,8 @@ class Radio(commands.Cog, name="Radio FM"):
         if context.voice_client is None:
             if not await self.join(context):
                 return
+        if context.voice_client.is_playing():
+            context.voice_client.stop()
         # Generate TTS audio
         tts = gtts.gTTS(text, lang="en", tld="com.au")
         file = os.path.join(tmp, "repeat.mp3")
