@@ -99,6 +99,7 @@ class Voice(commands.Cog, name="Voice Features"):
             # wait for the bot to finish speaking
             while context.voice_client.is_playing():
                 await asyncio.sleep(1)
+            context.voice_client.stop()
         # Replace mentions with their display names
         for mention in context.message.mentions:
             text = text.replace(mention.mention, mention.display_name)
@@ -127,7 +128,7 @@ class Voice(commands.Cog, name="Voice Features"):
         self.bot.log.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}", context.guild)
 
     @commands.command(name="leave", description="Leave the voice channel", aliases=["l"])
-    async def leave(self, context: Context):
+    async def leave(self, context: Context, force: bool = False):
         ''' Leave the voice channel '''
         if context.voice_client is None:
             embed = discord.Embed(
@@ -139,7 +140,8 @@ class Voice(commands.Cog, name="Voice Features"):
             self.bot.log.warning(f"{context.author} tried to use leave command without being in a voice channel", context.guild)
             return
         channel = context.voice_client.channel
-        await context.voice_client.disconnect()
+        context.voice_client.stop()
+        await context.voice_client.disconnect(force=force)
         embed = discord.Embed(
             title="Left the voice channel :wave:",
             description="I have left the voice channel",
@@ -292,6 +294,8 @@ class Voice(commands.Cog, name="Voice Features"):
             if len(before.channel.members) == 1:
                 await asyncio.sleep(5)
                 if len(before.channel.members) == 1:
+                    if before.channel.guild.voice_client.is_playing():
+                        before.channel.guild.voice_client.stop()
                     await before.channel.guild.voice_client.disconnect()
                     embed = discord.Embed(
                         title="I'm leaving :wave:",
