@@ -1,6 +1,6 @@
 logs/*
 tmp/*
-*/data/*
+*/data/*/*/*
 */__pycache__/*
 */__init__.py
 *tokens.sh
