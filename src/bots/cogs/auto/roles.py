@@ -143,6 +143,7 @@ class Roles(commands.Cog, name="Roles"):
     def read_config(self):
         if os.path.exists(os.path.join(self.bot.data_dir)):
             guilds = os.listdir(self.bot.data_dir)
+            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
             for guild_id in guilds:
                 if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "config.yaml")):
                     with open(os.path.join(self.bot.data_dir, guild_id, "config.yaml"), "r") as file:
@@ -153,6 +154,7 @@ class Roles(commands.Cog, name="Roles"):
     def read_reaction_roles(self):
         if os.path.exists(os.path.join(self.bot.data_dir)):
             guilds = os.listdir(self.bot.data_dir)
+            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
             for guild_id in guilds:
                 if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "reaction_roles.yaml")):
                     with open(os.path.join(self.bot.data_dir, guild_id, "reaction_roles.yaml"), "r") as file:

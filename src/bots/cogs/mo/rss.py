@@ -179,6 +179,7 @@ class RSSFeed(commands.Cog, name="RSS Feed"):
         # load subscribed rss feeds of all guilds
         if os.path.exists(self.bot.data_dir):
             guilds = os.listdir(self.bot.data_dir)
+            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
             for guild_id in guilds:
                 if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "rss_subscription.yml")):
                     with open(os.path.join(self.bot.data_dir, guild_id, "rss_subscription.yml"), 'r') as file:
@@ -196,6 +197,7 @@ class RSSFeed(commands.Cog, name="RSS Feed"):
         # save subscribed rss feeds of all guilds
         if os.path.exists(self.bot.data_dir):
             guilds = os.listdir(self.bot.data_dir)
+            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
             for guild_id in guilds:
                 if guild_id in self.subscribed_feeds.keys():
                     with open(os.path.join(self.bot.data_dir, guild_id, "rss_subscription.yml"), 'w') as file:

@@ -217,6 +217,7 @@ class Meme(commands.Cog, name="Meme Maintainer"):
         """Load meme templates for each guild from YAML files."""
         if os.path.exists(self.bot.data_dir):
             guilds = os.listdir(self.bot.data_dir)
+            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
             for guild_id in guilds:
                 fpath = os.path.join(self.bot.data_dir, guild_id, "meme_templates.yml")
                 if os.path.exists(fpath):

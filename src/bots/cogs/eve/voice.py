@@ -318,6 +318,7 @@ class Voice(commands.Cog, name="Voice Features"):
     def load_greet_messages(self):
         ''' Load the greet messages from a file '''
         guilds = os.listdir(self.bot.data_dir)
+        guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
         for guild_id in guilds:
             if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "greet_messages.txt")):
                 with open(os.path.join(self.bot.data_dir, guild_id, "greet_messages.txt"), "r") as file:

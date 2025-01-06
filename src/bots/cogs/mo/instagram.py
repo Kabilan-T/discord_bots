@@ -278,6 +278,7 @@ class Instagram(commands.Cog, name="Instagram"):
         # load the channels to watch for instagram links
         if os.path.exists(self.bot.data_dir):
             guilds = os.listdir(self.bot.data_dir)
+            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
             for guild_id in guilds:
                 if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml")):
                     with open(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml"), 'r') as file:
@@ -294,6 +295,7 @@ class Instagram(commands.Cog, name="Instagram"):
         # save the channels to watch for instagram links
         if os.path.exists(self.bot.data_dir):
             guilds = os.listdir(self.bot.data_dir)
+            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
             for guild_id in guilds:
                 if guild_id in self.channels_to_watch.keys():
                     with open(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml"), 'w+') as file:

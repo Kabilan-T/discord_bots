@@ -12,12 +12,46 @@
 import discord
 import typing
 import datetime
+from discord.ext import tasks
 from discord.ext import commands
 from discord.ext.commands import Context
 
 class Announcements(commands.Cog, name="Announcements"):
     def __init__(self, bot):
         self.bot = bot
+        self.load_holidays()
+        self.announce_speciality.start()
+
+    @tasks.loop(time=datetime.time(hour=0, minute=1, second=0, tzinfo=datetime.timezone.utc))
+    async def announce_speciality(self):
+        ''' Announce speciality of the day '''
+        today = datetime.datetime.now()
+        holidays = self.load_holidays()
+        holiday = self.holidays.get(today)
+        if holiday is not None:
+            for event in holiday:
+                name = event['name']
+                description = event['description']
+                channel = self.bot.get_channel(1292877986953166890)  # Replace with your channel ID
+                if channel:
+                    embed = discord.Embed(title=f"Today's Holiday: {name}",
+                                        description=description,
+                                        color=discord.Color.green())
+                    await channel.send(embed=embed)
+        self.bot.log.info(f"Announcing {name} in {channel.name}")
+        
+    def load_holidays(self):
+        """ Load holidays from the YAML file """
+        print("Loading holidays...")
+        print(f"{self.bot.data_dir})")
+        return None
+        # try:
+        #     with open(f"{self.bot.data_dir}/holidays_2025.yml", "r") as file:
+        #         holidays = yaml.safe_load(file)
+        #     return holidays
+        # except Exception as e:
+        #     print(f"Error loading holidays: {e}")
+        #     return {}
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):

@@ -420,6 +420,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
         # Save the watchlist to a file
         if os.path.exists(self.bot.data_dir):
             guilds = os.listdir(self.bot.data_dir)
+            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
             for guild_id in guilds:
                 if guild_id in self.watchlist.keys():
                     with open(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml'), 'w+') as file:
@@ -433,6 +434,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
         # Load the watchlist from a file
         if os.path.exists(self.bot.data_dir):
             guilds = os.listdir(self.bot.data_dir)
+            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
             for guild_id in guilds:
                 if os.path.exists(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml')):
                     with open(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml'), 'r') as file:
