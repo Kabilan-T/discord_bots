@@ -9,6 +9,8 @@
 
 #-------------------------------------------------------------------------------
 
+import os
+import yaml
 import discord
 import typing
 import datetime
@@ -19,39 +21,53 @@ from discord.ext.commands import Context
 class Announcements(commands.Cog, name="Announcements"):
     def __init__(self, bot):
         self.bot = bot
-        self.load_holidays()
-        self.announce_speciality.start()
+        self.broadcast_daily_highlights.start()
 
-    @tasks.loop(time=datetime.time(hour=0, minute=1, second=0, tzinfo=datetime.timezone.utc))
-    async def announce_speciality(self):
-        ''' Announce speciality of the day '''
-        today = datetime.datetime.now()
-        holidays = self.load_holidays()
-        holiday = self.holidays.get(today)
-        if holiday is not None:
-            for event in holiday:
-                name = event['name']
-                description = event['description']
-                channel = self.bot.get_channel(1292877986953166890)  # Replace with your channel ID
-                if channel:
-                    embed = discord.Embed(title=f"Today's Holiday: {name}",
-                                        description=description,
-                                        color=discord.Color.green())
-                    await channel.send(embed=embed)
-        self.bot.log.info(f"Announcing {name} in {channel.name}")
+    @tasks.loop(time=datetime.time(hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc))
+    async def broadcast_daily_highlights(self):
+        ''' Broadcast daily highlights to all servers '''
+        today = datetime.datetime.now().strftime("%Y-%m-%d")
+        holiday_data = self.load_holiday_data()
+        if holiday_data is None: return
+        todays_events = holiday_data.get(today, None)
+        if todays_events is None:
+            self.bot.log.info(f"No special events found for {today}")
+            return
+        embed = discord.Embed(
+            title="Today's Highlights :calendar_spiral:",
+            color=self.bot.default_color,
+            )
+        for event in todays_events:
+            event_name = event['name']
+            event_description = event['description']
+            event_type = event['types']
+            embed.add_field(name=f"**{event_name}**",
+                            value=f"_{event_description}_\ncategory: _{event_type}_\n",
+                            inline=False)
+        for guild in self.bot.guilds:
+            general_channel = discord.utils.find( lambda c: "general" in c.name.lower(), guild.text_channels)
+            if general_channel is not None:
+                embed.set_author(name=self.bot.name+", The Autopilot", icon_url=self.bot.user.avatar.url)
+                embed.set_footer(text=f"Earth Date: {today} \t\t\t\tStar Date: {(discord.utils.utcnow() - guild.created_at).days} days")
+                await general_channel.send(embed=embed)
+                self.bot.log.info(f"Sending today's highlights to {guild.name} in {general_channel.name}", guild)
+            else:
+                self.bot.log.warning(f"No general channel found in {guild.name}", guild)
         
-    def load_holidays(self):
-        """ Load holidays from the YAML file """
-        print("Loading holidays...")
-        print(f"{self.bot.data_dir})")
-        return None
-        # try:
-        #     with open(f"{self.bot.data_dir}/holidays_2025.yml", "r") as file:
-        #         holidays = yaml.safe_load(file)
-        #     return holidays
-        # except Exception as e:
-        #     print(f"Error loading holidays: {e}")
-        #     return {}
+    def load_holiday_data(self):
+        ''' Load holidays data from file '''
+        data_fpath = os.path.join(self.bot.data_dir, "holidays_2025.yml")
+        if not os.path.exists(data_fpath):
+            self.bot.log.warning(f"Holidays file not found in {data_fpath}")
+            return None
+        try:
+            with open(data_fpath, "r") as file:
+                holidays = yaml.load(file, Loader=yaml.FullLoader) or None
+            self.bot.log.info(f"Loaded {len(holidays)} holidays from {data_fpath}")
+            return holidays
+        except Exception as e:
+            self.bot.log.warning(f"Error loading holidays: {e}")
+            return None
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):

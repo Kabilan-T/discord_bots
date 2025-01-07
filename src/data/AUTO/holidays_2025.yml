@@ -1,25 +1,32 @@
 '2025-01-01':
-- description: "New Year\u2019s Day is celebrated many countries such as in India\
-    \ on the January 1 in the Gregorian calendar."
+- description: New Year's Day, which is on January 1, or the first day of the year
+    in the Gregorian Calendar, is a public holiday in Germany.
   name: New Year's Day
-  types: Optional holiday
+  types: National holiday
 '2025-01-02':
 - description: Hanukkah, also known as Chanukah or the Festival of Lights, is celebrated
     for eight days between the 25th day of the month of Kislev to the second day of
     Tevet in the Hebrew calendar.
   name: Last day of Hanukkah
   types: Observance
+- description: January 2 is an annual bank holiday and the last day of the Hogmanay
+    (New Year) celebrations in Scotland.
+  name: 2nd January
+  types: Local holiday
 '2025-01-04':
 - description: World Braille Day celebrates the life and achievements of Louis Braille,
     who invented the braille code for the visually impaired.
   name: World Braille Day
   types: United Nations observance
+'2025-01-05':
+- description: Twelfth Night is a observance and Christian holiday in the United Kingdom
+  name: Twelfth Night
+  types: Observance
 '2025-01-06':
-- description: "Many people in the United States annually observe Epiphany, or Three\
-    \ Kings\u2019 Day, on January 6. It is a Christian observance and a public holiday\
-    \ in the US Virgin Islands."
+- description: Epiphany on January 6 is a public holiday in 3 German states  and commemorates
+    the Bible story of  the Magi's visit to baby Jesus.
   name: Epiphany
-  types: Christian
+  types: Observance
 '2025-01-07':
 - description: Many Orthodox Christian churches in countries such as the United States
     observe Christmas Day on or near January 7 in the Gregorian calendar.
@@ -114,6 +121,11 @@
     USA
   name: International Day of Education
   types: United Nations observance
+'2025-01-25':
+- description: Burns Night celebrates the life and work of Robert Burns and Scottish
+    culture in general. It is on or around January 25 each year.
+  name: Burns Night
+  types: Local observance
 '2025-01-26':
 - description: India's Republic Day marks the anniversary of the adoption of the Indian
     constitution. It is an annual gazetted holiday in India on January 26.
@@ -128,6 +140,10 @@
   name: World Leprosy Day
   types: Worldwide observance
 '2025-01-27':
+- description: Remembrance Day for the Victims of National Socialism is a observance
+    in Germany
+  name: Remembrance Day for the Victims of National Socialism
+  types: Observance
 - description: Isra and Mi'raj (Isra Me'raj, Israa and Mi'raaj, Laylat Al-Isra wa
     Al-Miraj, Lailat al Miraj, Night Journey and Ascension to Heaven) marks the night
     when the Prophet Mohammad traveled from Mecca to Jerusalem, ascended to heaven
@@ -139,10 +155,6 @@
     Holocaust before and during World War II. It is on January 27 each year.
   name: International Day of Commemoration in Memory of the Victims of the Holocaust
   types: United Nations observance
-- description: Remembrance Day for the Victims of National Socialism is a observance
-    in Germany
-  name: Remembrance Day for the Victims of National Socialism
-  types: Observance
 '2025-01-29':
 - description: Lunar New year is an annual global celebration in many countries including
     India.
@@ -248,9 +260,13 @@
     the importance of the radio in communicating information worldwide.
   name: World Radio Day
   types: United Nations observance
+- description: "Tu B\u2019Shevat is known as the \u201CNew Year for Trees\u201D, is\
+    \ one of the four Jewish New Years."
+  name: Tu B'Shevat (Arbor Day)
+  types: Observance
 '2025-02-14':
-- description: "Valentine\u2019s Day is celebrated in many places worldwide, including\
-    \ in India, on February 14 each year."
+- description: February 14 is Valentine's Day or Saint Valentine's Feast. The day
+    of love owes its origins to ancient Roman and European Christian traditions.
   name: Valentine's Day
   types: Observance
 - description: Statehood Day is a local observance in the USA
@@ -262,13 +278,13 @@
   name: Susan B. Anthony's Birthday
   types: Local observance
 '2025-02-16':
+- description: Hizir Fast is a observance in Germany
+  name: Hizir Fast
+  types: Observance
 - description: Elizabeth Peratrovich was one of the main driving forces behind the
     territory's Anti-Discrimination Act of 1945.
   name: Elizabeth Peratrovich Day
   types: Local holiday
-- description: Hizir Fast is a observance in Germany
-  name: Hizir Fast
-  types: Observance
 '2025-02-17':
 - description: Washington's Birthday, or Presidents' Day, honors the life and work
     of the first president of the United States, George Washington.
@@ -354,6 +370,10 @@
   name: Texas Independence Day
   types: Local holiday
 '2025-03-03':
+- description: Carnival Monday is two days before Ash Wednesday and parades are held
+    in many Catholic areas of Germany.
+  name: Shrove Monday
+  types: Observance
 - description: World Wildlife Day celebrates all flora and fauna, including animals,
     on Earth.
   name: World Wildlife Day
@@ -366,11 +386,10 @@
     each year.
   name: Read Across America Day
   types: Observance
-- description: Carnival Monday is two days before Ash Wednesday and parades are held
-    in many Catholic areas of Germany.
-  name: Shrove Monday
-  types: Observance
 '2025-03-04':
+- description: Carnival has several long-standing traditions in Germany.
+  name: Carnival Tuesday
+  types: Observance
 - description: Shrove Tuesday is traditionally known as the day prior to Lent but
     it also serves as a day of celebration, known as Mardi Gras.
   name: Shrove Tuesday/Mardi Gras
@@ -383,14 +402,13 @@
     first Tuesday of March each year.
   name: Town Meeting Day
   types: Local holiday
-- description: Carnival has several long-standing traditions in Germany.
-  name: Carnival Tuesday
+- description: Shrove Tuesday is also known as Pancake Tuesday in the United Kingdom.
+  name: Carnival / Shrove Tuesday / Pancake Day
   types: Observance
 '2025-03-05':
-- description: Ash Wednesday is a Christian observance that marks the first day of
-    Lent, which is prior to Easter.
-  name: Ash Wednesday
-  types: Christian
+- description: Ash Wednesday marks the first day of Lent in western Christian churches.
+  name: Carnival / Ash Wednesday
+  types: Observance
 '2025-03-07':
 - description: Employee Appreciation Day is a US unofficial observance that recognizes
     and appreciates employees in all industries, aimed at helping employers keep their
@@ -398,11 +416,10 @@
   name: Employee Appreciation Day
   types: Observance
 '2025-03-08':
-- description: "International Women\u2019s Day celebrates women\u2019s achievements\
-    \ worldwide and throughout history."
+- description: International Women's Day is a observance in Germany
   name: International Women's Day
-  types: United Nations observance
-'2025-03-09T02:00:00-05:00':
+  types: Observance
+'2025-03-09':
 - description: Daylight Saving Time starts in the USA
   name: Daylight Saving Time starts
   types: Clock change/Daylight Saving Time
@@ -438,8 +455,8 @@
   name: Long Covid Awareness Day
   types: Worldwide observance
 '2025-03-17':
-- description: St Patrick's Day marks the life and deeds of St Patrick, one of Ireland's
-    patron saints. It is an Irish-American celebration in the USA.
+- description: "St Patrick\u2019s Day celebrates Irish culture and commemorates one\
+    \ of Ireland\u2019s patron saints, St Patrick, on or around March 17."
   name: St. Patrick's Day
   types: Observance
 - description: Evacuation Day in Suffolk County, Massachusetts, commemorates the first
@@ -452,6 +469,9 @@
   name: Anniversary of the March Revolution
   types: Observance
 '2025-03-20':
+- description: March Equinox in Germany (Berlin)
+  name: March Equinox
+  types: Season
 - description: French Language Day is a United Nations observance in the USA
   name: French Language Day
   types: United Nations observance
@@ -459,19 +479,10 @@
     of happiness is universal.
   name: International Day of Happiness
   types: United Nations observance
-'2025-03-20T05:01:21-04:00':
-- description: March Equinox in the USA (New York)
-  name: March Equinox
-  types: Season
-'2025-03-20T10:01:21+01:00':
-- description: March Equinox in Germany (Berlin)
-  name: March Equinox
-  types: Season
-'2025-03-20T14:31:21+05:30':
-- description: March Equinox in India (New Delhi)
-  name: March Equinox
-  types: Season
 '2025-03-21':
+- description: Alevitic New Year is a observance in Germany
+  name: Alevitic New Year
+  types: Observance
 - description: "The United Nations\u2019 (UN) International Day for the Elimination\
     \ of Racial Discrimination is annually observed on March 21."
   name: International Day for the Elimination of Racial Discrimination
@@ -487,9 +498,6 @@
 - description: World Down Syndrome Day is held on March 21 every year.
   name: World Down Syndrome Day
   types: United Nations observance
-- description: Alevitic New Year is a observance in Germany
-  name: Alevitic New Year
-  types: Observance
 '2025-03-22':
 - description: World Water Day aims to increase people's awareness of the water's
     importance in all aspects of life.
@@ -534,6 +542,10 @@
     26 to honor Prince Jonah Kuhio Kalanianaole.
   name: Prince Jonah Kuhio Kalanianaole Day
   types: Local holiday
+- description: Laylatul Qadr, the Night of Power, is the holiest day of the Islamic
+    calendar year.
+  name: Laylatul Qadr (Night of Power)
+  types: Observance
 '2025-03-29':
 - description: Earth Hour is an annual event in which many people worldwide turn their
     lights off on the last Saturday in March.
@@ -544,6 +556,9 @@
   name: National Vietnam War Veterans Day
   types: Observance
 '2025-03-30':
+- description: Daylight Saving Time starts in Germany
+  name: Daylight Saving Time starts
+  types: Clock change/Daylight Saving Time
 - description: Chaitra Sukhladi is a restricted holiday in India
   name: Chaitra Sukhladi
   types: Hinduism
@@ -565,11 +580,15 @@
 - description: Vietnam Veteran Recognition Day is a state observance in the USA
   name: Vietnam Veteran Recognition Day
   types: Local observance
-'2025-03-30T02:00:00+01:00':
-- description: Daylight Saving Time starts in Germany
-  name: Daylight Saving Time starts
-  types: Clock change/Daylight Saving Time
+- description: Mother's Day, or Mothering Sunday, is traditionally a day to visit
+    your mother church. It is now an occasion to bring gifts to your own mother.
+  name: Mother's Day
+  types: Observance
 '2025-03-31':
+- description: Eid al-Fitr is a holiday to mark the end of the Islamic month of Ramadan,
+    during which Muslims fast during the hours of daylight.
+  name: Eid ul Fitr
+  types: Observance
 - description: Eid al-Fitr is a holiday to mark the end of the Islamic month of Ramadan,
     during which Muslims fast during the hours of daylight.
   name: Ramzan Id/Eid-ul-Fitar
@@ -577,10 +596,6 @@
 - description: Jamat Ul-Vida is a restricted holiday in India
   name: Jamat Ul-Vida
   types: Optional holiday
-- description: Eid al-Fitr, which is on the first day of the Islamic month of Shawwal,
-    marks the end of the month-long fast of Ramadan.
-  name: Eid al-Fitr
-  types: Muslim
 - description: International Transgender Day of Visibility is a worldwide observance
     in the USA
   name: International Transgender Day of Visibility
@@ -659,15 +674,15 @@
   name: International Day of Human Space Flight
   types: United Nations observance
 '2025-04-13':
+- description: "Palm Sunday is a Christian feast that commemorates Jesus Christ\u2019\
+    s entry into Jerusalem. It is also the start of Holy Week."
+  name: Palm Sunday
+  types: Observance
 - description: During Passover, the Jewish people remember the liberation of the Israelites
     from slavery, their exodus from Egypt, and that their first-born children were
     spared during the 10th plague, as told in the Haggadah.
-  name: First day of Passover
+  name: First Day of Passover
   types: Observance
-- description: "Palm Sunday in the United States celebrates Jesus Christ\u2019s entry\
-    \ into Jerusalem. It is also the Sunday before Easter Sunday."
-  name: Palm Sunday
-  types: Christian
 - description: Passover marks the Israelites' liberation from slavery and their exodus
     from Egypt around 3000 years ago.
   name: Passover (first day)
@@ -677,6 +692,10 @@
   name: Thomas Jefferson's Birthday
   types: Observance
 '2025-04-14':
+- description: Second Day of Passover is a observance, Jewish holiday, and Jewish
+    holiday in Germany
+  name: Second Day of Passover
+  types: Observance
 - description: "Vaisakhi, also known as Baisakhi, is a harvest celebration on either\
     \ April 13 or April 14 in the Gregorian calendar. It is one of India\u2019s most\
     \ notable celebrations."
@@ -688,10 +707,6 @@
 - description: World Chagas Disease Day is a United Nations observance in the USA
   name: World Chagas Disease Day
   types: United Nations observance
-- description: Second Day of Passover is a observance, Jewish holiday, and Jewish
-    holiday in Germany
-  name: Second Day of Passover
-  types: Observance
 '2025-04-15':
 - description: World Art Day is a worldwide observance in the USA
   name: World Art Day
@@ -716,10 +731,14 @@
   name: Maundy Thursday
   types: Observance
 '2025-04-18':
-- description: "Many Christians commemorate Jesus Christ\u2019s crucifixion and death\
-    \ on Good Friday. It is a gazetted holiday in India."
+- description: Many Christians in Germany observe the Good Friday public holiday to
+    mark the crucifixion of Jesus Christ.
   name: Good Friday
   types: National holiday
+- description: Sixth Day of Passover is a observance, Jewish holiday, and Jewish holiday
+    in Germany
+  name: Sixth Day of Passover
+  types: Observance
 - description: The International Day for Monuments and Sites raises awareness on preserving
     and conserving historical and archeological heritage sites.
   name: International Day for Monuments and Sites
@@ -730,19 +749,19 @@
 - description: State Holiday is a state holiday in the USA
   name: State Holiday
   types: Local holiday
-- description: Sixth Day of Passover is a observance, Jewish holiday, and Jewish holiday
-    in Germany
-  name: Sixth Day of Passover
-  types: Observance
 '2025-04-19':
-- description: Holy Saturday is the day before Easter Sunday in the United States.
+- description: Holy Saturday is the day before Easter Sunday.
   name: Holy Saturday
-  types: Christian
+  types: Observance
 - description: Seventh Day of Passover is a observance, Jewish holiday, and Jewish
     holiday in Germany
   name: Seventh Day of Passover
   types: Observance
 '2025-04-20':
+- description: Easter Sunday is a holiday in Germany to celebrate the Jesus Christ's
+    resurrection, according to the Christian Bible.
+  name: Easter Sunday
+  types: Observance
 - description: "Easter Sunday commemorates Jesus Christ\u2019s resurrection, according\
     \ to Christian belief."
   name: Easter Day
@@ -760,15 +779,11 @@
     \ one of the organization\u2019s 6 official languages \u2013 Chinese."
   name: Chinese Language Day
   types: United Nations observance
-- description: Easter Sunday is an important day in the Christian church calendar
-    because it celebrates Jesus Christ's resurrection, according to Christian belief.
-  name: Easter Sunday
-  types: Observance
 '2025-04-21':
-- description: Many Orthodox churches in the United States observe Easter Monday on
-    the day after the Orthodox Easter Sunday date.
-  name: Orthodox Easter Monday
-  types: Orthodox
+- description: Many people in Germany annually observe Easter Monday on the day after
+    Easter Sunday. It is a public holiday in all states.
+  name: Easter Monday
+  types: National holiday
 - description: World Creativity and Innovation Day is a United Nations observance
     in the USA
   name: World Creativity and Innovation Day
@@ -794,7 +809,14 @@
     of Oklahoma's lands to European settlers.
   name: Oklahoma Day
   types: Local observance
+- description: Stephen Lawrence Day is an annual observance in the UK commemorating
+    the racially motivated murder of Stephen Lawrence.
+  name: Stephen Lawrence Day
+  types: Observance
 '2025-04-23':
+- description: German Beer Day is a observance in Germany
+  name: German Beer Day
+  types: Observance
 - description: Many people in the United States observe Yom Hashoah by remembering
     Holocaust victims who died during World War II.
   name: Yom HaShoah
@@ -811,10 +833,18 @@
     \ full week of April. It remembers the important role of administrative professionals."
   name: Administrative Professionals Day
   types: Observance
-- description: German Beer Day is a observance in Germany
-  name: German Beer Day
+- description: St George's Day in England is a celebration of Saint George, a Christian
+    martyr and soldier in the Roman army.
+  name: St. George's Day
+  types: Local holiday
+- description: National Shakespeare Day, also known as Shakespeare Day, is annually
+    held on April 23.
+  name: Shakespeare Day
   types: Observance
 '2025-04-24':
+- description: Girls' Day / Boys' Day is a observance in Germany
+  name: Girls' Day / Boys' Day
+  types: Observance
 - description: International Girls in ICT Day is a United Nations observance in the
     USA
   name: International Girls in ICT Day
@@ -825,9 +855,6 @@
   types: United Nations observance
 - description: Take our Daughters and Sons to Work Day is a observance in the USA
   name: Take our Daughters and Sons to Work Day
-  types: Observance
-- description: Girls' Day / Boys' Day is a observance in Germany
-  name: Girls' Day / Boys' Day
   types: Observance
 '2025-04-25':
 - description: International Delegate's Day is a United Nations observance in the
@@ -842,6 +869,10 @@
     it falls on the last Friday of April.
   name: Arbor Day
   types: Local holiday
+- description: Yom Hashoah, held on the 27th day of the month of Nisan, remembers
+    the Holocaust victims who died during World War II.
+  name: Yom HaShoah
+  types: Observance
 '2025-04-26':
 - description: World Intellectual Property Day is annually held on April 26 to increase
     awareness and understanding of intellectual property worldwide.
@@ -872,15 +903,23 @@
     It is a state holiday in some parts of the United States.
   name: Confederate Memorial Day
   types: Local holiday
+- description: St George's Day in England is a celebration of Saint George, a Christian
+    martyr and soldier in the Roman army.
+  name: St. George's Day
+  types: Observance
 '2025-04-30':
+- description: Walpurgis Night is a observance in Germany
+  name: Walpurgis Night
+  types: Observance
 - description: International Jazz Day recognizes the historical, cultural, and educational
     contribution of jazz.
   name: International Jazz Day
   types: United Nations observance
-- description: Walpurgis Night is a observance in Germany
-  name: Walpurgis Night
-  types: Observance
 '2025-05-01':
+- description: May Day in Germany is a holiday to celebrate the start of spring and
+    to campaign for workers' rights. It is always on May 1.
+  name: May Day
+  types: National holiday
 - description: ''
   name: International Worker's Day
   types: Observance
@@ -919,10 +958,6 @@
     in the USA
   name: First Day of Jewish American Heritage Month
   types: Observance
-- description: May Day in Germany is a holiday to celebrate the start of spring and
-    to campaign for workers' rights. It is always on May 1.
-  name: May Day
-  types: National holiday
 '2025-05-02':
 - description: World Tuna Day is a UN holiday designed to raise awareness of the global
     importance of tuna.
@@ -960,6 +995,9 @@
   name: Rhode Island Independence Day
   types: Local observance
 '2025-05-05':
+- description: Europe Day (Council of Europe) is a observance in Germany
+  name: Europe Day (Council of Europe)
+  types: Observance
 - description: World Portuguese Language Day is a United Nations observance in the
     USA
   name: World Portuguese Language Day
@@ -968,9 +1006,10 @@
     of Mexican pride and heritage.'
   name: Cinco de Mayo
   types: Observance
-- description: Europe Day (Council of Europe) is a observance in Germany
-  name: Europe Day (Council of Europe)
-  types: Observance
+- description: May Day, or the Early May Bank holiday, is on the first Monday of May
+    each year.
+  name: Early May Bank Holiday
+  types: National holiday
 '2025-05-06':
 - description: National Nurses Day is an occasion to honor the work of nurses.
   name: National Nurses Day
@@ -979,6 +1018,9 @@
   name: National Teacher Appreciation Day
   types: Observance
 '2025-05-08':
+- description: ''
+  name: Anniversary of the End of World War II
+  types: Observance
 - description: "The United Nations\u2019 (UN) Time of Remembrance and Reconciliation\
     \ for Those Who Lost Their Lives during the Second World War is annually held\
     \ over two days, from May 8-9."
@@ -1000,10 +1042,10 @@
 - description: Victory in Europe Day is a observance in the USA
   name: Victory in Europe Day
   types: Observance
-- description: ''
-  name: Anniversary of the End of World War II
-  types: Observance
 '2025-05-09':
+- description: Europe Day (European Union) is a observance in Germany
+  name: Europe Day (European Union)
+  types: Observance
 - description: Birthday of Rabindranath is a restricted holiday in India
   name: Birthday of Rabindranath
   types: Optional holiday
@@ -1019,9 +1061,6 @@
 - description: Appreciate and thank all the military spouses and partners you know
     on Military Spouse Appreciation Day.
   name: Military Spouse Appreciation Day
-  types: Observance
-- description: Europe Day (European Union) is a observance in Germany
-  name: Europe Day (European Union)
   types: Observance
 '2025-05-10':
 - description: World Migratory Bird Day is observed the second weekend of May every
@@ -1131,13 +1170,13 @@
   name: Harvey Milk Day
   types: Local observance
 '2025-05-23':
+- description: Constitution Day is a observance in Germany
+  name: Constitution Day
+  types: Observance
 - description: The International Day to End Obstetric Fistula raises awareness of
     fistula and calls for support to tackle the problem.
   name: International Day to End Obstetric Fistula
   types: United Nations observance
-- description: Constitution Day is a observance in Germany
-  name: Constitution Day
-  types: Observance
 '2025-05-25':
 - description: African Liberation Day celebrates African nations' hard-fought freedom
     from European colonial powers.
@@ -1160,25 +1199,31 @@
     state holiday in Alabama in the United States.
   name: Jefferson Davis' Birthday
   types: Local observance
+- description: The spring bank holiday in the United Kingdom is on the last Monday
+    of May each year.
+  name: Spring Bank Holiday
+  types: National holiday
 '2025-05-29':
-- description: Ascension Day is the 40th day of Easter and commemorates the ascension
-    of Jesus Christ into heaven.
-  name: Ascension Day
-  types: Christian
-- description: The International Day of United Nations Peacekeepers is an occasion
-    to pay tribute to people who served in United Nations (UN) peacekeeping operations.
-  name: International Day of United Nations Peacekeepers
-  types: United Nations observance
 - description: "Father\u2019s Day celebrates fatherhood and male parenting on different\
     \ dates worldwide."
   name: Fathers' Day
   types: Observance
+- description: Ascension Day in Germany is on a Thursday 39 days after Easter Sunday.
+  name: Ascension Day
+  types: National holiday
+- description: The International Day of United Nations Peacekeepers is an occasion
+    to pay tribute to people who served in United Nations (UN) peacekeeping operations.
+  name: International Day of United Nations Peacekeepers
+  types: United Nations observance
 '2025-05-31':
 - description: World No Tobacco Day draws attention to the health problems caused
     by tobacco use.
   name: World No Tobacco Day
   types: United Nations observance
 '2025-06-01':
+- description: International Children's Day is a observance in Germany
+  name: International Children's Day
+  types: Observance
 - description: Global Day of Parents appreciates the role of a parent in nurturing
     and fostering growth for their children.
   name: Global Day of Parents
@@ -1194,26 +1239,17 @@
     the 15th state and Tennessee became the 16th state of the United States.
   name: Statehood Day
   types: Local observance
-- description: International Children's Day is a observance in Germany
-  name: International Children's Day
-  types: Observance
 '2025-06-02':
-- description: Shavuot, also known as the Festival of Weeks, is one of three major
-    Jewish festivals.
-  name: Shavuot
-  types: Hebrew
+- description: Shavuot, sometimes known as the Festival of the Weeks, is a Jewish
+    holiday to mark the end of the Counting of the Omer and the anniversary of the
+    day when Jewish people received the Torah.
+  name: First Day of Shavuot
+  types: Observance
 - description: Jefferson Davis' Birthday, also known as Jefferson Davis Day, is a
     state holiday in Alabama in the United States.
   name: Jefferson Davis' Birthday
   types: Local holiday
 '2025-06-03':
-- description: World Bicycle Day is a United Nations observance in the USA
-  name: World Bicycle Day
-  types: United Nations observance
-- description: Jefferson Davis' Birthday, also known as Jefferson Davis Day, is a
-    state holiday in Alabama in the United States.
-  name: Jefferson Davis' Birthday
-  types: Local observance
 - description: European Bicycle Day is a observance in Germany
   name: European Bicycle Day
   types: Observance
@@ -1221,6 +1257,13 @@
     in Germany
   name: Second Day of Shavuot
   types: Observance
+- description: World Bicycle Day is a United Nations observance in the USA
+  name: World Bicycle Day
+  types: United Nations observance
+- description: Jefferson Davis' Birthday, also known as Jefferson Davis Day, is a
+    state holiday in Alabama in the United States.
+  name: Jefferson Davis' Birthday
+  types: Local observance
 '2025-06-04':
 - description: The United Nations' (UN) International Day of Innocent Children Victims
     of Aggression is observed on June 4 each year.
@@ -1247,10 +1290,11 @@
   name: D-Day
   types: Observance
 '2025-06-07':
-- description: For India's more than 200 million Muslims, Bakrid, the Festival of
-    Sacrifice, is one of the holiest days of the year.
-  name: Bakrid/Eid ul-Adha
-  types: National holiday
+- description: Eid al-Adha (Id ul-Adha) is an Islamic festival falling on the 10th
+    day of the month of Dhul Hijja (Thou al-Hijja) to commemorate the willingness
+    of Ibrahim (Abraham) to sacrifice his son.
+  name: Eid al-Adha
+  types: Observance
 - description: World Food Safety Day is a United Nations observance in the USA
   name: World Food Safety Day
   types: United Nations observance
@@ -1259,6 +1303,10 @@
   name: Belmont Stakes
   types: Sporting event
 '2025-06-08':
+- description: Pentecost is a Christian holiday to remember the Holy Spirit's descent
+    onto Jesus' followers.
+  name: Whit Sunday
+  types: Christian
 - description: Many Christians in the United States observe Pentecost, also known
     as Whitsunday or Whit Sunday.
   name: Pentecost
@@ -1271,15 +1319,11 @@
     some parts of the United States in lieu of Columbus Day.
   name: Native American Day
   types: Local holiday
-- description: Pentecost is a Christian holiday to remember the Holy Spirit's descent
-    onto Jesus' followers.
-  name: Whit Sunday
-  types: Christian
 '2025-06-09':
-- description: Many Christians in the United States will observe Whit Monday, or Pentecost
-    Monday. It is the day after Pentecost, which is also known as Whit Sunday or Whitsunday.
+- description: The Second Day of Pentecost is, which is on the Monday after Pentecost
+    (or Whitsunday), is a public holiday in Germany.
   name: Whit Monday
-  types: Christian
+  types: National holiday
 '2025-06-11':
 - description: Kamehameha Day, held annually on June 11, honors Kamehameha the Great
     (Kamehameha I), the monarch who united and established the Kingdom of Hawaii.
@@ -1314,6 +1358,9 @@
   name: Flag Day
   types: Observance
 '2025-06-15':
+- description: Car-free Sunday is a observance in Germany
+  name: Car-free Sunday
+  types: Observance
 - description: "Father\u2019s Day celebrates fatherhood and male parenting on different\
     \ dates worldwide."
   name: Fathers' Day
@@ -1326,9 +1373,6 @@
     of physical, emotional, and financial abuse of elders.
   name: World Elder Abuse Awareness Day
   types: United Nations observance
-- description: Car-free Sunday is a observance in Germany
-  name: Car-free Sunday
-  types: Observance
 '2025-06-16':
 - description: The UN estimates that family remittances worth over 500 billion US$
     are transferred worldwide every year.
@@ -1338,6 +1382,12 @@
   name: Juneteenth Freedom Day (substitute)
   types: Local holiday
 '2025-06-17':
+- description: Remembrance of the Victims of SED Injustice is a observance in Germany
+  name: Remembrance of the Victims of SED Injustice
+  types: Observance
+- description: Anniversary of the Popular Uprising in the GDR is a observance in Germany
+  name: Anniversary of the Popular Uprising in the GDR
+  types: Observance
 - description: The United Nations' World Day to Combat Desertification and Drought
     is observed worldwide on June 17 each year.
   name: World Day to Combat Desertification and Drought
@@ -1346,18 +1396,13 @@
     place on June 17, 1775 on the Charlestown Peninsula, Boston Harbor, in Massachusetts.
   name: Bunker Hill Day
   types: Local holiday
-- description: Remembrance of the Victims of SED Injustice is a observance in Germany
-  name: Remembrance of the Victims of SED Injustice
-  types: Observance
-- description: Anniversary of the Popular Uprising in the GDR is a observance in Germany
-  name: Anniversary of the Popular Uprising in the GDR
-  types: Observance
 '2025-06-18':
 - description: Sustainable Gastronomy Day is a United Nations observance in the USA
   name: Sustainable Gastronomy Day
   types: United Nations observance
 '2025-06-19':
-- description: Corpus Christi is observed in honor of the Holy Eucharist.
+- description: Corpus Christi celebrates the Eucharist and is public holiday in some
+    parts of Germany.
   name: Corpus Christi
   types: Christian
 - description: International Day for the Elimination of Sexual Violence in Conflict
@@ -1389,11 +1434,13 @@
     Eagle from a list of "endangered species".
   name: American Eagle Day
   types: Observance
-'2025-06-20T22:42:15-04:00':
 - description: June Solstice in the USA (New York)
   name: June Solstice
   types: Season
 '2025-06-21':
+- description: June Solstice in Germany (Berlin)
+  name: June Solstice
+  types: Season
 - description: The International Day of Yoga is a UN-day that aims to raise awareness
     worldwide of the many benefits of practicing yoga.
   name: International Day of Yoga
@@ -1401,14 +1448,15 @@
 - description: Juneteenth Day is a state observance in the USA
   name: Juneteenth Day
   types: Local holiday
-'2025-06-21T04:42:15+02:00':
-- description: June Solstice in Germany (Berlin)
-  name: June Solstice
-  types: Season
-'2025-06-21T08:12:15+05:30':
-- description: June Solstice in India (New Delhi)
-  name: June Solstice
-  types: Season
+- description: "The King\u2019s birthday is an annual public holiday in Australia\
+    \ celebrating the official birthday of King Charles III."
+  name: King's Birthday
+  types: Observance
+'2025-06-22':
+- description: Windrush Day is an annual observance in the UK honoring the British
+    Caribbean community.
+  name: Windrush Day
+  types: Observance
 '2025-06-23':
 - description: "The United Nations\u2019 Public Service Day celebrates the idea that\
     \ democracy and successful governance depend on a competent civil service."
@@ -1450,20 +1498,20 @@
   name: Micro-, Small and Medium-sized Enterprises Day
   types: United Nations observance
 '2025-06-28':
-- description: Carolina Day is a state observance in the USA
-  name: Carolina Day
-  types: Local observance
 - description: Architecture Day is a observance in Germany
   name: Architecture Day
   types: Observance
+- description: Carolina Day is a state observance in the USA
+  name: Carolina Day
+  types: Local observance
 '2025-06-29':
+- description: St Peter and Paul is a observance and Christian holiday in Germany
+  name: St Peter and Paul
+  types: Observance
 - description: International Day of the Tropics is a United Nations observance in
     the USA
   name: International Day of the Tropics
   types: United Nations observance
-- description: St Peter and Paul is a observance and Christian holiday in Germany
-  name: St Peter and Paul
-  types: Observance
 '2025-06-30':
 - description: The United Nations established International Asteroid Day to raise
     public awareness of the asteroid impact hazard.
@@ -1485,9 +1533,9 @@
   name: International Day of Cooperatives
   types: United Nations observance
 '2025-07-06':
-- description: Muharram, or the Islamic New Year, is a public holiday in India.
-  name: Muharram/Ashura
-  types: National holiday
+- description: Ashura is a observance and Muslim holiday in Germany
+  name: Ashura
+  types: Observance
 '2025-07-10':
 - description: Guru Purnima is a festival that honors spiritual Gurus by remembering
     their life and teachings. It is observed on the full moon day, Purnima, in the
@@ -1499,6 +1547,11 @@
     to plan for a family.
   name: World Population Day
   types: United Nations observance
+'2025-07-12':
+- description: Orangemen's Day is a bank holiday in Northern Ireland to commemorate
+    the Battle of the Boyne.
+  name: Battle of the Boyne
+  types: Local holiday
 '2025-07-13':
 - description: Nathan Bedford Forrest Day is a local observance in the USA
   name: Nathan Bedford Forrest Day
@@ -1507,6 +1560,10 @@
 - description: Bastille Day is a observance in the USA
   name: Bastille Day
   types: Observance
+- description: Orangemen's Day is a bank holiday in Northern Ireland to commemorate
+    the Battle of the Boyne.
+  name: Battle of the Boyne observed
+  types: Local holiday
 '2025-07-15':
 - description: Acquiring skills enhances youths' ability to make informed choices
     and empowers them to gain access to changing labor markets.
@@ -1582,6 +1639,10 @@
 - description: Barack Obama Day is a observance in the USA
   name: Barack Obama Day
   types: Observance
+- description: The summer bank holiday is on the first Monday of August in Scotland
+    and the last Monday of August in England, Wales and Northern Ireland.
+  name: Summer Bank Holiday
+  types: Common local holiday
 '2025-08-07':
 - description: "Purple Heart Day on August 7 commemorates the day in 1782 when General\
     \ George Washington created the Purple Heart Medal \u2013 a military decoration\
@@ -1590,16 +1651,16 @@
   name: Purple Heart Day
   types: Observance
 '2025-08-08':
+- description: The Augsburg Peace Festival in Germany celebrates the implementation
+    of the Peace of Westphalia in 1648 CE. It is on August 8 each year.
+  name: Peace Festival in Augsburg
+  types: Local holiday
 - description: Raksha Bandhan is a Hindu festival that is celebrated on the full moon
     of the Hindu month of Shravana (Shravan Poornima). The day is also sometimes referred
     to as Brother and Sister Day because it honors the relationship between brother
     and sister.
   name: Raksha Bandhan
   types: Hinduism
-- description: The Augsburg Peace Festival in Germany celebrates the implementation
-    of the Peace of Westphalia in 1648 CE. It is on August 8 each year.
-  name: Peace Festival in Augsburg
-  types: Local holiday
 '2025-08-09':
 - description: Raksha Bandhan is a Hindu festival that is celebrated on the full moon
     of the Hindu month of Shravana (Shravan Poornima). The day is also sometimes referred
@@ -1625,6 +1686,11 @@
   name: International Youth Day
   types: United Nations observance
 '2025-08-15':
+- description: The Feast of the Assumption of Mary is an occasion for Catholics to
+    honor the belief that God assumed the Virgin Mary to heaven. It is a public holiday
+    in some parts of Germany on August 15 each year.
+  name: Assumption of Mary
+  types: Christian
 - description: India's Independence Day is an annual gazetted holiday on August 15
     to commemorate the day India became an independent nation.
   name: Independence Day
@@ -1635,11 +1701,6 @@
 - description: Parsi New Year is a restricted holiday in India
   name: Parsi New Year
   types: Optional holiday
-- description: Assumption Day is a Christian observance in the United States that
-    is held annually on August 15. Catholics observe the Dormition (falling asleep)
-    or the day that the Blessed Virgin Mary was received into heaven.
-  name: Assumption of Mary
-  types: Christian
 - description: "Hawaii\u2019s Statehood Day is celebrated on the third Friday of August\
     \ to commemorate the anniversary of Hawaii\u2019s statehood."
   name: Hawaii Statehood Day
@@ -1696,6 +1757,11 @@
     \ people of the tragedy of the transatlantic slave trade."
   name: International Day for the Remembrance of the Slave Trade and its Abolition
   types: United Nations observance
+'2025-08-25':
+- description: The summer bank holiday is on the first Monday of August in Scotland
+    and the last Monday of August in England, Wales and Northern Ireland.
+  name: Summer Bank Holiday
+  types: Common local holiday
 '2025-08-26':
 - description: Ganesh Chaturthi is the great Ganesha festival that celebrates the
     birthday of Lord Ganesha during the Hindu Month of Bhadra, which usually falls
@@ -1747,13 +1813,13 @@
   name: International Overdose Awareness Day
   types: Worldwide observance
 '2025-09-01':
+- description: Anti War Day is a observance in Germany
+  name: Anti War Day
+  types: Observance
 - description: Labor Day is a federal holiday in the United States. It gives workers
     a day of rest and it celebrates their contribution to the American economy.
   name: Labor Day
   types: National holiday
-- description: Anti War Day is a observance in Germany
-  name: Anti War Day
-  types: Observance
 '2025-09-04':
 - description: ' World Sexual Health Day is an annual awareness day that attempts
     to break down social and cultural taboos associated with sexuality and to promote
@@ -1776,6 +1842,9 @@
     do to help minimize poverty.
   name: International Day of Charity
   types: United Nations observance
+- description: Milad un Nabi, also called Mawlid, marks the birthday of prophet Muhammad.
+  name: Milad un Nabi (Mawlid)
+  types: Observance
 '2025-09-06':
 - description: Carl Garner Federal Lands Cleanup Day encourages people in the United
     States to participate in cleaning up the federal lands. It is observed on the
@@ -1832,22 +1901,22 @@
   name: International Day for South-South Cooperation
   types: United Nations observance
 '2025-09-13':
+- description: German Language Day is a observance in Germany
+  name: German Language Day
+  types: Observance
 - description: "Many people celebrate International Programmers\u2019 Day on January\
     \ 7, while others observe this event on the 256th day of the year, usually on\
     \ September 13 or on September 12 in leap years."
   name: International Programmers' Day
   types: Worldwide observance
-- description: German Language Day is a observance in Germany
-  name: German Language Day
-  types: Observance
 '2025-09-14':
+- description: European Heritage Days is a observance in Germany
+  name: European Heritage Days
+  types: Observance
 - description: Constitution Day and Citizenship Day is a combined event that occurs
     in the United States on September 17 each year.
   name: Constitution Commemoration Day
   types: Local holiday
-- description: European Heritage Days is a observance in Germany
-  name: European Heritage Days
-  types: Observance
 '2025-09-15':
 - description: "The United Nations\u2019 (UN) International Day of Democracy is observed\
     \ on September 15 each year."
@@ -1893,6 +1962,9 @@
   name: International Day of Peace
   types: United Nations observance
 '2025-09-22':
+- description: September Equinox in Germany (Berlin)
+  name: September Equinox
+  types: Season
 - description: First Day of Sharad Navratri is a observance and Hindu holiday in India
   name: First Day of Sharad Navratri
   types: Observance
@@ -1902,23 +1974,11 @@
 - description: Emancipation Day is a state-wide observation in Ohio on September 22.
   name: Emancipation Day
   types: Local observance
-'2025-09-22T14:19:22-04:00':
-- description: September Equinox in the USA (New York)
-  name: September Equinox
-  types: Season
-'2025-09-22T20:19:22+02:00':
-- description: September Equinox in Germany (Berlin)
-  name: September Equinox
-  types: Season
-'2025-09-22T23:49:22+05:30':
-- description: September Equinox in India (New Delhi)
-  name: September Equinox
-  types: Season
 '2025-09-23':
-- description: Rosh Hashanah is the Jewish New Year. Many Jewish-run organizations
-    in the US are closed during the two-day celebration.
+- description: Rosh Hashana, commonly known as the Jewish New Year, is the first day
+    of Tishrei, the seventh month in the Hebrew calendar.
   name: Rosh Hashana
-  types: Hebrew
+  types: Observance
 - description: International Day of Sign Languages is a United Nations observance
     in the USA
   name: International Day of Sign Languages
@@ -2013,6 +2073,10 @@
   name: World Vegetarian Day
   types: Worldwide observance
 '2025-10-02':
+- description: Yom Kippur (Day of Atonement) is an important Jewish holiday that centers
+    on the themes of atonement and repentance.
+  name: Yom Kippur
+  types: Observance
 - description: Mahatma Gandhi's birthday is an annual gazetted holiday in India on
     October 2.
   name: Mahatma Gandhi Jayanti
@@ -2022,10 +2086,6 @@
     in varied traditions across India.
   name: Dussehra
   types: National holiday
-- description: Yom Kippur is an important Jewish holiday that falls on the 10th day
-    of the month of Tishrei in the Jewish calendar.
-  name: Yom Kippur
-  types: Hebrew
 - description: "The United Nations\u2019 (UN) International Day of Non-Violence is\
     \ a globally observed on October 2 each year to promote non-violence."
   name: International Day of Non-Violence
@@ -2042,14 +2102,14 @@
   name: Feast of St Francis of Assisi
   types: Christian
 '2025-10-05':
+- description: Harvest Festival is a observance in Germany
+  name: Harvest Festival
+  types: Observance
 - description: The United Nations' (UN) World Teachers' Day commemorates the work
     of teachers and their contributions to society. It is observed on October 5 each
     year.
   name: World Teachers' Day
   types: United Nations observance
-- description: Harvest Festival is a observance in Germany
-  name: Harvest Festival
-  types: Observance
 '2025-10-06':
 - description: "The United Nations\u2019 (UN) World Habitat Day reflects on the state\
     \ of human settlements and people\u2019s right to sufficient shelter."
@@ -2071,23 +2131,23 @@
   name: Child Health Day
   types: Observance
 '2025-10-07':
+- description: The first day of Sukkot marks the start of the Sukkot festival, celebrated
+    among Jewish communities worldwide.
+  name: First day of Sukkot
+  types: Observance
 - description: Maharishi Valmiki Jayanti is a restricted holiday in India
   name: Maharishi Valmiki Jayanti
   types: Optional holiday
-- description: The first day of Sukkot marks the start of the Sukkot festival for
-    Jewish communities in many countries, including the United States.
-  name: First Day of Sukkot
-  types: Hebrew
 '2025-10-08':
+- description: Second Day of Sukkot is a observance, Jewish holiday, and Jewish holiday
+    in Germany
+  name: Second Day of Sukkot
+  types: Observance
 - description: "The United Nations\u2019 (UN) International Day for Natural Disaster\
     \ Reduction is annually observed on the second Wednesday of October to promote\
     \ a global culture of natural disaster risk reduction."
   name: International Day for Natural Disaster Reduction
   types: United Nations observance
-- description: Second Day of Sukkot is a observance, Jewish holiday, and Jewish holiday
-    in Germany
-  name: Second Day of Sukkot
-  types: Observance
 '2025-10-09':
 - description: World Post Day marks the anniversary of the Universal Postal Union's
     establishment in 1874. It is held on October 9 each year.
@@ -2132,10 +2192,6 @@
   name: Anniversary of Death of General Pulaski
   types: Local observance
 '2025-10-12':
-- description: The Chicago Marathon is one of the six World Marathon Majors and is
-    held annually in October.
-  name: Chicago Marathon
-  types: Sporting event
 - description: Grandparents' Day is a observance in Germany
   name: Grandparents' Day
   types: Observance
@@ -2143,11 +2199,15 @@
     in Germany
   name: Sixth Day of Sukkot
   types: Observance
+- description: The Chicago Marathon is one of the six World Marathon Majors and is
+    held annually in October.
+  name: Chicago Marathon
+  types: Sporting event
 '2025-10-13':
-- description: Many Jewish communities in countries such as the United States observe
-    the last day of Sukkot, which marks the end of the Sukkot festival.
-  name: Last Day of Sukkot
-  types: Hebrew
+- description: Seventh Day of Sukkot is a observance, Jewish holiday, and Jewish holiday
+    in Germany
+  name: Seventh Day of Sukkot
+  types: Observance
 - description: Navy Birthday celebrates the establishment of the United States Navy
     on October 13, 1775.
   name: Navy Birthday
@@ -2176,18 +2236,21 @@
     Thanksgiving Day in the United States.
   name: American Indian Heritage Day
   types: Local holiday
+- description: Jewish people in the UK celebrate Hoshana Rabbah, also spelled Hoshana
+    Raba, on the last day of the Sukkot festival.
+  name: Hoshana Rabbah
+  types: Observance
 '2025-10-14':
 - description: Shemini Atzeret (or Shmini Atzeret) is a Jewish holiday dedicated to
-    the love of God, while Simchat Torah (Simchas Torah or Simhat Torah) marks the
-    end of Sukkot and celebrates the completion of the annual reading of the Torah.
-  name: Shmini Atzeret
-  types: Hebrew
+    the love of God, while Simchat Torah (Simchas Torah or Simhat Torah) and celebrates
+    the completion of the annual reading of the Torah.
+  name: Shemini Atzeret
+  types: Observance
 '2025-10-15':
-- description: Simchat Torah (Simchas Torah or Simhat Torah) is a Jewish holiday that
-    marks the end of Sukkot and celebrates the completion of the annual reading of
-    the Torah.
+- description: Simchat Torah is a Jewish holiday on which the yearly cycle of readings
+    from the Torah ends and a new reading cycle begins.
   name: Simchat Torah
-  types: Hebrew
+  types: Observance
 - description: "The United Nations\u2019 (UN) International Day of Rural Women is\
     \ annually celebrated on October 15 to recognize rural women\u2019s role in supporting\
     \ their communities."
@@ -2238,6 +2301,11 @@
     in countries' policy decisions.
   name: World Statistics Day
   types: United Nations observance
+'2025-10-21':
+- description: Diwali, also known as the Festival of Lights, marks the beginning of
+    the Hindu New Year.
+  name: Diwali/Deepavali
+  types: Observance
 '2025-10-22':
 - description: Govardhan Puja is a restricted holiday in India
   name: Govardhan Puja
@@ -2258,7 +2326,7 @@
     October 24 each year.
   name: World Development Information Day
   types: United Nations observance
-'2025-10-26T03:00:00+02:00':
+'2025-10-26':
 - description: Daylight Saving Time ends in Germany
   name: Daylight Saving Time ends
   types: Clock change/Daylight Saving Time
@@ -2281,6 +2349,10 @@
   name: World Thrift Day
   types: Observance
 '2025-10-31':
+- description: Reformation Day in Germany is annually observed on October 31 to remember
+    the Reformation, a time of big religious change between 1517 CE and 1648 CE.
+  name: Reformation Day
+  types: Observance
 - description: Halloween is a festive occasion that is celebrated in many countries
     on October 31 each year.
   name: Halloween
@@ -2294,15 +2366,11 @@
     which took place on October 31, 1864.
   name: Nevada Day
   types: Local holiday
-- description: Reformation Day in Germany is annually observed on October 31 to remember
-    the Reformation, a time of big religious change between 1517 CE and 1648 CE.
-  name: Reformation Day
-  types: Observance
 '2025-11-01':
-- description: Many Catholics honor all the saints on All Saints' Day, also known
-    as All Hallows' Day, in the United States.
+- description: All Saints' Day is an annual public holiday in five German states to
+    remember all Christian saints on November 1.
   name: All Saints' Day
-  types: Christian
+  types: Observance
 - description: World Vegan Day is an annual observation that brings together vegans
     around the world to bring attention to animal rights and to spread the word about
     the health advantages of following a vegan diet.
@@ -2313,11 +2381,10 @@
   name: First Day of Native American Heritage Month
   types: Observance
 '2025-11-02':
-- description: "Prayers for the dead are made on All Souls\u2019 Day in the United\
-    \ States, which falls on November 2 each year. The Day of the Dead is also celebrated\
-    \ on this day."
+- description: "All Souls\u2019 Day falls on November 2 each year. It is a day of\
+    \ alms giving and prayers for the dead."
   name: All Souls' Day
-  types: Christian
+  types: Observance
 - description: The International Day to End Impunity for Crimes against Journalists
     raises awareness about violence against journalists.
   name: International Day to End Impunity for Crimes against Journalists
@@ -2326,7 +2393,6 @@
     and takes place every year in November.
   name: New York City Marathon
   types: Sporting event
-'2025-11-02T02:00:00-04:00':
 - description: Daylight Saving Time ends in the USA
   name: Daylight Saving Time ends
   types: Clock change/Daylight Saving Time
@@ -2342,6 +2408,10 @@
 - description: World Tsunami Awareness Day is a United Nations observance in the USA
   name: World Tsunami Awareness Day
   types: United Nations observance
+- description: Guy Fawkes' Night, or Bonfire Night, commemorates the prevention of
+    a plot to blow up the Houses of Parliament in London in 1605.
+  name: Guy Fawkes Day
+  types: Observance
 '2025-11-06':
 - description: "The United Nations\u2019 (UN) International Day for Preventing the\
     \ Exploitation of the Environment in War and Armed Conflict is held on November\
@@ -2372,13 +2442,13 @@
   name: Barack Obama Day
   types: Local observance
 '2025-11-11':
+- description: St. Martin's Day is celebrated in Germany every year on November 11.
+  name: St. Martin's Day
+  types: Observance
 - description: Veterans Day in the USA is a holiday to honor all who have served in
     the United States Military Services.
   name: Veterans Day
   types: National holiday
-- description: St. Martin's Day is celebrated in Germany every year on November 11.
-  name: St. Martin's Day
-  types: Observance
 '2025-11-12':
 - description: World Pneumonia Day supports all efforts made to protect and treat
     people against pneumonia, the single largest cause of child deaths worldwide.
@@ -2391,6 +2461,10 @@
   name: World Diabetes Day
   types: United Nations observance
 '2025-11-16':
+- description: On the National Day of Mourning (Volkstrauertag) many Germans commemorate
+    all victims of war and tyranny.
+  name: National Day of Mourning
+  types: Observance
 - description: "The United Nations\u2019 (UN) International Day for Tolerance is observed\
     \ on November 16 each year to help people understand the importance of tolerance\
     \ worldwide."
@@ -2400,16 +2474,17 @@
     advocacy day for road traffic injury prevention.
   name: World Day of Remembrance for Road Traffic Victims
   types: United Nations observance
-- description: On the National Day of Mourning (Volkstrauertag) many Germans commemorate
-    all victims of war and tyranny.
-  name: National Day of Mourning
-  types: Observance
 '2025-11-17':
 - description: ' World Prematurity Day is an annual observance that is dedicated to
     raising awareness about the health and emotional issues surrounding preterm birth.'
   name: World Prematurity Day
   types: Worldwide observance
 '2025-11-19':
+- description: The Day of Prayer and Repentance is a Protestant holiday and a public
+    holiday in the state of Saxony (Sachsen) on the last Wednesday before November
+    23.
+  name: Repentance Day
+  types: Observance
 - description: "World Toilet Day aims to promote public awareness of the need for\
     \ adequate toilets to improve people\u2019s health and save lives."
   name: World Toilet Day
@@ -2421,11 +2496,6 @@
 - description: George Rogers Clark Day is a state observance in the USA
   name: George Rogers Clark Day
   types: Local observance
-- description: The Day of Prayer and Repentance is a Protestant holiday and a public
-    holiday in the state of Saxony (Sachsen) on the last Wednesday before November
-    23.
-  name: Repentance Day
-  types: Observance
 '2025-11-20':
 - description: The United Nations' (UN) Universal Children's Day is an occasion to
     promote the welfare of children and an understanding between children all over
@@ -2513,6 +2583,9 @@
   name: Nellie Tayloe Ross's Birthday
   types: Local observance
 '2025-11-30':
+- description: The first Sunday of Advent marks the beginning of the Christian year.
+  name: First Advent Sunday
+  types: Observance
 - description: Many Christians in the United States observe the first Sunday of Advent,
     which marks the start of the Christian year.
   name: First Sunday of Advent
@@ -2521,9 +2594,10 @@
     \ is annually observed on April 29."
   name: Day of Remembrance for all Victims of Chemical Warfare
   types: United Nations observance
-- description: The first Sunday of Advent marks the beginning of the Christian year.
-  name: First Advent Sunday
-  types: Observance
+- description: St Andrew is the patron saint of Scotland and St Andrew's Day is a
+    bank holiday in Scotland.
+  name: St Andrew's Day
+  types: Local holiday
 '2025-12-01':
 - description: The United Nations' (UN) World AIDS Day is annually observed on December
     1.
@@ -2537,6 +2611,10 @@
     the United States on either February 4 or December 1.
   name: Rosa Parks Day
   types: Local observance
+- description: St Andrew is the patron saint of Scotland and St Andrew's Day is a
+    bank holiday in Scotland.
+  name: St Andrew's Day observed
+  types: Local holiday
 '2025-12-02':
 - description: "The United Nations\u2019 (UN) International Day for the Abolition\
     \ of Slavery is annually observed on December 2."
@@ -2566,11 +2644,14 @@
   name: World Soil Day
   types: United Nations observance
 '2025-12-06':
-- description: Some churches in the United States recognize St Nicholas' Day as a
-    feast day.
-  name: St Nicholas Day
+- description: St. Nicholas Day is celebrated on December 6 in many European countries,
+    as well as areas across the world that boast a strong European influence.
+  name: Saint Nicholas Day
   types: Observance
 '2025-12-07':
+- description: Second Advent Sunday is a observance and Christian holiday in Germany
+  name: Second Advent Sunday
+  types: Observance
 - description: International Civil Aviation Day is observed globally on December 7
     each year. It is observed by organizations such as the International Civil Aviation
     Organization (ICAO).
@@ -2583,14 +2664,11 @@
 - description: Delaware Day is a state observance in the USA
   name: Delaware Day
   types: Local observance
-- description: Second Advent Sunday is a observance and Christian holiday in Germany
-  name: Second Advent Sunday
-  types: Observance
 '2025-12-08':
 - description: The Feast of the Immaculate Conception is a Christian observance on
     December 8 each year.
   name: Feast of the Immaculate Conception
-  types: Christian
+  types: Observance
 '2025-12-09':
 - description: "The United Nations\u2019 (UN) International Anti-Corruption Day is\
     \ annually observed on December 9 to raise public awareness of corruption and\
@@ -2685,16 +2763,7 @@
 - description: Fourth Advent Sunday is a observance and Christian holiday in Germany
   name: Fourth Advent Sunday
   types: Observance
-'2025-12-21T10:03:05-05:00':
-- description: December Solstice in the USA (New York)
-  name: December Solstice
-  types: Season
-'2025-12-21T16:03:05+01:00':
 - description: December Solstice in Germany (Berlin)
-  name: December Solstice
-  types: Season
-'2025-12-21T20:33:05+05:30':
-- description: December Solstice in India (New Delhi)
   name: December Solstice
   types: Season
 '2025-12-22':
@@ -2704,16 +2773,20 @@
   name: Last day of Hanukkah
   types: Observance
 '2025-12-24':
-- description: Christmas Eve is the day before Christmas Day and falls on December
-    24 in the Gregorian calendar.
+- description: Christmas Eve is the day before Christmas Day and the start of the
+    Christmas celebration. It always falls on December 24 in Germany.
   name: Christmas Eve
-  types: Optional holiday
+  types: Half-day holiday
 '2025-12-25':
-- description: Many Christians celebrate Christmas Day, which is a gazetted holiday
-    in India, on December 25 each year.
-  name: Christmas
+- description: Christmas Day marks the birth of Jesus Christ and is a public holiday
+    in Germany. It is on December 25 each year.
+  name: Christmas Day
   types: National holiday
 '2025-12-26':
+- description: The Second Day of Christmas is a public holiday in Germany. It always
+    falls on December 26.
+  name: Boxing Day
+  types: National holiday
 - description: Kwanzaa is a week-long holiday honoring the culture and traditions
     of African people and their descendants worldwide, especially in the United States.
   name: Kwanzaa (first day)
@@ -2722,10 +2795,6 @@
     as a public holiday.
   name: Day After Christmas Day
   types: Local holiday
-- description: The Second Day of Christmas is a public holiday in Germany. It always
-    falls on December 26.
-  name: Boxing Day
-  types: National holiday
 '2025-12-27':
 - description: Guru Gobind Singh Jayanti is the Sikh annual celebration that occurs
     in countries such as India around December or January in the Gregorian calendar.
@@ -2740,7 +2809,7 @@
   name: Asarah B'Tevet
   types: Hebrew
 '2025-12-31':
-- description: "New Year\u2019s Eve is the last day of the year, December 31, in the\
-    \ Gregorian calendar."
+- description: New Year's Eve in Germany is annually celebrated on December 31. It
+    is the last day of the year in the Gregorian calendar.
   name: New Year's Eve
-  types: Observance
+  types: Half-day holiday
