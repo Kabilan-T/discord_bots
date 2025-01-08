@@ -26,7 +26,7 @@ class Announcements(commands.Cog, name="Announcements"):
     @tasks.loop(time=datetime.time(hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc))
     async def broadcast_daily_highlights(self):
         ''' Broadcast daily highlights to all servers '''
-        today = datetime.datetime.now().strftime("%Y-%m-%d")
+        today = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
         holiday_data = self.load_holiday_data()
         if holiday_data is None: return
         todays_events = holiday_data.get(today, None)
