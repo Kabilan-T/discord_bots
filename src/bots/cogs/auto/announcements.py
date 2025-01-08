@@ -21,6 +21,8 @@ from discord.ext.commands import Context
 class Announcements(commands.Cog, name="Announcements"):
     def __init__(self, bot):
         self.bot = bot
+        if self.broadcast_daily_highlights.is_running():
+            self.broadcast_daily_highlights.stop()
         self.broadcast_daily_highlights.start()
 
     @tasks.loop(time=datetime.time(hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc))
@@ -53,6 +55,10 @@ class Announcements(commands.Cog, name="Announcements"):
                 self.bot.log.info(f"Sending today's highlights to {guild.name} in {general_channel.name}", guild)
             else:
                 self.bot.log.warning(f"No general channel found in {guild.name}", guild)
+    
+    @broadcast_daily_highlights.before_loop
+    async def before_broadcast(self):
+        await self.bot.wait_until_ready()
         
     def load_holiday_data(self):
         ''' Load holidays data from file '''
