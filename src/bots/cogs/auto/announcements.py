@@ -22,7 +22,9 @@ class Announcements(commands.Cog, name="Announcements"):
     def __init__(self, bot):
         self.bot = bot
         if self.broadcast_daily_highlights.is_running():
+            self.bot.log.info("broadcast_daily_highlights task is already running")
             self.broadcast_daily_highlights.stop()
+            self.bot.log.info("broadcast_daily_highlights task stopped")
         self.broadcast_daily_highlights.start()
 
     @tasks.loop(time=datetime.time(hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc))
