@@ -34,10 +34,23 @@ class Announcements(commands.Cog, name="Announcements"):
         task_details = []
         for task in asyncio.all_tasks():
             task_name = task.get_name() or "Unnamed Task"
-            task_status = task._state  # State could be PENDING, RUNNING, DONE, etc.
+            task_status = task._state  # State could be PENDING, RUNNING, DONE
             coro_repr = repr(task._coro).split(' at ')[0]  # Clean up the coroutine representation
             
-            task_info = f"**Task Name:** {task_name}\n**Status:** {task_status}\n**Coro:** {coro_repr}"
+            # Extract the "running at" location from the task repr
+            task_repr = repr(task)
+            running_at = "Unknown Location"
+            if "running at" in task_repr:
+                running_at = task_repr.split("running at ")[1].split(" ")[0]
+            
+            # Add task details
+            task_info = (
+                f"**Task Name:** {task_name}\n"
+                f"**Status:** {task_status}\n"
+                f"**Coro:** {coro_repr}\n"
+                f"**Running at:** {running_at}"
+            )
+            
             task_details.append(task_info)
         
         # Send the task details to Discord in a neat format
