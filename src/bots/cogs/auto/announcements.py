@@ -42,9 +42,9 @@ class Announcements(commands.Cog, name="Announcements"):
         
         # Send the task details to Discord in a neat format
         if task_details:
-            await ctx.send("Currently running tasks:\n```" + "\n\n".join(task_details) + "```")
+            await context.send("Currently running tasks:\n```" + "\n\n".join(task_details) + "```")
         else:
-            await ctx.send("No tasks are currently running.")
+            await context.send("No tasks are currently running.")
 
     @tasks.loop(time=datetime.time(hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc))
     async def broadcast_daily_highlights(self):
