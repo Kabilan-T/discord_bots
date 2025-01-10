@@ -61,6 +61,9 @@ class Announcements(commands.Cog, name="Announcements"):
     @broadcast_daily_highlights.before_loop
     async def before_broadcast(self):
         await self.bot.wait_until_ready()
+    
+    def cog_unload(self):
+        self.broadcast_daily_highlights.cancel()
         
     def load_holiday_data(self):
         ''' Load holidays data from file '''
