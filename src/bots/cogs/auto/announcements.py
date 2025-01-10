@@ -58,6 +58,21 @@ class Announcements(commands.Cog, name="Announcements"):
             await context.send("Currently running tasks:\n```" + "\n\n".join(task_details) + "```")
         else:
             await context.send("No tasks are currently running.")
+    
+    @commands.command(name="end_tasks", aliases=["end"])
+    async def end_specific_tasks(self, context):
+        """Ends all tasks running at discord/ext/tasks/__init__.py:215>."""
+        import asyncio
+        target_location = "/discord/ext/tasks/__init__.py:215"
+        ended_tasks = 0
+
+        for task in asyncio.all_tasks():
+            task_repr = repr(task)
+            if target_location in task_repr:
+                task.cancel()
+                ended_tasks += 1
+        
+        await context.send(f"Ended {ended_tasks} tasks running at `{target_location}`.")
 
     @tasks.loop(time=datetime.time(hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc))
     async def broadcast_daily_highlights(self):
