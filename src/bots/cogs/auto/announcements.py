@@ -26,6 +26,25 @@ class Announcements(commands.Cog, name="Announcements"):
             self.broadcast_daily_highlights.stop()
             self.bot.log.info("broadcast_daily_highlights task stopped")
         self.broadcast_daily_highlights.start()
+    
+    @commands.command(name="test", aliases=["ts"])
+    async def test(self, context: Context):
+        ### get all the tasks running in the bot
+        import asyncio
+        task_details = []
+        for task in asyncio.all_tasks():
+            task_name = task.get_name() or "Unnamed Task"
+            task_status = task._state  # State could be PENDING, RUNNING, DONE, etc.
+            coro_repr = repr(task._coro).split(' at ')[0]  # Clean up the coroutine representation
+            
+            task_info = f"**Task Name:** {task_name}\n**Status:** {task_status}\n**Coro:** {coro_repr}"
+            task_details.append(task_info)
+        
+        # Send the task details to Discord in a neat format
+        if task_details:
+            await ctx.send("Currently running tasks:\n```" + "\n\n".join(task_details) + "```")
+        else:
+            await ctx.send("No tasks are currently running.")
 
     @tasks.loop(time=datetime.time(hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc))
     async def broadcast_daily_highlights(self):
