@@ -10,10 +10,11 @@
 #-------------------------------------------------------------------------------
 
 import os
+import time
 import discord
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 base_log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'logs')
 
@@ -26,12 +27,13 @@ class Logger():
         self.log_channel = dict()
         self.log_dir = os.path.join(base_log_dir, self.bot_name)
         os.makedirs(self.log_dir, exist_ok=True)
-        self.log_file = os.path.join(self.log_dir, f'{self.bot_name}_{datetime.now().strftime("%Y%m%d%H%M%S")}.log')
+        self.log_file = os.path.join(self.log_dir, f'{self.bot_name}_{datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")}.log')
         logging.basicConfig(filename= self.log_file,
                             level= logging.INFO,
                             format= "%(asctime)s [%(levelname)s] %(message)s",
                             datefmt="%Y-%m-%d %H:%M:%S")
         self.log = logging.getLogger(__name__)
+        logging.Formatter.converter = time.gmtime
 
     def set_log_channel(self, guild_id: int, log_channel: discord.TextChannel):
         ''' Set the log channel '''
