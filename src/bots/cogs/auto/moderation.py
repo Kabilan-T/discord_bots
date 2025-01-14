@@ -405,23 +405,6 @@ class Moderation(commands.Cog, name="Moderation"):
             )
         if reason is not None: embed.add_field(name="Reason", value=reason, inline=False)
         await context.send(embed=embed)
-
-    @commands.command( name="order66", description="Ban all members from the server.")
-    @commands.is_owner()
-    async def order66(self, context: Context):
-        '''Ban all members from the server'''
-        if not self.check(context, PermissionToBan): return
-        for member in context.guild.members:
-            if member != context.guild.owner:
-                await member.ban(reason="Order 66")
-                self.bot.log.info(f"{context.author.name} banned {member.name} from {context.guild.name}", context.guild)
-                await self.send_dm(context, member, "banned", "Order 66")
-        embed = discord.Embed(
-            title="Moderation activity - Order 66 :no_entry:",
-            description=f"**{context.author.mention}** has executed Order 66.",
-            color=self.bot.default_color,
-            )
-        await context.send(embed=embed)
                  
 async def setup(bot):
     await bot.add_cog(Moderation(bot))
