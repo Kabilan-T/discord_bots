@@ -11,6 +11,7 @@ auto:
     - 'cogs.auto.roles'
     - 'cogs.auto.announcements'
     - 'cogs.manage'
+    - 'cogs.cosmic_con'
 eve:
   name: EVE
   username: 'EVE#4830'
@@ -24,6 +25,7 @@ eve:
     - 'cogs.eve.meme'
     - 'cogs.eve.bingo'
     - 'cogs.manage'
+    - 'cogs.cosmic_con'
 mo:
   name: M-O
   username: 'MO#9127'
@@ -37,3 +39,4 @@ mo:
     - 'cogs.mo.search'
     #- 'cogs.mo.rss'
     - 'cogs.manage'
+    - 'cogs.cosmic_con'
