@@ -230,7 +230,7 @@ class CosmicCon(commands.Cog):
     @commands.command(name='foxy_magnet', description = "Atractive level 100")
     async def foxy_magnet(self, context: Context, member: discord.Member):
         ''' Send cute gifs to the user for 24 hours whenever they send a message '''
-        if context.author.guild_permissions.moderate_members:
+        if not context.author.guild_permissions.moderate_members:
             embed = discord.Embed(title="Foxy Magnet",
                                 description="You need to be a pro gamer to use this cheat code",
                                 color=self.bot.default_color)
