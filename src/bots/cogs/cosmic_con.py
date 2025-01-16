@@ -38,13 +38,13 @@ class CosmicCon(commands.Cog):
                             "https://tenor.com/view/funny-silly-lion-king-gif-14287886"]
         
         self.foxy = dict()
-        self.foxy_gifs = ["https://tenor.com/view/heypillagada-saipallavi-kali-gif-21578869"
-                            "https://tenor.com/view/sarange-don-sivakarthikeyan-priyanka-mohan-gif-25621599"
-                            "https://tenor.com/view/vinnaithandi-varuvaya-vtv-anbil-avan-trisha-jessie-gif-17836131"
-                            "https://tenor.com/view/romantic-trending-neethaane-en-ponvasantham-samantha-akkineni-love-gif-7747061558216435844"
-                            "https://tenor.com/view/meenakshi-chaudhary-bhibatsam-beautiful-angry-annoyed-gif-2262741861409338122"
-                            "https://tenor.com/view/tara-in-okk-ok-bangaram-ok-kanmani-maniratnam-dulquer-gif-14768119681824719686"
-                            "https://tenor.com/view/mrunal-thakur-hi-nanna-cute-smile-smirk-gif-4586904126258729553"
+        self.foxy_gifs = ["https://tenor.com/view/heypillagada-saipallavi-kali-gif-21578869",
+                            "https://tenor.com/view/sarange-don-sivakarthikeyan-priyanka-mohan-gif-25621599",
+                            "https://tenor.com/view/vinnaithandi-varuvaya-vtv-anbil-avan-trisha-jessie-gif-17836131",
+                            "https://tenor.com/view/romantic-trending-neethaane-en-ponvasantham-samantha-akkineni-love-gif-7747061558216435844",
+                            "https://tenor.com/view/meenakshi-chaudhary-bhibatsam-beautiful-angry-annoyed-gif-2262741861409338122",
+                            "https://tenor.com/view/tara-in-okk-ok-bangaram-ok-kanmani-maniratnam-dulquer-gif-14768119681824719686",
+                            "https://tenor.com/view/mrunal-thakur-hi-nanna-cute-smile-smirk-gif-4586904126258729553",
                             "https://tenor.com/view/janhvi-janhvi-kapoor-vogue-vogue-bffs-wink-gif-20008230"]
 
 
