@@ -127,7 +127,7 @@ class Instagram(commands.Cog, name="Instagram"):
             net_media_size = round(net_media_size/(1024*1024), 2) # in mb
             self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post. Total size: "+str(net_media_size)+" mb", guild)
             os.system("rm -rf "+tmp_download_dir+"/*")
-            # Send the post with caption and likes as embed message
+            # create an embed message with the post
             if post.caption is not None:
                 short_caption = post.caption.split("\n")[0] if len(post.caption.split("\n")[0]) < 50  else post.caption.split("\n")[0][:50]+"..."
             else:
@@ -139,6 +139,17 @@ class Instagram(commands.Cog, name="Instagram"):
                 color=self.bot.default_color,
                 )
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
+            # size of the media files should be less than 8mb, No of files should be less than 10
+            if len(media_files) > 10:
+                embed.description = "Sorry! Too many files. The post from @"+str(post.owner_profile.username)+" contains more than 10 files. I can't send more than 10 files."
+                await replier(embed=embed)
+                self.bot.log.info("Couldn't send post from @"+str(post.owner_profile.username)+"'s post. More than 10 files in the post.", guild)
+                return
+            if net_media_size > 8:
+                embed.description = "Sorry! The files are too large to send. The post from @"+str(post.owner_profile.username)+" has a total size of "+str(net_media_size)+" mb. I can't send more than 8 mb."
+                await replier(embed=embed)
+                self.bot.log.info("Couldn't send post from @"+str(post.owner_profile.username)+"'s post. Total size of the files is "+str(net_media_size)+" mb.", guild)
+                return
             await replier(embed=embed, files=media_files)
             self.bot.log.info("Sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post", guild)
         except instaloader.exceptions.InstaloaderException as e:
@@ -167,7 +178,7 @@ class Instagram(commands.Cog, name="Instagram"):
             net_media_size = round(net_media_size/(1024*1024), 2) # in mb
             self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel. Total size: "+str(net_media_size)+" mb", guild)
             os.system("rm -rf "+tmp_download_dir+"/*")
-            # Send the reel with caption and likes as embed message
+            # create an embed message with the reel
             if reel.caption is not None:
                 short_caption = reel.caption.split("\n")[0] if len(reel.caption.split("\n")[0]) < 50  else reel.caption.split("\n")[0][:50]+"..."
             else:
@@ -179,6 +190,17 @@ class Instagram(commands.Cog, name="Instagram"):
                 color=self.bot.default_color,
                 )
             embed.set_thumbnail(url=reel.owner_profile.profile_pic_url)
+            # size of the media files should be less than 8mb, No of files should be less than 10
+            if len(media_files) > 10:
+                embed.description = "Sorry! Too many files. The reel from @"+str(reel.owner_profile.username)+" contains more than 10 files. I can't send more than 10 files."
+                await replier(embed=embed)
+                self.bot.log.info("Couldn't send reel from @"+str(reel.owner_profile.username)+"'s reel. More than 10 files in the reel.", guild)
+                return
+            if net_media_size > 8:
+                embed.description = "Sorry! The files are too large to send. The reel from @"+str(reel.owner_profile.username)+" has a total size of "+str(net_media_size)+" mb. I can't send more than 8 mb."
+                await replier(embed=embed)
+                self.bot.log.info("Couldn't send reel from @"+str(reel.owner_profile.username)+"'s reel. Total size of the files is "+str(net_media_size)+" mb.", guild)
+                return
             await replier(embed=embed, files=media_files)
             self.bot.log.info("Sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel", guild)
         except instaloader.exceptions.InstaloaderException as e:
@@ -217,7 +239,7 @@ class Instagram(commands.Cog, name="Instagram"):
             net_media_size = round(net_media_size/(1024*1024), 2) # in mb
             self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(profile.username)+"'s story. Total size: "+str(net_media_size)+" mb", guild)
             os.system("rm -rf "+tmp_download_dir+"/*")
-            # Send the story 
+            # create an embed message with the story
             embed = discord.Embed(
                 title=str(profile.full_name),
                 url="https://www.instagram.com/"+str(profile.username),
@@ -225,6 +247,17 @@ class Instagram(commands.Cog, name="Instagram"):
                 color=self.bot.default_color,
                 )
             embed.set_thumbnail(url=profile.profile_pic_url)
+            # size of the media files should be less than 8mb, No of files should be less than 10
+            if len(media_files) > 10:
+                embed.description = "Sorry! Too many files. The story from @"+str(profile.username)+" contains more than 10 files. I can't send more than 10 files."
+                await replier(embed=embed)
+                self.bot.log.info("Couldn't send story from @"+str(profile.username)+"'s story. More than 10 files in the story.", guild)
+                return
+            if net_media_size > 8:
+                embed.description = "Sorry! The files are too large to send. The stories from @"+str(profile.username)+" has a total size of "+str(net_media_size)+" mb. I can't send more than 8 mb."
+                await replier(embed=embed)
+                self.bot.log.info("Couldn't send story from @"+str(profile.username)+"'s story. Total size of the files is "+str(net_media_size)+" mb.", guild)
+                return
             await replier(embed=embed, files=media_files)
             self.bot.log.info("Sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story", guild)
         except instaloader.exceptions.InstaloaderException as e:
