@@ -207,7 +207,30 @@ class CosmicCon(commands.Cog):
         await context.send(embed=embed)
         self.bot.log.info(f"Muggle {member.name} has been Wingardium Leviosa'd by {context.author.name} in {context.guild.name}", context.guild)
 
-
+    ## star trek reference
+    @commands.command(name='beam_us', description = "Beam everyone to the different deck")
+    async def beam_us(self, context: Context, channel: discord.VoiceChannel):
+        ''' Move all the users in the voice channel to a different voice channel '''
+        if not context.author.guild_permissions.move_members:
+            embed = discord.Embed(title="Beam us up :flying_saucer:",
+                                description="You need to be a starfleet officer to use the transporter",
+                                color=self.bot.default_color)
+            await context.send(embed=embed)
+            return
+        if context.author.voice is None:
+            embed = discord.Embed(title="Beam us up :flying_saucer:",
+                                description="You need to be in a voice channel to use the transporter",
+                                color=self.bot.default_color)
+            await context.send(embed=embed)
+            return
+        members = context.author.voice.channel.members
+        for member in members:
+            await member.move_to(channel)
+        embed = discord.Embed(title="Beam us up :flying_saucer:",
+                            description=f"Everyone has been beamed to {channel.name}",
+                            color=self.bot.default_color)
+        await context.send(embed=embed)
+        self.bot.log.info(f"Everyone has been beamed to {channel.name} by {context.author.name} in {context.guild.name}", context.guild)
 
     ## Naruto reference
     @commands.command(name='tsukuyomi', description = "Trap a shinobi in an illusion for 72 hours")
