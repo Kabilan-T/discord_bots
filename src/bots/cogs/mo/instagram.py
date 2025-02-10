@@ -118,8 +118,14 @@ class Instagram(commands.Cog, name="Instagram"):
             post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the post
             self.loader.download_post(post, target=tmp_download_dir)
-            media_files = [discord.File(tmp_download_dir+"/"+file) for file in os.listdir(os.getcwd()+"/"+tmp_download_dir)
-                            if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif")]
+            media_files = list()
+            net_media_size = 0
+            for file in os.listdir(os.getcwd()+"/"+tmp_download_dir):
+                if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif"):
+                    media_files.append(discord.File(tmp_download_dir+"/"+file))
+                    net_media_size += os.path.getsize(tmp_download_dir+"/"+file) # in bytes
+            net_media_size = round(net_media_size/(1024*1024), 2) # in mb
+            self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post. Total size: "+str(net_media_size)+" mb", guild)
             os.system("rm -rf "+tmp_download_dir+"/*")
             # Send the post with caption and likes as embed message
             if post.caption is not None:
@@ -134,7 +140,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 )
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
-            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post ", guild)
+            self.bot.log.info("Sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post", guild)
         except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
@@ -152,8 +158,14 @@ class Instagram(commands.Cog, name="Instagram"):
             reel = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the reel
             self.loader.download_post(reel, target=tmp_download_dir)
-            media_files = [discord.File(tmp_download_dir+"/"+file) for file in os.listdir(os.getcwd()+"/"+tmp_download_dir)
-                            if file.endswith(".mp4")]   # Reels are always mp4. jpg is for thumbnail
+            media_files = list()
+            net_media_size = 0
+            for file in os.listdir(os.getcwd()+"/"+tmp_download_dir):
+                if file.endswith(".mp4"):
+                    media_files.append(discord.File(tmp_download_dir+"/"+file))
+                    net_media_size += os.path.getsize(tmp_download_dir+"/"+file) # in bytes
+            net_media_size = round(net_media_size/(1024*1024), 2) # in mb
+            self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel. Total size: "+str(net_media_size)+" mb", guild)
             os.system("rm -rf "+tmp_download_dir+"/*")
             # Send the reel with caption and likes as embed message
             if reel.caption is not None:
@@ -168,7 +180,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 )
             embed.set_thumbnail(url=reel.owner_profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
-            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel ", guild)
+            self.bot.log.info("Sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel", guild)
         except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
@@ -196,10 +208,14 @@ class Instagram(commands.Cog, name="Instagram"):
             self.loader.download_stories([profile.userid],  filename_target=tmp_download_dir)
             # if there is a video and image with same name, remove the image
             media_files = list()
+            net_media_size = 0
             for file in os.listdir(os.getcwd()+"/"+tmp_download_dir):
                 if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif"):
                     if file.split(".")[0]+".mp4" not in [file.filename for file in media_files]:
                         media_files.append(discord.File(tmp_download_dir+"/"+file))
+                        net_media_size += os.path.getsize(tmp_download_dir+"/"+file) # in bytes
+            net_media_size = round(net_media_size/(1024*1024), 2) # in mb
+            self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(profile.username)+"'s story. Total size: "+str(net_media_size)+" mb", guild)
             os.system("rm -rf "+tmp_download_dir+"/*")
             # Send the story 
             embed = discord.Embed(
@@ -210,7 +226,7 @@ class Instagram(commands.Cog, name="Instagram"):
                 )
             embed.set_thumbnail(url=profile.profile_pic_url)
             await replier(embed=embed, files=media_files)
-            self.bot.log.info("Downloaded and sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story", guild)
+            self.bot.log.info("Sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story", guild)
         except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
