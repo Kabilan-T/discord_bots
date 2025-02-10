@@ -13,6 +13,7 @@ import os
 import io
 import yaml
 import zipfile
+import asyncio
 import subprocess
 import discord
 from discord.ext import commands
@@ -138,10 +139,21 @@ class Manage(commands.Cog, name="Manage"):
     @commands.has_permissions(administrator=True)
     async def runcommand(self, context: Context, *, command: str):
         '''Run a command in the terminal'''
+        timeout_seconds = 60 # 60 seconds timeout
         try:
-            result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
-        except subprocess.CalledProcessError as e:
-            result = e.output
+            process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.bot.log.info(f"Command '{command}' started", context.guild)
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout_seconds)
+            if stdout:
+                result = stdout.decode()
+            else:
+                result = stderr.decode()
+        except asyncio.TimeoutError:
+            result = f"Command execution timed out after {timeout_seconds} seconds."
+            process.kill()
+        except Exception as e:
+            result = f"An error occurred while executing the command: {e}"
+            process.kill()
         
         # embed can have only 4096 characters
         if len(result) < 4096:
