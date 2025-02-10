@@ -26,7 +26,6 @@ tmp = "tmp"
 class CosmicCon(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
         self.taunt = dict()
         self.taunt_gifs = ["https://tenor.com/view/willem-dafoe-laugh-crazy-car-gif-22580177",
                             "https://tenor.com/view/krillin-taunt-taunting-anime-dbz-gif-13298362",
@@ -206,10 +205,99 @@ class CosmicCon(commands.Cog):
                             color=self.bot.default_color)
         await context.send(embed=embed)
         self.bot.log.info(f"Muggle {member.name} has been Wingardium Leviosa'd by {context.author.name} in {context.guild.name}", context.guild)
+    
+    @commands.command(name='horcrux', description="Split a soul into multiple pieces")
+    async def horcrux(self, context: commands.Context, soul_member: discord.Member, *horcruxes: discord.Member):
+        """ As long as one of the horcruxes is alive, the soul member will be resurrected """
+        if not context.author.guild_permissions.ban_members:
+            embed = discord.Embed(title="Horcrux :snake:",
+                                 description="You need to be a dark wizard to split your soul.",
+                                 color=self.bot.default_color)
+            await context.send(embed=embed)
+            return
+        horcruxes = [member.id for member in horcruxes if member.id != soul_member.id]
+        guild_data_path = os.path.join(self.bot.data_dir, str(context.guild.id))
+        horcrux_file_path = os.path.join(guild_data_path, 'horcruxes.yml')
+        # Create guild directory if it doesn't exist
+        if not os.path.exists(guild_data_path):
+            os.makedirs(guild_data_path)
+        # Load existing horcrux data (if any)
+        horcrux_book = dict()
+        if os.path.exists(horcrux_file_path):
+            with open(horcrux_file_path, 'r') as file:
+                try:
+                    horcrux_book = yaml.safe_load(file) or dict()  # Ensure it loads as a dictionary
+                except yaml.YAMLError:
+                    horcrux_book = dict()
+        # Update soul data
+        if soul_member.id not in horcrux_book:
+            horcrux_book[soul_member.id] = horcruxes
+        else:
+            existing_horcruxes = set(horcrux_book[soul_member.id])  # Prevent duplicates
+            existing_horcruxes.update(horcruxes)
+            horcrux_book[soul_member.id] = list(existing_horcruxes)
+        # Save updated horcrux data
+        with open(horcrux_file_path, 'w') as file:
+            yaml.dump(horcrux_book, file, default_flow_style=False)
+
+        embed = discord.Embed(title="Horcrux :snake:",
+                            description=f"{soul_member.mention}'s soul has been split into {len(horcruxes)} pieces",
+                            color=self.bot.default_color)
+        await context.send(embed=embed)
+        self.bot.log.info(f"{soul_member.name}'s soul has been split into {len(horcruxes)} pieces by {context.author.name} in {context.guild.name}", context.guild)
+
+    async def refer_dark_book(self, member: discord.Member, guild: discord.Guild):
+        ''' Check if the member is a horcrux '''
+        guild_data_path = os.path.join(self.bot.data_dir, str(guild.id))
+        horcrux_file_path = os.path.join(guild_data_path, 'horcruxes.yml')
+        if not os.path.exists(horcrux_file_path):
+            return False
+        with open(horcrux_file_path, 'r') as file:
+            try:
+                horcrux_book = yaml.safe_load(file) or dict()  # Ensure it loads as a dictionary
+            except yaml.YAMLError:
+                horcrux_book = dict()
+        # if member.id is not in keys, return False
+        if member.id not in horcrux_book.keys():
+            return False
+        # Check if any of the horcruxes are alive
+        for horcrux in horcrux_book[member.id]:
+            if guild.get_member(horcrux) is not None:
+                return True
+        return False
+    
+    async def resurrect_the_soul(self, member: discord.Member, guild: discord.Guild):
+        ''' Resurrect the member and send a invite '''
+        # Unban the user if banned
+        try:
+            await guild.unban(member)
+            self.bot.log.info(f"{member.name} has been unbanned in {guild.name} via Horcrux", guild)
+        except discord.NotFound:
+            self.bot.log.info(f"{member.name} is not banned in {guild.name}", guild)
+        # Send an invite
+        invite = await guild.text_channels[0].create_invite(max_uses=1, unique=True)
+        self.bot.log.info(f"Invite {invite.url} created for {member.name} in {guild.name}", guild)
+        try:
+            embed = discord.Embed(title="Resurrection :wand:",
+                                description=f"You have been resurrected in {guild.name}",
+                                color=self.bot.default_color)
+            embed.add_field(name="Join the world of the living :owl:", value=f"[Invite]({invite.url})")
+            await member.send(embed=embed)
+            self.bot.log.info(f"{member.name} has been resurrected in {guild.name} via Horcrux", guild)
+        except discord.Forbidden:
+            self.bot.log.info(f"Could not dm {member.name} in {guild.name}", guild)
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member):
+        ''' Check if the member is a horcrux '''
+        can_resurrect = await self.refer_dark_book(member, member.guild)
+        if can_resurrect:
+            self.bot.log.info(f"{member.name} has left {member.guild.name} but can be resurrected", member.guild)
+            await self.resurrect_the_soul(member, member.guild)
 
     ## star trek reference
     @commands.command(name='beam_us', description = "Beam everyone to the different deck")
-    async def beam_us(self, context: Context, channel: discord.VoiceChannel):
+    async def beam_us(self, context: Context, channel: typing.Union[discord.VoiceChannel, int]):
         ''' Move all the users in the voice channel to a different voice channel '''
         if not context.author.guild_permissions.move_members:
             embed = discord.Embed(title="Beam us up :flying_saucer:",
@@ -223,6 +311,14 @@ class CosmicCon(commands.Cog):
                                 color=self.bot.default_color)
             await context.send(embed=embed)
             return
+        if isinstance(channel, int):
+            channel = context.guild.get_channel(channel)
+            if channel is None:
+                embed = discord.Embed(title="Beam us up :flying_saucer:",
+                                    description="The destination deck does not exist",
+                                    color=self.bot.default_color)
+                await context.send(embed=embed)
+                return
         members = context.author.voice.channel.members
         for member in members:
             await member.move_to(channel)
