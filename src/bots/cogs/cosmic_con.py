@@ -45,6 +45,8 @@ class CosmicCon(commands.Cog):
                             "https://tenor.com/view/tara-in-okk-ok-bangaram-ok-kanmani-maniratnam-dulquer-gif-14768119681824719686",
                             "https://tenor.com/view/mrunal-thakur-hi-nanna-cute-smile-smirk-gif-4586904126258729553",
                             "https://tenor.com/view/janhvi-janhvi-kapoor-vogue-vogue-bffs-wink-gif-20008230"]
+        
+        self.linked_users = dict()
 
 
     ## Star Wars reference
@@ -413,6 +415,50 @@ class CosmicCon(commands.Cog):
         await context.send(file=discord.File(audio_path))
         os.remove(audio_path)
         self.bot.log.info(f"Message translated to R2D2's language by {context.author.name} in {context.guild.name}", context.guild)
+
+    ## DragonBall Z reference
+    @commands.command(name='fusion_dance', description = "Merge two saiyans into one")
+    async def fusion_dance(self, context: Context, member1: discord.Member, member2: discord.Member):
+        ''' Link voice states of two users together - 48 hrs. If one moves/disconnects or mute/deafens, the other will follow '''
+        if not context.author.guild_permissions.move_members:
+            embed = discord.Embed(title="Fusion Dance :dragon:",
+                                description="You need to be a super saiyan to perform the fusion dance",
+                                color=self.bot.default_color)
+            await context.send(embed=embed)
+            return
+        end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(minutes=1)
+        self.linked_users[member1.id] = (member2.id, end_time)
+        self.linked_users[member2.id] = (member1.id, end_time)
+        embed = discord.Embed(title="Fusion Dance :dragon:",
+                            description=f"{member1.mention} and {member2.mention} have been linked for next 48 hours",
+                            color=self.bot.default_color)
+        await context.send(embed=embed)
+        self.bot.log.info(f"Saiyans {member1.name} and {member2.name} have been linked by {context.author.name} in {context.guild.name}", context.guild)
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        ''' Check if the user is linked '''
+        if member.id in self.linked_users.keys():
+            linked_member_id, end_time = self.linked_users[member.id]
+            linked_member = member.guild.get_member(linked_member_id)
+            if datetime.datetime.now(tz=datetime.timezone.utc) < end_time:
+                # Check if the linked member is also in a voice channel
+                if linked_member.voice is None:
+                    return
+                if before.channel != after.channel:
+                    await linked_member.move_to(after.channel)
+                if before.self_mute != after.self_mute:
+                    await linked_member.edit(mute=after.self_mute)
+                if before.self_deaf != after.self_deaf:
+                    await linked_member.edit(deafen=after.self_deaf)
+            else:
+                self.linked_users.pop(member.id, None)
+                self.linked_users.pop(linked_member_id, None)
+                embed = discord.Embed(title="Fusion Dance :dragon:",
+                                    description=f"{member.mention} and {linked_member.mention} have been unlinked",
+                                    color=self.bot.default_color)
+                await after.channel.send(embed=embed)
+                self.bot.log.info(f"Saiyans {member.name} and {linked_member.name} have been unlinked", member.guild)
         
 
 async def setup(bot):
