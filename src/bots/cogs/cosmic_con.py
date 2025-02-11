@@ -419,14 +419,14 @@ class CosmicCon(commands.Cog):
     ## DragonBall Z reference
     @commands.command(name='fusion_dance', description = "Merge two saiyans into one")
     async def fusion_dance(self, context: Context, member1: discord.Member, member2: discord.Member):
-        ''' Link voice states of two users together - 48 hrs. If one moves/disconnects or mute/deafens, the other will follow '''
+        ''' Link voice states of two users together - 12 hrs. If one moves/disconnects or mute/deafens, the other will follow '''
         if not context.author.guild_permissions.move_members:
             embed = discord.Embed(title="Fusion Dance :dragon:",
                                 description="You need to be a super saiyan to perform the fusion dance",
                                 color=self.bot.default_color)
             await context.send(embed=embed)
             return
-        end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(minutes=1)
+        end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(hours=12)
         self.linked_users[member1.id] = (member2.id, end_time)
         self.linked_users[member2.id] = (member1.id, end_time)
         embed = discord.Embed(title="Fusion Dance :dragon:",
