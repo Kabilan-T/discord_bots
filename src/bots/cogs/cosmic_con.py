@@ -47,6 +47,7 @@ class CosmicCon(commands.Cog):
                             "https://tenor.com/view/janhvi-janhvi-kapoor-vogue-vogue-bffs-wink-gif-20008230"]
         
         self.linked_users = dict()
+        self.ring_posessor = None
 
 
     ## Star Wars reference
@@ -298,7 +299,7 @@ class CosmicCon(commands.Cog):
             await self.resurrect_the_soul(member, member.guild)
 
     ## star trek reference
-    @commands.command(name='beam_us', description = "Beam everyone to the different deck")
+    @commands.command(name='beam_us', description = "Beam each_member to the different deck")
     async def beam_us(self, context: Context, channel: typing.Union[discord.VoiceChannel, int]):
         ''' Move all the users in the voice channel to a different voice channel '''
         if not context.author.guild_permissions.move_members:
@@ -430,7 +431,7 @@ class CosmicCon(commands.Cog):
         self.linked_users[member1.id] = (member2.id, end_time)
         self.linked_users[member2.id] = (member1.id, end_time)
         embed = discord.Embed(title="Fusion Dance :dragon:",
-                            description=f"{member1.mention} and {member2.mention} have been linked for next 48 hours",
+                            description=f"{member1.mention} and {member2.mention} have been linked for next 12 hours",
                             color=self.bot.default_color)
         await context.send(embed=embed)
         self.bot.log.info(f"Saiyans {member1.name} and {member2.name} have been linked by {context.author.name} in {context.guild.name}", context.guild)
@@ -459,6 +460,47 @@ class CosmicCon(commands.Cog):
                                     color=self.bot.default_color)
                 await after.channel.send(embed=embed)
                 self.bot.log.info(f"Saiyans {member.name} and {linked_member.name} have been unlinked", member.guild)
+
+    ## One Ring reference
+    @commands.command(name='one_ring', description = "One ring to rule them all")
+    async def one_ring(self, context: Context, possessor: discord.Member):
+        ''' If the possessor moves/deafens/mutes, each_member in the guild will follow for 6 hours '''
+        if not context.author.guild_permissions.move_members:
+            embed = discord.Embed(title="One Ring :ring:",
+                                description="You need to be the dark lord, Sauron to wield the one ring",
+                                color=self.bot.default_color)
+            await context.send(embed=embed)
+            return
+        # end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(hours=6)
+        end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(minutes=3)
+        self.ring_posessor = {"id": possessor.id, "end_time": end_time}
+        embed = discord.Embed(title="One Ring :ring:",
+                            description=f"{possessor.mention} has been chosen as the ring bearer. Everyone follows the ring bearer for next 6 hours",
+                            color=self.bot.default_color)
+        await context.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        ''' Check if the user is the ring bearer '''
+        if self.ring_posessor is None:
+            return
+        if member.id == self.ring_posessor["id"]:
+            if datetime.datetime.now(tz=datetime.timezone.utc) < self.ring_posessor["end_time"]:
+                for each_member in member.guild.members:
+                    if each_member.voice is not None and each_member.id != member.id:
+                        if before.channel != after.channel:
+                            await each_member.move_to(after.channel)
+                        if before.self_mute != after.self_mute:
+                            await each_member.edit(mute=after.self_mute)
+                        if before.self_deaf != after.self_deaf:
+                            await each_member.edit(deafen=after.self_deaf)
+            else:
+                self.ring_posessor = None
+                embed = discord.Embed(title="One Ring :ring:",
+                                    description=f"{member.mention} has been relieved from the ring bearer duty",
+                                    color=self.bot.default_color)
+                await after.channel.send(embed=embed)
+                self.bot.log.info(f"{member.name} has been relieved from the ring bearer duty", member.guild)
         
 
 async def setup(bot):
