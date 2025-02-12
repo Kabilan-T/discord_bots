@@ -426,20 +426,22 @@ class Radio(commands.Cog, name="Radio FM"):
         if voice_client is None: return
         if before.channel == voice_client.channel and (after.channel != voice_client.channel or after.channel is None):
             if len(before.channel.members) == 1:
-                # Stop playing if the bot is playing something
-                if voice_client.is_playing():
-                    voice_client.stop()
-                    self.now_playing.pop(before.channel.guild.id, None)
-                await voice_client.disconnect()
-                embed = discord.Embed(
-                    title="Radio FM",
-                    description="I have disconnected as no one is in the voice channel",
-                    color=self.bot.default_color,
-                    )
-                called_channel = self.called_channel.get(before.channel.guild.id,None)
-                if called_channel is not None:
-                    await called_channel.send(embed=embed)
-                self.bot.log.info(f"Disconnected from voice channel {before.channel.name} in {before.channel.guild.name}")
+                await asyncio.sleep(5)
+                if len(before.channel.members) == 1:
+                    # Stop playing if the bot is playing something
+                    if voice_client.is_playing():
+                        voice_client.stop()
+                        self.now_playing.pop(before.channel.guild.id, None)
+                    await voice_client.disconnect()
+                    embed = discord.Embed(
+                        title="Radio FM",
+                        description="I have disconnected as no one is in the voice channel",
+                        color=self.bot.default_color,
+                        )
+                    called_channel = self.called_channel.get(before.channel.guild.id,None)
+                    if called_channel is not None:
+                        await called_channel.send(embed=embed)
+                    self.bot.log.info(f"Disconnected from voice channel {before.channel.name} in {before.channel.guild.name}")
     
 async def setup(bot):
     await bot.add_cog(Radio(bot))
