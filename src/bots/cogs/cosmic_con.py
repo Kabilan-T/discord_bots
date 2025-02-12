@@ -420,18 +420,18 @@ class CosmicCon(commands.Cog):
     ## DragonBall Z reference
     @commands.command(name='fusion_dance', description = "Merge two saiyans into one")
     async def fusion_dance(self, context: Context, member1: discord.Member, member2: discord.Member):
-        ''' Link voice states of two users together - 12 hrs. If one moves/disconnects or mute/deafens, the other will follow '''
+        ''' Link voice states of two users together - 1 hr. If one moves/disconnects or mute/deafens, the other will follow '''
         if not context.author.guild_permissions.move_members:
             embed = discord.Embed(title="Fusion Dance :dragon:",
                                 description="You need to be a super saiyan to perform the fusion dance",
                                 color=self.bot.default_color)
             await context.send(embed=embed)
             return
-        end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(hours=12)
+        end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(hours=1)
         self.linked_users[member1.id] = (member2.id, end_time)
         self.linked_users[member2.id] = (member1.id, end_time)
         embed = discord.Embed(title="Fusion Dance :dragon:",
-                            description=f"{member1.mention} and {member2.mention} have been linked for next 12 hours",
+                            description=f"{member1.mention} and {member2.mention} have been linked for next 1 hour",
                             color=self.bot.default_color)
         await context.send(embed=embed)
         self.bot.log.info(f"Saiyans {member1.name} and {member2.name} have been linked by {context.author.name} in {context.guild.name}", context.guild)
@@ -464,18 +464,17 @@ class CosmicCon(commands.Cog):
     ## One Ring reference
     @commands.command(name='one_ring', description = "One ring to rule them all")
     async def one_ring(self, context: Context, possessor: discord.Member):
-        ''' If the possessor moves/deafens/mutes, each_member in the guild will follow for 6 hours '''
+        ''' If the possessor moves/deafens/mutes, each_member in the guild will follow for 1 hour '''
         if not context.author.guild_permissions.move_members:
             embed = discord.Embed(title="One Ring :ring:",
                                 description="You need to be the dark lord, Sauron to wield the one ring",
                                 color=self.bot.default_color)
             await context.send(embed=embed)
             return
-        # end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(hours=6)
-        end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(minutes=3)
+        end_time = datetime.datetime.now(tz=datetime.timezone.utc)+datetime.timedelta(hours=1)
         self.ring_posessor = {"id": possessor.id, "end_time": end_time}
         embed = discord.Embed(title="One Ring :ring:",
-                            description=f"{possessor.mention} has been chosen as the ring bearer. Everyone follows the ring bearer for next 6 hours",
+                            description=f"{possessor.mention} has been chosen as the ring bearer. Everyone follows the ring bearer for next 1 hour",
                             color=self.bot.default_color)
         await context.send(embed=embed)
 
