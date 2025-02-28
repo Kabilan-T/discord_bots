@@ -12,6 +12,7 @@
 import os
 import re
 import yaml
+import math
 import asyncio
 import discord
 from discord.ext import commands
@@ -101,6 +102,8 @@ class Instagram(commands.Cog, name="Instagram"):
     
     async def send_media(self, instagram_url, replier, guild=None):
         # download a media from instagram url and send it
+        max_num_attachment = 10  # Maximum files per message
+        max_attachment_size = 25 * 1024 * 1024  # Maximum size of individual attachment - 25MB
         if not self.loader.context.is_logged_in:
             self.load_session(guild) # load the session if available
         media_type = instagram_url.split("/")[3]    
@@ -111,25 +114,37 @@ class Instagram(commands.Cog, name="Instagram"):
         elif media_type == "stories":
             media_files, embed = await self.get_stories(instagram_url, guild)
         # Send the media
-        if media_files is not None:
-            # size of the media files should be less than 8mb, No of files should be less than 10
-            net_media_size = sum([file["size"] for file in media_files])
-            net_media_size = round(net_media_size/(1024*1024), 2) # in mb
-            if len(media_files) > 10:
-                embed.description = "Sorry! Too many files. The media contains more than 10 files. I can't send more than 10 files."
-                await replier(embed=embed)
-                self.bot.log.info("Couldn't send media. More than 10 files in the media.", guild)
-                return
-            if net_media_size > 8:
-                embed.description = "Sorry! The files are too large to send. The media has a total size of "+str(net_media_size)+" mb. I can't send more than 8 mb."
-                await replier(embed=embed)
-                self.bot.log.info("Couldn't send media. Total size of the files is "+str(net_media_size)+" mb.", guild)
-                return
-            await replier(embed=embed, files=[file["file"] for file in media_files])
-            self.bot.log.info("Sending "+str(len(media_files))+" attachments with total size of "+str(net_media_size)+" mb", guild)
-        else:
+        if media_files is None:
             await replier(embed=embed)
             self.bot.log.warning("Failed to send media from "+str(instagram_url), guild)
+            return
+        # Check if any file exceeds the maximum size
+        skip_files = list()
+        for file in media_files:
+            if file["size"] > max_attachment_size:
+                skip_files.append(file)
+                media_files.remove(file)
+        skipped_sizes = [f"{round(file['size'] / (1024 * 1024), 2)}MB" for file in skip_files]
+        if len(skip_files) > 0:
+            embed.description = embed.description + f"\nSkipped {len(skip_files)} files ({', '.join(skipped_sizes)}) because they exceed the maximum attachment size of 25MB"
+            self.bot.log.info(f"Skipped {len(skip_files)} files ({', '.join(skipped_sizes)}) because they exceed the maximum attachment size of 25MB", guild)
+        if len(media_files) == 0:
+            embed.description = f"Sorry! There is some problem. :sweat:\nAll files exceed the maximum attachment size of 25MB:  ({', '.join(skipped_sizes)})"
+            await replier(embed=embed)
+            self.bot.log.warning(f"Failed to send media. All files exceed the maximum attachment size of 25MB ({', '.join(skipped_sizes)})", guild)
+        num_files = len(media_files)
+        if num_files > max_num_attachment:
+            #Send files in chunks (split files evenly)
+            chunk_size = min(max_num_attachment, math.ceil(num_files / math.ceil(num_files / max_num_attachment)))
+            original_description = embed.description
+            for i in range(0, num_files, chunk_size):
+                embed.description = original_description + f"\nShowing {i+1} to {min(i + chunk_size, num_files)} of {num_files} files"
+                await replier(embed=embed, files=[file["file"] for file in media_files[i:i + chunk_size]])
+                self.bot.log.info(f"Sending {i+1} to {min(i + chunk_size, num_files)} of {num_files} attachments from instagram", guild)
+        else:
+            #Send all files in one message
+            await replier(embed=embed, files=[file["file"] for file in media_files])
+            self.bot.log.info(f"Sending {num_files} attachments from instagram", guild)
 
     async def get_post(self, instagram_url, guild=None):
         # get a post from the url
