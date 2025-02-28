@@ -19,7 +19,7 @@ from discord.ext.commands import Context
 import instaloader
 
 tmp_download_dir = "tmp"
-instagram_media = r'\bhttps?:\/\/(?:www\.)?instagram\.com\/(?:[a-zA-Z0-9_\.]+\/)?[a-zA-Z0-9_\.\/-]+\/?\b'
+instagram_regex = r"https?://(?:www\.)?instagram\.com/\S*"
 
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):
@@ -39,7 +39,7 @@ class Instagram(commands.Cog, name="Instagram"):
     @commands.command( name="show", description="Download a post from instagram.")
     async def show(self, context: Context, message: str):
         '''Download a media from instagram and show it'''
-        match = re.match(instagram_media, message)
+        match = re.match(instagram_regex, message)
         if match is not None:
             print("Matched")
             await self.send_media(context.reply, message, context.guild)
@@ -57,25 +57,25 @@ class Instagram(commands.Cog, name="Instagram"):
         if message.guild is None or message.author.bot or message.content == "":
             return
         if str(message.channel.id) in self.channels_to_watch.get(str(message.guild.id), []):
-            match = re.match(instagram_media, message.content)
+            match = re.search(instagram_regex, message.content)
             if match is not None:
                 if len(message.content.split("/")) == 4:
                     # Link is of a profile - get the bio
                     self.bot.log.info("Got a link of a profile from "+message.channel.name, message.guild)
-                    await self.send_bio(message.reply, message.content, message.guild)
+                    await self.send_bio(match.group(0), message.reply, message.guild)
                 elif len(message.content.split("/")) >= 5:
                     # Link is of a media - get the media and send it
                     self.bot.log.info("Got a link of a media from "+message.guild.name, message.guild)
-                    await self.send_media(message.reply, message.content, message.guild)
+                    await self.send_media(match.group(0), message.reply, message.guild)
                 else:
                     return
     
-    async def send_bio(self, replier, username, guild=None):
+    async def send_bio(self, instagram_url, replier, guild=None):
         # send the bio of a user
-        if username.startswith("@"):
-            username = username[1:]
-        elif username.startswith("https://www.instagram.com/"):
-            username = username.split("/")[-1]
+        if instagram_url.startswith("@"):
+            username = instagram_url[1:]
+        else:
+            username = instagram_url.split("/")[-1]
         try:    
             profile = instaloader.Profile.from_username(self.loader.context, username)
             embed = discord.Embed(
@@ -99,35 +99,55 @@ class Instagram(commands.Cog, name="Instagram"):
             await replier(embed=embed)
             self.bot.log.warning("Failed to send bio of "+str(username), guild)
     
-    async def send_media(self, replier, message, guild=None):
+    async def send_media(self, instagram_url, replier, guild=None):
         # download a media from instagram url and send it
         if not self.loader.context.is_logged_in:
-            self.load_session(guild) 
-        if message.split("/")[3] == "p":
-            await self.send_post(replier, message, guild)
-        elif message.split("/")[3] == "reel":
-            await self.send_reel(replier, message, guild)
-        elif message.split("/")[3] == "stories":
-            await self.send_stories(replier, message, guild)
+            self.load_session(guild) # load the session if available
+        media_type = instagram_url.split("/")[3]    
+        if media_type == "p":
+            media_files, embed = await self.get_post(instagram_url, guild)
+        elif media_type == "reel":
+            media_files, embed = await self.get_reel(instagram_url, guild)
+        elif media_type == "stories":
+            media_files, embed = await self.get_stories(instagram_url, guild)
+        # Send the media
+        if media_files is not None:
+            # size of the media files should be less than 8mb, No of files should be less than 10
+            net_media_size = sum([file["size"] for file in media_files])
+            net_media_size = round(net_media_size/(1024*1024), 2) # in mb
+            if len(media_files) > 10:
+                embed.description = "Sorry! Too many files. The media contains more than 10 files. I can't send more than 10 files."
+                await replier(embed=embed)
+                self.bot.log.info("Couldn't send media. More than 10 files in the media.", guild)
+                return
+            if net_media_size > 8:
+                embed.description = "Sorry! The files are too large to send. The media has a total size of "+str(net_media_size)+" mb. I can't send more than 8 mb."
+                await replier(embed=embed)
+                self.bot.log.info("Couldn't send media. Total size of the files is "+str(net_media_size)+" mb.", guild)
+                return
+            await replier(embed=embed, files=[file["file"] for file in media_files])
+            self.bot.log.info("Sending "+str(len(media_files))+" attachments with total size of "+str(net_media_size)+" mb", guild)
+        else:
+            await replier(embed=embed)
+            self.bot.log.warning("Failed to send media from "+str(instagram_url), guild)
 
-    async def send_post(self, replier, message, guild=None):
-        # send a post
-        shortcode = message.split("/")[-2] # (https://www.instagram.com/p/<shortcode>/<post_id>)
+    async def get_post(self, instagram_url, guild=None):
+        # get a post from the url
+        shortcode = instagram_url.split("/")[-2] # (https://www.instagram.com/p/<shortcode>/<post_id>)
         try:
             #Find the post from the url
             post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the post
             self.loader.download_post(post, target=tmp_download_dir)
             media_files = list()
-            net_media_size = 0
             for file in os.listdir(os.getcwd()+"/"+tmp_download_dir):
                 if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif"):
-                    media_files.append(discord.File(tmp_download_dir+"/"+file))
-                    net_media_size += os.path.getsize(tmp_download_dir+"/"+file) # in bytes
-            net_media_size = round(net_media_size/(1024*1024), 2) # in mb
-            self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post. Total size: "+str(net_media_size)+" mb", guild)
+                    media_file = discord.File(tmp_download_dir+"/"+file)
+                    size = os.path.getsize(tmp_download_dir+"/"+file) # in bytes
+                    media_files.append({"file": media_file, "size": size})
+            self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post", guild)
             os.system("rm -rf "+tmp_download_dir+"/*")
-            # create an embed message with the post
+            # Create an embed message with the post
             if post.caption is not None:
                 short_caption = post.caption.split("\n")[0] if len(post.caption.split("\n")[0]) < 50  else post.caption.split("\n")[0][:50]+"..."
             else:
@@ -135,48 +155,34 @@ class Instagram(commands.Cog, name="Instagram"):
             embed = discord.Embed(
                 title=str(post.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(post.owner_profile.username),
-                description="Caption: "+str(short_caption)+"\nType: Post ("+str(len(media_files))+" files)\nLikes: "+str(post.likes)+"\n",
+                description="Caption: "+str(short_caption)+"\nType: Post\nLikes: "+str(post.likes)+"\n",
                 color=self.bot.default_color,
                 )
             embed.set_thumbnail(url=post.owner_profile.profile_pic_url)
-            # size of the media files should be less than 8mb, No of files should be less than 10
-            if len(media_files) > 10:
-                embed.description = "Sorry! Too many files. The post from @"+str(post.owner_profile.username)+" contains more than 10 files. I can't send more than 10 files."
-                await replier(embed=embed)
-                self.bot.log.info("Couldn't send post from @"+str(post.owner_profile.username)+"'s post. More than 10 files in the post.", guild)
-                return
-            if net_media_size > 8:
-                embed.description = "Sorry! The files are too large to send. The post from @"+str(post.owner_profile.username)+" has a total size of "+str(net_media_size)+" mb. I can't send more than 8 mb."
-                await replier(embed=embed)
-                self.bot.log.info("Couldn't send post from @"+str(post.owner_profile.username)+"'s post. Total size of the files is "+str(net_media_size)+" mb.", guild)
-                return
-            await replier(embed=embed, files=media_files)
-            self.bot.log.info("Sent "+str(len(media_files))+" files from @"+str(post.owner_profile.username)+"'s post", guild)
+            return media_files, embed
         except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="A exception occured while trying to download the post. Possibly the user is private or the post doesn't exist.",
                     color=self.bot.default_color,
                     )
-            await replier(embed=embed)
-            self.bot.log.warning("Failed to send post from shortcode '"+str(shortcode)+"'. Exception raised by instaloader: "+str(e), guild)
+            return None, embed
 
-    async def send_reel(self, replier, message, guild=None):
-        # send a reel
-        shortcode = message.split("/")[-2] # (https://www.instagram.com/reel/<shortcode>/<post_id>)
+    async def get_reel(self, instagram_url, guild=None):
+        # get a reel from the url
+        shortcode = instagram_url.split("/")[-2] # (https://www.instagram.com/reel/<shortcode>/<post_id>)
         try:
             #Find the reel from the url
             reel = instaloader.Post.from_shortcode(self.loader.context, shortcode)
             # Download the reel
             self.loader.download_post(reel, target=tmp_download_dir)
             media_files = list()
-            net_media_size = 0
             for file in os.listdir(os.getcwd()+"/"+tmp_download_dir):
                 if file.endswith(".mp4"):
-                    media_files.append(discord.File(tmp_download_dir+"/"+file))
-                    net_media_size += os.path.getsize(tmp_download_dir+"/"+file) # in bytes
-            net_media_size = round(net_media_size/(1024*1024), 2) # in mb
-            self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel. Total size: "+str(net_media_size)+" mb", guild)
+                    media_file = discord.File(tmp_download_dir+"/"+file)
+                    size = os.path.getsize(tmp_download_dir+"/"+file)
+                    media_files.append({"file": media_file, "size": size})
+            self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel", guild)
             os.system("rm -rf "+tmp_download_dir+"/*")
             # create an embed message with the reel
             if reel.caption is not None:
@@ -186,88 +192,60 @@ class Instagram(commands.Cog, name="Instagram"):
             embed = discord.Embed(
                 title=str(reel.owner_profile.full_name),
                 url="https://www.instagram.com/"+str(reel.owner_profile.username),
-                description="Caption: "+str(short_caption)+"\nType: Reel \nLikes: "+str(reel.likes)+"\n",
+                description="Caption: "+str(short_caption)+"\nType: Reel\nLikes: "+str(reel.likes)+"\n",
                 color=self.bot.default_color,
                 )
             embed.set_thumbnail(url=reel.owner_profile.profile_pic_url)
-            # size of the media files should be less than 8mb, No of files should be less than 10
-            if len(media_files) > 10:
-                embed.description = "Sorry! Too many files. The reel from @"+str(reel.owner_profile.username)+" contains more than 10 files. I can't send more than 10 files."
-                await replier(embed=embed)
-                self.bot.log.info("Couldn't send reel from @"+str(reel.owner_profile.username)+"'s reel. More than 10 files in the reel.", guild)
-                return
-            if net_media_size > 8:
-                embed.description = "Sorry! The files are too large to send. The reel from @"+str(reel.owner_profile.username)+" has a total size of "+str(net_media_size)+" mb. I can't send more than 8 mb."
-                await replier(embed=embed)
-                self.bot.log.info("Couldn't send reel from @"+str(reel.owner_profile.username)+"'s reel. Total size of the files is "+str(net_media_size)+" mb.", guild)
-                return
-            await replier(embed=embed, files=media_files)
-            self.bot.log.info("Sent "+str(len(media_files))+" files from @"+str(reel.owner_profile.username)+"'s reel", guild)
+            return media_files, embed
         except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
                     description="A exception occured while trying to download the reel. Possibly the user is private or the reel doesn't exist.",
                     color=self.bot.default_color,
                     )
-            await replier(embed=embed)
-            self.bot.log.warning("Failed to send reel from shortcode '"+str(shortcode)+"'. Exception raised by instaloader: "+str(e), guild)
+            return None, embed
 
-    async def send_stories(self, replier, message, guild=None):
-        # stories requires
+    async def get_stories(self, instagram_url, guild=None):
+        # get a story from the url
+        username = instagram_url.split("/")[4]
+        # stories requires login
         if not self.loader.context.is_logged_in:
             embed = discord.Embed(
                 title="Sorry! There is some problem. :sweat:",
                 description="Stories can be downloaded only if the bot is logged in. There is no login credentials provided to log in to instagram.",
                 color=self.bot.default_color,
                 )
-            await replier(embed=embed)
-            self.bot.log.warning("Failed to send story. No login credentials provided.", guild)
-            return
-        # send a story
-        profile = instaloader.Profile.from_username(self.loader.context, message.split("/")[4])
+            self.bot.log.warning("Failed to get story. No login credentials provided.", guild)
+            return None, embed
+        # get the story
         try:
+            profile = instaloader.Profile.from_username(self.loader.context, username)
             # Download the story
             self.loader.download_stories([profile.userid],  filename_target=tmp_download_dir)
-            # if there is a video and image with same name, remove the image
             media_files = list()
-            net_media_size = 0
             for file in os.listdir(os.getcwd()+"/"+tmp_download_dir):
                 if file.endswith(".jpg") or file.endswith(".mp4") or file.endswith(".png") or file.endswith(".jpeg") or file.endswith(".gif"):
-                    if file.split(".")[0]+".mp4" not in [file.filename for file in media_files]:
-                        media_files.append(discord.File(tmp_download_dir+"/"+file))
-                        net_media_size += os.path.getsize(tmp_download_dir+"/"+file) # in bytes
-            net_media_size = round(net_media_size/(1024*1024), 2) # in mb
-            self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(profile.username)+"'s story. Total size: "+str(net_media_size)+" mb", guild)
+                    media_file = discord.File(tmp_download_dir+"/"+file)
+                    size = os.path.getsize(tmp_download_dir+"/"+file)
+                    media_files.append({"file": media_file, "size": size})
+            self.bot.log.info("Downloaded "+str(len(media_files))+" files from @"+str(profile.username)+"'s story", guild)
             os.system("rm -rf "+tmp_download_dir+"/*")
             # create an embed message with the story
             embed = discord.Embed(
                 title=str(profile.full_name),
                 url="https://www.instagram.com/"+str(profile.username),
-                description="Type: Story ("+str(len(media_files))+" files)\n",
+                description="Type: Story\n",
                 color=self.bot.default_color,
                 )
             embed.set_thumbnail(url=profile.profile_pic_url)
-            # size of the media files should be less than 8mb, No of files should be less than 10
-            if len(media_files) > 10:
-                embed.description = "Sorry! Too many files. The story from @"+str(profile.username)+" contains more than 10 files. I can't send more than 10 files."
-                await replier(embed=embed)
-                self.bot.log.info("Couldn't send story from @"+str(profile.username)+"'s story. More than 10 files in the story.", guild)
-                return
-            if net_media_size > 8:
-                embed.description = "Sorry! The files are too large to send. The stories from @"+str(profile.username)+" has a total size of "+str(net_media_size)+" mb. I can't send more than 8 mb."
-                await replier(embed=embed)
-                self.bot.log.info("Couldn't send story from @"+str(profile.username)+"'s story. Total size of the files is "+str(net_media_size)+" mb.", guild)
-                return
-            await replier(embed=embed, files=media_files)
-            self.bot.log.info("Sent "+str(len(media_files))+" files from @"+str(profile.username)+"'s story", guild)
+            return media_files, embed
         except instaloader.exceptions.InstaloaderException as e:
             embed = discord.Embed(
                     title="Sorry! There is some problem.",
                     description="A exception occured while trying to download the story. Possibly the user is private or the story doesn't exist or the user @"+str(profile.username)+" doesn't have any stories.",
                     color=self.bot.default_color,
                     )
-            await replier(embed=embed)
-            self.bot.log.warning("Failed to send story of @"+str(profile.username)+"Exception raised by instaloader: "+str(e), guild)
+            return None, embed
 
     @commands.command( name="watch_channel", description="Set the channel to watch for instagram links.")
     async def watchchannel(self, context: Context, channel: discord.TextChannel = None):
