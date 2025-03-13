@@ -92,3 +92,6 @@ or make the script executable and run the script.
 chmod +x setup.bash
 ./setup.bash
 ```
+
+
+Credits: [Thirukkural Dataset](https://www.kaggle.com/datasets/rahulvks/thirukkural)

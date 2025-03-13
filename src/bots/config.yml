@@ -35,6 +35,7 @@ mo:
     - 'cogs.general'
     - 'cogs.mo.radio'
     - 'cogs.mo.instagram'
+    - 'cogs.mo.thirukkural'
     - 'cogs.mo.search'
     #- 'cogs.mo.rss'
     - 'cogs.manage'
