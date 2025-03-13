@@ -37,7 +37,7 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
             self.bot.log.warning(f"Error loading Thirukkural data: {e}")
             return None
 
-    @tasks.loop(time=datetime.time(hour=16, minute=52, second=0, tzinfo=datetime.timezone.utc))
+    @tasks.loop(time=datetime.time(hour=0, minute=0, second=10, tzinfo=datetime.timezone.utc))
     async def daily_kural(self):
         if self.kurals is None or self.kurals.empty:
             self.bot.log.warning("No Kurals available to send.")
@@ -54,9 +54,9 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
             channel = discord.utils.find(lambda c: "general" in c.name.lower(), guild.text_channels)
             if channel:
                 await channel.send(embed=embed)
-                self.bot.log.info(f"Sent daily Thirukkural to {guild.name} in {channel.name}")
+                self.bot.log.info(f"Sent daily Thirukkural to {guild.name} in {channel.name}", guild)
             else:
-                self.bot.log.warning(f"No general channel found in {guild.name}")
+                self.bot.log.warning(f"No general channel found in {guild.name}", guild)
 
     @daily_kural.before_loop
     async def before_daily_kural(self):
@@ -68,31 +68,45 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
     @commands.command(name='kural', description="Get a specific Kural by number")
     async def get_kural(self, context, number: int):
         if self.kurals is None or self.kurals.empty:
-            await context.send("Kural dataset is not available.")
+            embed = discord.Embed(
+                title="Thirukkural",
+                description="Kural dataset is not available.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+            self.bot.log.warning("Kural dataset is not available.", context.guild)
             return
         if number < 1 or number > len(self.kurals):
-            await context.send("Invalid Kural number. Please enter a number between 1 and 1330.")
+            embed = discord.Embed(
+                title="Thirukkural",
+                description="Invalid Kural number. Please enter a number between 1 and 1330.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+            self.bot.log.warning("Invalid Kural number entered by user.", context.guild)
             return
         kural = self.kurals.iloc[number - 1]
-        #replce 			 with \n in verse
         kural['Verse'] = kural['Verse'].replace("\t\t", "\n")
-        #replce /n in translation
-
         embed = discord.Embed(
             title=f"Thirukkural #{number} - {kural['Section Name']} ({kural['Chapter Name']})",
             description=f"**{kural['Verse']}**\n\n*{kural['Explanation']}*",
             color=self.bot.default_color,
         )
         await context.send(embed=embed)
+        self.bot.log.info(f"Sent Kural #{number} to {context.guild.name}", context.guild)
     
     @commands.command(name='list_adhigarams', description="List all Adhigarams in Thirukkural")
     async def list_adhigarams(self, context):
         if self.kurals is None or self.kurals.empty:
-            await context.send("Kural dataset is not available.")
+            embed = discord.Embed(
+                title="Thirukkural",
+                description="Kural dataset is not available.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+            self.bot.log.warning("Kural dataset is not available.", context.guild)
             return
         chapter_names = self.kurals['Chapter Name'].unique()
-        # there are 133 adhigarams in Thirukkural
-        # all comes under 3 chapters. send 3 messages
         adhigaram_count = 0
         for chapter in chapter_names:
             adhigarams = self.kurals[self.kurals['Chapter Name'] == chapter]['Section Name'].unique()
@@ -104,22 +118,41 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
                 embed.description = f"{embed.description}\n{adhigaram_count + 1}. {adhigaram}"
                 adhigaram_count += 1
             await context.send(embed=embed)
+        self.bot.log.info(f"Sent list of Adhigarams to {context.guild.name}", context.guild)
 
     @commands.command(name='adhigaram', description="Get all Kurals in a specific Adhigaram")
     async def get_adhigaram(self, context, *, section_name_or_number: typing.Union[int, str]):
         if isinstance(section_name_or_number, int):
             if section_name_or_number < 1 or section_name_or_number > 133:
-                await context.send("Invalid Adhigaram number. Please enter a number between 1 and 133.")
+                embed = discord.Embed(
+                    title="Thirukkural",
+                    description="Invalid Adhigaram number. Please enter a number between 1 and 133.",
+                    color=self.bot.default_color,
+                )
+                await context.send(embed=embed)
+                self.bot.log.warning("Invalid Adhigaram number entered by user.", context.guild)
                 return
             section_name = self.kurals['Section Name'].unique()[section_name_or_number - 1]
         else:
             section_name = section_name_or_number
         if self.kurals is None or self.kurals.empty:
-            await context.send("Kural dataset is not available.")
+            embed  = discord.Embed(
+                title="Thirukkural",
+                description="Kural dataset is not available.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+            self.bot.log.warning("Kural dataset is not available.", context.guild)
             return
         kurals = self.kurals[self.kurals['Section Name'].str.lower() == section_name.lower()]
         if kurals.empty:
-            await context.send(f"No Kurals found for Adhigaram '{section_name}'")
+            embed = discord.Embed(
+                title="Thirukkural",
+                description="Invalid Adhigaram name. Please enter a valid Adhigaram name.",
+                color=self.bot.default_color,
+            )
+            await context.send(embed=embed)
+            self.bot.log.warning("Invalid Adhigaram name entered by user.", context.guild)
             return
         chapter_name = kurals.iloc[0]['Chapter Name']
         embed = discord.Embed(
@@ -134,6 +167,7 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
                 inline=False
             )
         await context.send(embed=embed)
+        self.bot.log.info(f"Sent Adhigaram {section_name} to {context.guild.name}", context.guild)
 
 async def setup(bot):
     await bot.add_cog(Thirukkural(bot))
