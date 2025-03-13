@@ -112,6 +112,7 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
             adhigarams = self.kurals[self.kurals['Chapter Name'] == chapter]['Section Name'].unique()
             embed = discord.Embed(
                 title=f"Thirukkural - {chapter}",
+                description="",
                 color=self.bot.default_color,
             )
             for adhigaram in adhigarams:
@@ -132,7 +133,7 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
                 await context.send(embed=embed)
                 self.bot.log.warning("Invalid Adhigaram number entered by user.", context.guild)
                 return
-            section_name = self.kurals['Section Name'].unique()[section_name_or_number - 1]
+            section_name = self.kurals['Section Name'].unique()[section_name_or_number-1]
         else:
             section_name = section_name_or_number
         if self.kurals is None or self.kurals.empty:
