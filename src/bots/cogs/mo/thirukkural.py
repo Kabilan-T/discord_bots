@@ -52,7 +52,7 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
         )
         embed.add_field(name=f"Transliteration #{kural['Number']} - {kural['adikaram_transliteration']} ({kural['paul_transliteration']})", value=f"{kural['transliteration1']}\n{kural['transliteration2']}", inline=False)
         embed.add_field(name=f"Translation #{kural['Number']} - {kural['adikaram_translation']} ({kural['paul_translation']})", value=f"{kural['Translation']}", inline=False)
-        embed.add_field(name="Explanation", value=f"Mu Karunanidhi : {kural['mk']} \nEnglish : {kural['explanation']}", inline=False)
+        embed.add_field(name="Explanation", value=f"**Mu Karunanidhi** : {kural['mk']} **\nEnglish** : {kural['explanation']}", inline=False)
         embed.add_field(name="Couplet", value=kural['couplet'], inline=False)
         
         for guild in self.bot.guilds:
@@ -96,7 +96,7 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
         )
         embed.add_field(name=f"Transliteration #{kural['Number']} - {kural['adikaram_transliteration']} ({kural['paul_transliteration']})", value=f"{kural['transliteration1']}\n{kural['transliteration2']}", inline=False)
         embed.add_field(name=f"Translation #{kural['Number']} - {kural['adikaram_translation']} ({kural['paul_translation']})", value=f"{kural['Translation']}", inline=False)
-        embed.add_field(name="Explanation", value=f"Mu Karunanidhi : {kural['mk']} \nEnglish : {kural['explanation']}", inline=False)
+        embed.add_field(name="Explanation", value=f"**Mu Karunanidhi** : {kural['mk']} **\nEnglish** : {kural['explanation']}", inline=False)
         embed.add_field(name="Couplet", value=kural['couplet'], inline=False)
         await context.send(embed=embed)
         self.bot.log.info(f"Sent Kural {number} to {context.channel.name}", context.guild)
@@ -135,7 +135,7 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
         )
         embed.add_field(name=f"Transliteration #{kural['Number']} - {kural['adikaram_transliteration']} ({kural['paul_transliteration']})", value=f"{kural['transliteration1']}\n{kural['transliteration2']}", inline=False)
         embed.add_field(name=f"Translation #{kural['Number']} - {kural['adikaram_translation']} ({kural['paul_translation']})", value=f"{kural['Translation']}", inline=False)
-        embed.add_field(name="Explanation", value=f"Mu Karunanidhi : {kural['mk']} \nEnglish : {kural['explanation']}", inline=False)
+        embed.add_field(name="Explanation", value=f"**Mu Karunanidhi** : {kural['mk']} **\nEnglish** : {kural['explanation']}", inline=False)
         embed.add_field(name="Couplet", value=kural['couplet'], inline=False)
         await context.send(embed=embed)
         self.bot.log.info(f"Sent random Kural to {context.channel.name}", context.guild)
