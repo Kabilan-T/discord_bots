@@ -94,4 +94,4 @@ chmod +x setup.bash
 ```
 
 
-Credits: [Thirukkural Dataset](https://www.kaggle.com/datasets/rahulvks/thirukkural)
+Credits: [Vijhay Anandd](https://github.com/vijayanandrp)  for [Thirukkural Dataset](https://github.com/vijayanandrp/Thirukkural-Tamil-Dataset)
