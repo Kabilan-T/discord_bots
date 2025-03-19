@@ -10,8 +10,18 @@
 #-------------------------------------------------------------------------------
 
 import os
-from chatterbot import ChatBot
-from chatterbot.trainers import ChatterBotCorpusTrainer
+try:
+    from chatterbot import ChatBot
+    from chatterbot.trainers import ChatterBotCorpusTrainer
+except ImportError:
+    # install chatterbot
+    os.system('pip install chatterbot')
+    os.system('pip install chatterbot_corpus')
+    os.system('pip install spacy')
+    os.system('python -m spacy download en_core_web_sm')
+
+    from chatterbot import ChatBot
+    from chatterbot.trainers import ChatterBotCorpusTrainer
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
