@@ -222,7 +222,7 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
         pauls = list(dict.fromkeys([k['paul_name'] for k in self.kurals]))
         adhigaram_no = 1
         for paul in pauls:
-            adhigarams = set(k['adikaram_name'] for k in self.kurals if k['paul_name'] == paul)
+            adhigarams = [k['adikaram_name'] for k in self.kurals if k['paul_name'] == paul and k['Number'] % 10 == 1]
             embed = discord.Embed(
                 title=f"Thirukkural Adhigarams - {paul} - ({len(adhigarams)})",
                 description= "\n".join([f"{num}. {adhigaram}" for num, adhigaram in enumerate(adhigarams, adhigaram_no)]),
@@ -243,8 +243,8 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
         paul_translations = list(dict.fromkeys([k['paul_translation'] for k in self.kurals]))
         adhigaram_no = 1
         for paul, paul_translation in zip(pauls, paul_translations):
-            adhigarams = set(k['adikaram_transliteration'] for k in self.kurals if k['paul_transliteration'] == paul)
-            adhigaram_translations = set(k['adikaram_translation'] for k in self.kurals if k['paul_transliteration'] == paul)
+            adhigarams = [k['adikaram_transliteration'] for k in self.kurals if k['paul_transliteration'] == paul and k['Number'] % 10 == 1]
+            adhigaram_translations = [k['adikaram_translation'] for k in self.kurals if k['paul_transliteration'] == paul and k['Number'] % 10 == 1]
             paul_translation = self.kurals[adhigaram_no * 10 - 10]['paul_translation']
             embed = discord.Embed(
                 title=f"Thirukkural Adhigarams - {paul} - {paul_translation} ({len(adhigarams)})",
