@@ -85,7 +85,7 @@ class General(commands.Cog, name="General"):
             )
         await context.send(embed=embed)
     
-    @commands.command( name="echo", description="Repeat the message.", aliases=["e"])
+    @commands.command( name="echo", description="Repeat the message.")
     async def echo(self, context: Context, channel: typing.Optional[discord.TextChannel], *, message: str,):
         '''Repeat the message'''
         if isinstance(channel, str):
