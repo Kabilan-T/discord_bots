@@ -20,6 +20,7 @@ eve:
   extensions:
     - 'cogs.general'
     - 'cogs.eve.voice'
+    - 'cogs.eve.chatter'
     - 'cogs.eve.watchlist'
     - 'cogs.eve.meme'
     - 'cogs.eve.bingo'

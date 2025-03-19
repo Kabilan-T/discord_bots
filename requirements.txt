@@ -12,3 +12,8 @@ feedparser==6.0.11
 googlesearch-python==1.2.3
 beautifulsoup4==4.12.3
 fuzzywuzzy[speedup]==0.18.0
+chatterbot==1.2.3
+chatterbot_corpus==1.2.2
+SQLAlchemy==2.0.39
+spacy==3.8.4
+en-core-web-sm==3.8.0

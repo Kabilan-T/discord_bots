@@ -4,6 +4,10 @@ tmp/*
 */__pycache__/*
 */__init__.py
 *tokens.sh
+
+# database
+*.db
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
