@@ -35,24 +35,42 @@ EOF
     exit 0
 fi
 
-# Activate virtual environment
+# Activate the virtual environment
 eval "$(conda shell.bash hook)"
 conda activate discord_bots_env
+
+# Check if the Conda environment is activated
+if [[ -z "$CONDA_PREFIX" ]]; then
+    echo "Failed to activate Conda environment 'discord_bots_env'. Exiting."
+    exit 1
+fi
+
 echo "Virtual environment 'discord_bots_env' activated."
+
+# Read Python version from runtime.txt
+python_version=$(cat runtime.txt)
+
+# Check if the desired Python version exists and is available in the system
+python_path=$(which "python$python_version")
+
+if [ -z "$python_path" ]; then
+    echo "Python $python_version is not installed. Please install the required version."
+    exit 1
+fi
 
 # Source token file
 source tokens.sh
 
-# Run the corresponding bot based on provided argument
+# Run the corresponding bot based on the provided argument
 case "$bot_name" in
     "auto")
-        python3 src/auto.py
+        "$python_path" src/auto.py
         ;;
     "eve")
-        python3 src/eve.py
+        "$python_path" src/eve.py
         ;;
     "mo")
-        python3 src/mo.py
+        "$python_path" src/mo.py
         ;;
     *)
         echo "Invalid bot name. Available bots: auto, eve, mo"
