@@ -134,6 +134,20 @@ class Manage(commands.Cog, name="Manage"):
                 color=self.bot.default_color,
                 )
             await context.send(embed=embed)
+
+    @commands.command( name="terminate", description="Terminate the bot.")
+    @commands.has_permissions(administrator=True)
+    async def terminate(self, context: Context):
+        '''Terminate the bot'''
+        embed = discord.Embed(
+            title="Terminating :wave:",
+            description="The bot is terminating.",
+            color=self.bot.default_color,
+            )
+        await context.send(embed=embed)
+        self.bot.log.info(f"Bot terminated by {context.author.name}", context.guild)
+        await self.bot.close()
+        self.bot.log.info(f"Bot terminated", context.guild)
     
     @commands.command( name="run_command", description="Run a command in the terminal.")
     @commands.has_permissions(administrator=True)
