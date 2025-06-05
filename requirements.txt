@@ -16,3 +16,5 @@ chatterbot==1.2.3
 chatterbot_corpus==1.2.2
 SQLAlchemy==2.0.39
 spacy==3.8.4
+llama-index==0.12.34
+llama-index-llms-gemini==0.4.14

@@ -30,6 +30,8 @@ export EVE_BOT_TOKEN="<Enter eve bot token here>"
 
 export MO_BOT_TOKEN="<Enter mo bot token here>"
 
+export GO4_BOT_TOKEN="<Enter mo bot token here>"
+
 EOF
     echo "Template created in tokens.sh. Please fill in your bot tokens and then rerun the script."
     exit 0
@@ -71,6 +73,9 @@ case "$bot_name" in
         ;;
     "mo")
         "$python_path" src/mo.py
+        ;;
+    "go4")
+        "$python_path" src/go4.py
         ;;
     *)
         echo "Invalid bot name. Available bots: auto, eve, mo"
