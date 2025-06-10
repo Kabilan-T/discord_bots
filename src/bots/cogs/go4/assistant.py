@@ -29,16 +29,28 @@ class Assistant(commands.Cog, name="Chatting Features"):
             api_key=google_api_key
         )
         self.open_conversations = dict()  # {channel: {user: [messages]}}
+        self.tools_available = dict()
     
-    def get_llm_response(self, query, chat_history=None):
+    def get_llm_response(self, query, chat_history=None, guild_id=None):
         ''' Get response from LLM with optional chat history '''
+        tool_prompt = ""
+        if guild_id and guild_id in self.tools_available:
+            header_lines = [
+                "You can use the following available tools by invoking their commands.",
+                "If a tool has arguments, use the appropriate syntax as shown.",
+                "Remove any ` ` block or ``` ``` block in the output if using a tool"
+            ]
+            for prefix, cmds in self.tools_available[guild_id].items():
+                for cmd, meta in cmds.items():
+                    desc = meta.get("description", "No description")
+                    usage = meta.get("usage", f"{prefix}{cmd}")
+                    header_lines.append(f"- {cmd}: {desc}\n  Usage: {usage}")
+            tool_prompt = "\n".join(header_lines) + "\n\n"
         if chat_history:
-            # Format the chat history with user and assistant messages
-            formatted_history = "\n".join(
-                f"User: {msg[0]}\nAssistant: {msg[1]}" 
-                for msg in chat_history
-            )
-            query = f"Chat History:\n{formatted_history}\n\nNew User Message: {query}"
+            formatted_history = "\n".join(f"User: {msg[0]}\nAssistant: {msg[1]}" for msg in chat_history)
+            query = f"{tool_prompt}Chat History:\n{formatted_history}\n\nNew User Message: {query}"
+        else:
+            query = f"{tool_prompt}{query}"
         
         response = self.llm.complete(query)
         return str(response)
@@ -165,12 +177,14 @@ class Assistant(commands.Cog, name="Chatting Features"):
                 chat_history = self.open_conversations[channel][author]
                 
                 # Get response from LLM with chat history
-                response = self.get_llm_response(message.content, chat_history)
+                response = self.get_llm_response(message.content, 
+                                                 chat_history,
+                                                 message.guild.id)
                 
                 # Add this exchange to chat history (keeping last N messages if you want to limit)
                 chat_history.append((message.content, response))
                 # Limit chat history length to prevent memory issues
-                if len(chat_history) > 20:  # Keep last n exchanges
+                if len(chat_history) > 10:  # Keep last n exchanges
                     chat_history.pop(0)
                 
                 # Send response
@@ -210,9 +224,21 @@ class Assistant(commands.Cog, name="Chatting Features"):
             description=f'I have read {len(commands)} commands',
             color=self.bot.default_color,
         )
-        print(commands)
+        guild_id = context.guild.id
+        if guild_id not in self.tools_available:
+            self.tools_available[guild_id] = {}
+        self.tools_available[guild_id][prefix] = commands
         await context.reply(embed=embed)
-
+    
+    @commands.command(name='clear_tools', description='clear tools available list for the agent')
+    async def clear_tools(self, context: Context):
+        self.tools_available.pop(context.guild.id, None)
+        embed = discord.Embed(
+            title='Tools Cleared :wastebasket:',
+            description='All tools have been cleared for this server.',
+            color=self.bot.default_color,
+        )
+        await context.reply(embed=embed)
 
     async def _wait_for_help_embed(self, context, timeout=15) -> discord.Embed:
         '''Wait for the next embed message from another bot.'''
