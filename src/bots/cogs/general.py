@@ -101,11 +101,7 @@ class General(commands.Cog, name="General"):
                 )
             await context.reply(embed=embed)
             return
-        embed = discord.Embed(
-            description=message,
-            color=self.bot.default_color,
-            )
-        await channel.send(embed=embed)
+        await channel.send(message)
     
     @commands.command( name="dm", description="Send a direct message to a user.")
     async def dm(self, context: Context, user: typing.Optional[typing.Union[discord.Member, int]], *, message: str):
@@ -208,6 +204,16 @@ class General(commands.Cog, name="General"):
                 inline=False,
                 )
         await context.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        '''Convert message from other bots to commands (if begins with prefix)'''
+        if message.author.bot and message.content.startswith(self.bot.prefix.get(message.guild.id, self.bot.default_prefix)):
+            context = await self.bot.get_context(message)
+            if context.valid:
+                await self.bot.invoke(context)
+            else:
+                await self.bot.process_commands(message)
 
 
 async def setup(bot):
