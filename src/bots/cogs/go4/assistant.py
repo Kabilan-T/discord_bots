@@ -12,6 +12,8 @@
 import os
 import discord
 import textwrap
+import asyncio
+import aiohttp
 from discord.ext import commands
 from discord.ext.commands import Context
 from llama_index.llms.gemini import Gemini
@@ -177,6 +179,94 @@ class Assistant(commands.Cog, name="Chatting Features"):
                     await message.reply(part)
 
                 self.bot.log.info(f'Responded to {author.name} in {channel.name}', guild=message.guild)
+
+    
+    @commands.command(name='read', description='Scrape another bot\'s help command')
+    async def read_help(self, context: Context, prefix: str):
+        ''' Scrape another bot's help command '''
+        if not prefix:
+            embed = discord.Embed(
+                title='Error :x:',
+                description='Please provide a prefix to scrape help from another bot.',
+                color=self.bot.default_color,
+            )
+            await context.reply(embed=embed)
+            return
+        await context.reply(f"{prefix}help")
+
+        help_embed = await self._wait_for_help_embed(context)
+        if not help_embed:
+            embed = discord.Embed(
+                title='Timeout :stopwatch:',
+                description='No help embed received within the timeout period. Please try again.',
+                color=self.bot.default_color,
+            )
+            await context.reply(embed=embed)
+            return
+
+        bot_name, commands = self._parse_help_embed(help_embed)
+        self.bot_help_messages[bot_name] = commands
+        embed = discord.Embed(
+            title=f'Help from {bot_name} :books:',
+            description=f'I have read {len(commands)} commands',
+            color=self.bot.default_color,
+        )
+        print(commands)
+        await context.reply(embed=embed)
+
+
+    async def _wait_for_help_embed(self, context, timeout=15) -> discord.Embed:
+        '''Wait for the next embed message from another bot.'''
+        def check(m: discord.Message):
+            return (
+                m.channel == context.channel and
+                m.author != context.me and
+                m.author.bot and
+                len(m.embeds) > 0
+            )
+        try:
+            msg = await self.bot.wait_for("message", check=check, timeout=timeout)
+            return msg.embeds[0]
+        except asyncio.TimeoutError:
+            return None
+    
+    def _parse_help_embed(self, embed: discord.Embed) -> tuple[str, dict]:
+        '''Extract command info from a help embed.'''
+        bot_name = embed.author.name if embed.author else "Unknown Bot"
+        commands = {}
+
+        # Case 1: Specific command help (has 'Usage' field)
+        if any(field.name == "Usage" for field in embed.fields):
+            command_name = embed.title.replace("Help: ", "").strip()
+            commands[command_name] = {
+                "description": embed.description,
+                "usage": embed.fields[0].value  # First field is 'Usage'
+            }
+            return (bot_name, commands)
+
+        # Case 2: General help (lists all commands)
+        for field in embed.fields:
+            # Each field is a cog with command listings
+            for line in field.value.split('\n'):
+                # Extract command name and description from lines like:
+                # ***`watchlist`*** - Shows your movie watchlist
+                # or with aliases: ***`command`*** **(`a1`)** **(`a2`)** - Description
+                if '***`' in line:
+                    # Extract command name (first backtick block)
+                    command_name = line.split('***`')[1].split('`***')[0].strip()
+                    # Extract description (everything after the last hyphen)
+                    description = line.split('-')[-1].strip() if '-' in line else "No description"
+                    # Extract aliases if present
+                    aliases = []
+                    if '**(`' in line:
+                        alias_part = line.split('`***')[-1].split('-')[0]
+                        aliases = [a.split('`')[1] for a in alias_part.split('**(`')[1:]]
+                    commands[command_name] = {
+                        "description": description,
+                        "aliases": aliases,
+                        "category": field.name
+                    }
+        return (bot_name, commands)
 
 async def setup(bot):
     await bot.add_cog(Assistant(bot))
