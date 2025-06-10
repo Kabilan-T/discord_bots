@@ -26,10 +26,18 @@ class Assistant(commands.Cog, name="Chatting Features"):
             model="models/gemini-2.0-flash",
             api_key=google_api_key
         )
-        self.open_conversations = dict()
+        self.open_conversations = dict()  # {channel: {user: [messages]}}
     
-    def get_llm_response(self, query):
-        ''' Get response from LLM '''
+    def get_llm_response(self, query, chat_history=None):
+        ''' Get response from LLM with optional chat history '''
+        if chat_history:
+            # Format the chat history with user and assistant messages
+            formatted_history = "\n".join(
+                f"User: {msg[0]}\nAssistant: {msg[1]}" 
+                for msg in chat_history
+            )
+            query = f"Chat History:\n{formatted_history}\n\nNew User Message: {query}"
+        
         response = self.llm.complete(query)
         return str(response)
 
@@ -38,10 +46,23 @@ class Assistant(commands.Cog, name="Chatting Features"):
         ''' Chat with the bot '''
         channel = context.channel
         author = context.author
-        if channel in self.open_conversations.keys():
-            self.open_conversations[channel].append(author)
-        else:
-            self.open_conversations[channel] = [author]
+        
+        # Initialize chat history for this user in this channel
+        if channel not in self.open_conversations:
+            self.open_conversations[channel] = {}
+        
+        if author in self.open_conversations[channel]:
+            embed = discord.Embed(
+                title='Already Chatting! :speech_balloon:',
+                description="You already have an active chat session in this channel.",
+                color=self.bot.default_color,
+            )
+            await context.reply(embed=embed)
+            return
+        
+        # Initialize empty chat history
+        self.open_conversations[channel][author] = []
+        
         embed = discord.Embed(
             title='Let\'s Chat! :speech_balloon:',
             description="Hello! I have opened a chat session with you in this channel",
@@ -56,36 +77,43 @@ class Assistant(commands.Cog, name="Chatting Features"):
         ''' End the chat session '''
         channel = context.channel
         author = context.author
-        if channel in self.open_conversations.keys():
-            if author in self.open_conversations[channel]:
-                self.open_conversations[channel].remove(author)
-                if len(self.open_conversations[channel]) == 0:
-                    del self.open_conversations[channel]
-                embed = discord.Embed(
-                    title='Closing Chat :wave:',
-                    description='The chat session has been ended.',
-                    color=self.bot.default_color,
-                )
-                await context.reply(embed=embed)
-                self.bot.log.info(f'Ended chat session with {author.name} in {channel.name}', guild=context.guild)
-            else:
-                embed = discord.Embed(
-                    title='Sorry! :confused:',
-                    description='You do not have an active chat session in this channel.',
-                    color=self.bot.default_color,
-                )
-                await context.reply(embed=embed)
-                self.bot.log.warning(f'{author.name} tried to end a chat session without an active session in {channel.name}', guild=context.guild)
-                return
+        
+        if channel in self.open_conversations and author in self.open_conversations[channel]:
+            del self.open_conversations[channel][author]
+            if not self.open_conversations[channel]:  # If no more users in this channel
+                del self.open_conversations[channel]
+            
+            embed = discord.Embed(
+                title='Closing Chat :wave:',
+                description='The chat session has been ended.',
+                color=self.bot.default_color,
+            )
+            await context.reply(embed=embed)
+            self.bot.log.info(f'Ended chat session with {author.name} in {channel.name}', guild=context.guild)
         else:
             embed = discord.Embed(
                 title='Sorry! :confused:',
-                description='There is no active chat session in this channel.',
+                description='You do not have an active chat session in this channel.',
                 color=self.bot.default_color,
             )
             await context.reply(embed=embed)
             self.bot.log.warning(f'{author.name} tried to end a chat session without an active session in {channel.name}', guild=context.guild)
-            return
+    
+    @commands.command(name='end_all_chat', description='End all active chat sessions')
+    @commands.is_owner()
+    async def endall(self, context: Context):
+        ''' End all active chat sessions '''
+        count = sum(len(users) for users in self.open_conversations.values())
+        self.open_conversations.clear()
+        
+        embed = discord.Embed(
+            title='All Chats Ended :wave:',
+            description=f'Successfully closed {count} active chat sessions.',
+            color=self.bot.default_color,
+        )
+        await context.reply(embed=embed)
+        self.bot.log.info(f'Ended all {count} active chat sessions', guild=context.guild)
+
     def split_message(self, text, limit=2000):
         '''Split text by newlines and words, respecting the character limit.'''
         parts = list()
@@ -113,26 +141,42 @@ class Assistant(commands.Cog, name="Chatting Features"):
             return
         if message.content.startswith(self.bot.prefix[message.guild.id]):
             return
-        if message.channel in self.open_conversations.keys():
-            if message.author in self.open_conversations[message.channel]:
-                if message.content.lower() == 'end':
-                    self.open_conversations[message.channel].remove(message.author)
-                    if len(self.open_conversations[message.channel]) == 0:
-                        del self.open_conversations[message.channel]
-                    embed = discord.Embed(
-                        title='Closing Chat :wave:',
-                        description='The chat session has been ended.',
-                        color=self.bot.default_color,
-                    )
-                    await message.reply(embed=embed)
-                    self.bot.log.info(f'Ended chat session with {message.author.name} in {message.channel.name}', guild=message.guild)
-                else:
-                    response = self.get_llm_response(message.content)
-                    parts = self.split_message(response)
-                    for part in parts:
-                        await message.reply(part)
+        
+        channel = message.channel
+        author = message.author
+        
+        if channel in self.open_conversations and author in self.open_conversations[channel]:
+            if message.content.lower() == 'end':
+                del self.open_conversations[channel][author]
+                if not self.open_conversations[channel]:  # If no more users in this channel
+                    del self.open_conversations[channel]
+                
+                embed = discord.Embed(
+                    title='Closing Chat :wave:',
+                    description='The chat session has been ended.',
+                    color=self.bot.default_color,
+                )
+                await message.reply(embed=embed)
+                self.bot.log.info(f'Ended chat session with {author.name} in {channel.name}', guild=message.guild)
+            else:
+                # Get chat history for this user
+                chat_history = self.open_conversations[channel][author]
+                
+                # Get response from LLM with chat history
+                response = self.get_llm_response(message.content, chat_history)
+                
+                # Add this exchange to chat history (keeping last N messages if you want to limit)
+                chat_history.append((message.content, response))
+                # Limit chat history length to prevent memory issues
+                if len(chat_history) > 20:  # Keep last n exchanges
+                    chat_history.pop(0)
+                
+                # Send response
+                parts = self.split_message(response)
+                for part in parts:
+                    await message.reply(part)
 
-                    self.bot.log.info(f'Responded to {message.author.name} in {message.channel.name}', guild=message.guild)
+                self.bot.log.info(f'Responded to {author.name} in {channel.name}', guild=message.guild)
 
 async def setup(bot):
     await bot.add_cog(Assistant(bot))
