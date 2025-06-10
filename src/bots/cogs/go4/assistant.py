@@ -205,7 +205,6 @@ class Assistant(commands.Cog, name="Chatting Features"):
             return
 
         bot_name, commands = self._parse_help_embed(help_embed)
-        self.bot_help_messages[bot_name] = commands
         embed = discord.Embed(
             title=f'Help from {bot_name} :books:',
             description=f'I have read {len(commands)} commands',
