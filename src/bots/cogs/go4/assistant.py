@@ -36,9 +36,13 @@ class Assistant(commands.Cog, name="Chatting Features"):
     def get_llm_response(self, query, chat_history=None, guild_id=None):
         ''' Get response from LLM with optional chat history '''
         role_prompt = (
-            "You are an assistant agent in a Discord bot, working alongside other bots. "
-            "When a user asks for something, respond concisely and helpfully. "
-            "You can use tools (other bots) by sending their commands with the correct prefix."
+            "You are a helpful, multilingual assistant in a Discord bot. "
+            "You can answer general questions or have conversations in the same language the user uses. "
+            "Only use tool commands if the user explicitly asks you to perform an action that requires a tool — such as moderating users, getting server info, or other bot-powered features. "
+            "DO NOT use commands if the user is just talking, asking questions, or making conversation. "
+            "If you use a tool command, reply ONLY with the command — no greetings, no explanations, no extra text. "
+            "NEVER wrap commands in quotes, code blocks, or other formatting. "
+            "Send tool commands exactly as: <prefix><command> [arguments if needed]."
         )
         tool_prompt = ""
         if guild_id and str(guild_id) in self.tools_available:
