@@ -245,14 +245,17 @@ class Assistant(commands.Cog, name="Chatting Features"):
             await context.reply(embed=embed)
             return
         if str(guild_id) not in self.tools_available:
-            self.tools_available[str(guild_id)] = {}
+            self.tools_available[str(guild_id)] = dict()
         if bot_name not in self.tools_available[str(guild_id)]:
             self.tools_available[str(guild_id)][bot_name] = dict()
         self.tools_available[str(guild_id)][bot_name]["prefix"] = prefix
         if "commands" not in self.tools_available[str(guild_id)][bot_name]:
-            self.tools_available[str(guild_id)][bot_name]["commands"] = commands
-        if category is not None:
-            self.tools_available[str(guild_id)][bot_name]["commands"].update(commands)
+            self.tools_available[str(guild_id)][bot_name]["commands"] = {}
+        for cat, cmds in commands.items():
+            if cat not in self.tools_available[str(guild_id)][bot_name]["commands"]:
+                self.tools_available[str(guild_id)][bot_name]["commands"][cat] = cmds
+            else:
+                self.tools_available[str(guild_id)][bot_name]["commands"][cat].update(cmds)
         self.save_tools_available()
 
         embed = discord.Embed(
