@@ -10,6 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import os
+import yaml
 import discord
 import textwrap
 import asyncio
@@ -28,30 +29,47 @@ class Assistant(commands.Cog, name="Chatting Features"):
             model="models/gemini-2.0-flash",
             api_key=google_api_key
         )
-        self.open_conversations = dict()  # {channel: {user: [messages]}}
+        self.open_conversations = dict()
         self.tools_available = dict()
+        self.load_tools_available()
     
     def get_llm_response(self, query, chat_history=None, guild_id=None):
         ''' Get response from LLM with optional chat history '''
+        role_prompt = (
+            "You are an assistant agent in a Discord bot, working alongside other bots. "
+            "When a user asks for something, respond concisely and helpfully. "
+            "You can use tools (other bots) by sending their commands with the correct prefix."
+        )
         tool_prompt = ""
-        if guild_id and guild_id in self.tools_available:
+        if guild_id and str(guild_id) in self.tools_available:
             header_lines = [
-                "You can use the following available tools by invoking their commands.",
-                "If a tool has arguments, use the appropriate syntax as shown.",
-                "Remove any ` ` block or ``` ``` block in the output if using a tool"
+               "Tool Usage Rules:",
+                "- Use tool commands only when necessary.",
+                "- DO NOT wrap commands in backticks, quotes, or any formatting.",
+                "- Send them exactly as: <prefix><command> [arguments if needed]",
+                "- Example: If the prefix is &&, just send: &&command_name",
             ]
-            for prefix, cmds in self.tools_available[guild_id].items():
-                for cmd, meta in cmds.items():
-                    desc = meta.get("description", "No description")
-                    usage = meta.get("usage", f"{prefix}{cmd}")
-                    header_lines.append(f"- {cmd}: {desc}\n  Usage: {usage}")
+            for bot_name, meta in self.tools_available[str(guild_id)].items():
+                prefix = meta.get("prefix", "")
+                commands = meta.get("commands", {})
+                for category, cmds in commands.items():
+                    header_lines.append(f"\n**{bot_name} - {category}**")
+                    for cmd, info in cmds.items():
+                        description = info.get("description", "No description available")
+                        header_lines.append(f"{prefix}{cmd} - {description}")
             tool_prompt = "\n".join(header_lines) + "\n\n"
+
+        full_prompt = "role:" + role_prompt + "\n\n" + tool_prompt   
         if chat_history:
             formatted_history = "\n".join(f"User: {msg[0]}\nAssistant: {msg[1]}" for msg in chat_history)
-            query = f"{tool_prompt}Chat History:\n{formatted_history}\n\nNew User Message: {query}"
+            query = f"{full_prompt}Chat History:\n{formatted_history}\n\nNew User Message: {query}"
         else:
-            query = f"{tool_prompt}{query}"
-        
+            query = f"{full_prompt}\n\nNew User Message: {query}"
+        # save the query for debugging
+        # with open(os.path.join(self.bot.data_dir, 'query.txt'), 'a') as f:
+        #     f.write(f"Query: {query}\n")
+        if len(query) > 4000: # check if the query is too long
+            raise ValueError("Query is getting too long ...")
         response = self.llm.complete(query)
         return str(response)
 
@@ -60,7 +78,6 @@ class Assistant(commands.Cog, name="Chatting Features"):
         ''' Chat with the bot '''
         channel = context.channel
         author = context.author
-        
         # Initialize chat history for this user in this channel
         if channel not in self.open_conversations:
             self.open_conversations[channel] = {}
@@ -73,10 +90,8 @@ class Assistant(commands.Cog, name="Chatting Features"):
             )
             await context.reply(embed=embed)
             return
-        
         # Initialize empty chat history
         self.open_conversations[channel][author] = []
-        
         embed = discord.Embed(
             title='Let\'s Chat! :speech_balloon:',
             description="Hello! I have opened a chat session with you in this channel",
@@ -155,16 +170,13 @@ class Assistant(commands.Cog, name="Chatting Features"):
             return
         if message.content.startswith(self.bot.prefix[message.guild.id]):
             return
-        
         channel = message.channel
         author = message.author
-        
         if channel in self.open_conversations and author in self.open_conversations[channel]:
             if message.content.lower() == 'end':
                 del self.open_conversations[channel][author]
                 if not self.open_conversations[channel]:  # If no more users in this channel
                     del self.open_conversations[channel]
-                
                 embed = discord.Embed(
                     title='Closing Chat :wave:',
                     description='The chat session has been ended.',
@@ -174,29 +186,32 @@ class Assistant(commands.Cog, name="Chatting Features"):
                 self.bot.log.info(f'Ended chat session with {author.name} in {channel.name}', guild=message.guild)
             else:
                 # Get chat history for this user
-                chat_history = self.open_conversations[channel][author]
-                
-                # Get response from LLM with chat history
-                response = self.get_llm_response(message.content, 
-                                                 chat_history,
-                                                 message.guild.id)
-                
+                chat_history = self.open_conversations[channel][author] 
+                try:
+                    # Get response from LLM with chat history
+                    response = self.get_llm_response(message.content, chat_history, message.guild.id)
+                except ValueError as e:
+                    embed = discord.Embed(
+                        title="I'm Sorry! :confused:",
+                        description='The query is getting too long. Please end the chat session and start a new one. If not, try to clear up the tools list using the command `clear_tools`.',
+                        color=self.bot.default_color,
+                    )
+                    await message.reply(embed=embed)
+                    return
                 # Add this exchange to chat history (keeping last N messages if you want to limit)
                 chat_history.append((message.content, response))
                 # Limit chat history length to prevent memory issues
                 if len(chat_history) > 10:  # Keep last n exchanges
                     chat_history.pop(0)
-                
                 # Send response
                 parts = self.split_message(response)
                 for part in parts:
                     await message.reply(part)
-
                 self.bot.log.info(f'Responded to {author.name} in {channel.name}', guild=message.guild)
 
     
     @commands.command(name='read', description='Scrape another bot\'s help command')
-    async def read_help(self, context: Context, prefix: str):
+    async def read_help(self, context: Context, prefix: str, category: str = None):
         ''' Scrape another bot's help command '''
         if not prefix:
             embed = discord.Embed(
@@ -207,8 +222,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
             await context.reply(embed=embed)
             return
         await context.reply(f"{prefix}help")
-
-        help_embed = await self._wait_for_help_embed(context)
+        bot_name, help_embed = await self.wait_for_response(context)
         if not help_embed:
             embed = discord.Embed(
                 title='Timeout :stopwatch:',
@@ -217,22 +231,43 @@ class Assistant(commands.Cog, name="Chatting Features"):
             )
             await context.reply(embed=embed)
             return
+        commands = self.parse_help_embed(help_embed, category)
+        guild_id = context.guild.id
+        if len(commands) == 0:
+            embed = discord.Embed(
+                title='No Commands Found :mag:',
+                color=self.bot.default_color,
+            )
+            if category:
+                embed.description = f"No commands found in category '{category}' from {bot_name} with prefix `{prefix}`."
+            else:
+                embed.description=f'No commands found in the help embed from {bot_name}. Please check the prefix and try again.',
+            await context.reply(embed=embed)
+            return
+        if str(guild_id) not in self.tools_available:
+            self.tools_available[str(guild_id)] = {}
+        if bot_name not in self.tools_available[str(guild_id)]:
+            self.tools_available[str(guild_id)][bot_name] = dict()
+        self.tools_available[str(guild_id)][bot_name]["prefix"] = prefix
+        if "commands" not in self.tools_available[str(guild_id)][bot_name]:
+            self.tools_available[str(guild_id)][bot_name]["commands"] = commands
+        if category is not None:
+            self.tools_available[str(guild_id)][bot_name]["commands"].update(commands)
+        self.save_tools_available()
 
-        bot_name, commands = self._parse_help_embed(help_embed)
         embed = discord.Embed(
             title=f'Help from {bot_name} :books:',
-            description=f'I have read {len(commands)} commands',
             color=self.bot.default_color,
         )
-        guild_id = context.guild.id
-        if guild_id not in self.tools_available:
-            self.tools_available[guild_id] = {}
-        self.tools_available[guild_id][prefix] = commands
+        if category:
+            embed.description = f"Category: {category} has been read from {bot_name} with prefix `{prefix}` and all its tools have been saved."
+        else:
+            embed.description = f"{bot_name} has been read with prefix `{prefix}` and all its tools have been saved. {len(commands)} categories found."
         await context.reply(embed=embed)
     
     @commands.command(name='clear_tools', description='clear tools available list for the agent')
     async def clear_tools(self, context: Context):
-        self.tools_available.pop(context.guild.id, None)
+        self.delete_tools_available_data(context.guild.id)
         embed = discord.Embed(
             title='Tools Cleared :wastebasket:',
             description='All tools have been cleared for this server.',
@@ -240,38 +275,31 @@ class Assistant(commands.Cog, name="Chatting Features"):
         )
         await context.reply(embed=embed)
 
-    async def _wait_for_help_embed(self, context, timeout=15) -> discord.Embed:
+    async def wait_for_response(self, context, bot=False, timeout=15) -> discord.Embed:
         '''Wait for the next embed message from another bot.'''
         def check(m: discord.Message):
             return (
                 m.channel == context.channel and
                 m.author != context.me and
-                m.author.bot and
+                m.author.bot if bot else True and
                 len(m.embeds) > 0
             )
         try:
             msg = await self.bot.wait_for("message", check=check, timeout=timeout)
-            return msg.embeds[0]
+            author_name = msg.author.name if msg.author else "Unknown"
+            return (author_name, msg.embeds[0])
         except asyncio.TimeoutError:
             return None
     
-    def _parse_help_embed(self, embed: discord.Embed) -> tuple[str, dict]:
+    def parse_help_embed(self, embed: discord.Embed, category: str = None):
         '''Extract command info from a help embed.'''
-        bot_name = embed.author.name if embed.author else "Unknown Bot"
-        commands = {}
-
-        # Case 1: Specific command help (has 'Usage' field)
-        if any(field.name == "Usage" for field in embed.fields):
-            command_name = embed.title.replace("Help: ", "").strip()
-            commands[command_name] = {
-                "description": embed.description,
-                "usage": embed.fields[0].value  # First field is 'Usage'
-            }
-            return (bot_name, commands)
-
-        # Case 2: General help (lists all commands)
+        
+        commands = dict()
+        # General help parsing (lists all commands)
         for field in embed.fields:
-            # Each field is a cog with command listings
+            if category and field.name.lower() != category.lower():
+                continue
+            commands[field.name] = dict()
             for line in field.value.split('\n'):
                 # Extract command name and description from lines like:
                 # ***`watchlist`*** - Shows your movie watchlist
@@ -281,17 +309,49 @@ class Assistant(commands.Cog, name="Chatting Features"):
                     command_name = line.split('***`')[1].split('`***')[0].strip()
                     # Extract description (everything after the last hyphen)
                     description = line.split('-')[-1].strip() if '-' in line else "No description"
-                    # Extract aliases if present
-                    aliases = []
-                    if '**(`' in line:
-                        alias_part = line.split('`***')[-1].split('-')[0]
-                        aliases = [a.split('`')[1] for a in alias_part.split('**(`')[1:]]
-                    commands[command_name] = {
-                        "description": description,
-                        "aliases": aliases,
-                        "category": field.name
+                    commands[field.name][command_name] = {
+                        "description": description
                     }
-        return (bot_name, commands)
+        return commands
 
+    def save_tools_available(self):
+        if os.path.exists(self.bot.data_dir):
+            for guild_id, bot_names in self.tools_available.items():
+                guild_path = os.path.join(self.bot.data_dir, str(guild_id), 'tools_available')
+                os.makedirs(guild_path, exist_ok=True)
+                for bot_name , meta in bot_names.items():
+                    file_path = os.path.join(guild_path, f"{bot_name}.yml")
+                    with open(file_path, 'w') as file:
+                        yaml.dump(meta, file, default_flow_style=False)
+                self.bot.log.info(f'Saved tools available for guild {guild_id}', guild=self.bot.get_guild(guild_id))
+    
+    def delete_tools_available_data(self, guild_id):
+        ''' Delete tools available for a guild '''
+        if str(guild_id) in self.tools_available:
+            del self.tools_available[str(guild_id)]
+            guild_path = os.path.join(self.bot.data_dir, str(guild_id), 'tools_available')
+            if os.path.exists(guild_path):
+                for file in os.listdir(guild_path):
+                    os.remove(os.path.join(guild_path, file))
+                os.rmdir(guild_path)
+            self.bot.log.info(f'Deleted tools available for guild {guild_id}', guild=self.bot.get_guild(guild_id))
+               
+    def load_tools_available(self):
+        if os.path.exists(self.bot.data_dir):
+            guilds = [d for d in os.listdir(self.bot.data_dir) if os.path.isdir(os.path.join(self.bot.data_dir, d))]
+            for guild_id in guilds:
+                tools_path = os.path.join(self.bot.data_dir, guild_id, 'tools_available')
+                if os.path.exists(tools_path):
+                    for file in os.listdir(tools_path):
+                        if file.endswith('.yml'):
+                            bot_name = file.split('.')[0]
+                            file_path = os.path.join(tools_path, file)
+                            with open(file_path, 'r') as f:
+                                meta = yaml.safe_load(f)
+                                if guild_id not in self.tools_available:
+                                    self.tools_available[str(guild_id)] = dict()
+                                self.tools_available[str(guild_id)][bot_name] = meta
+                                self.bot.log.info(f'Loaded tools available for guild {guild_id} - {bot_name}')
+                            
 async def setup(bot):
     await bot.add_cog(Assistant(bot))
