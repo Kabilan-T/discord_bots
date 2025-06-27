@@ -205,9 +205,74 @@ class General(commands.Cog, name="General"):
                 )
         await context.send(embed=embed)
 
+    @commands.command( name="load_cog", description="Load a specific cog.")
+    @commands.has_permissions(administrator=True)
+    async def load_cog(self, context: Context, cog_name: str):
+        '''Load a specific cog'''
+        if not cog_name.startswith("cogs."):
+            cog_name = f'cogs.{self.bot.name.lower().replace("-", "")}.{cog_name}'
+        cog_name = f"bots.{cog_name}"
+        if cog_name in self.bot.extensions:
+            embed = discord.Embed(
+                title="Error",
+                description=f"`{cog_name}` is already loaded.",
+                color=discord.Color.red(),
+                )
+            await context.send(embed=embed)
+            return
+        try:
+            await self.bot.load_specific_extension(cog_name)
+            self.bot.log.info(f"Loaded extension {cog_name}")
+            embed = discord.Embed(
+                title="Cog Loaded",
+                description=f"`{cog_name}` has been loaded.",
+                color=self.bot.default_color,
+                )
+        except Exception as e:
+            embed = discord.Embed(
+                title="Error",
+                description=f"Failed to load `{cog_name}`: {e}",
+                color=discord.Color.red(),
+                )
+        await context.send(embed=embed)
+
+    @commands.command( name="unload_cog", description="Unload a specific cog.")
+    @commands.has_permissions(administrator=True)
+    async def unload_cog(self, context: Context, cog_name: str):
+        '''Unload a specific cog'''
+        if not cog_name.startswith("cogs."):
+            cog_name = f'cogs.{self.bot.name.lower().replace("-", "")}.{cog_name}'
+        cog_name = f"bots.{cog_name}"
+        if cog_name not in self.bot.extensions:
+            embed = discord.Embed(
+                title="Error",
+                description=f"`{cog_name}` is not loaded.",
+                color=discord.Color.red(),
+                )
+            await context.send(embed=embed)
+            return
+        try:
+            await self.bot.unload_specific_extension(cog_name)
+            self.bot.log.info(f"Unloaded extension {cog_name}")
+            embed = discord.Embed(
+                title="Cog Unloaded",
+                description=f"`{cog_name}` has been unloaded.",
+                color=self.bot.default_color,
+                )
+        except Exception as e:
+            embed = discord.Embed(
+                title="Error",
+                description=f"Failed to unload `{cog_name}`: {e}",
+                color=discord.Color.red(),
+                )
+        await context.send(embed=embed)
+
     @commands.Cog.listener()
     async def on_message(self, message):
         '''Convert message from other bots to commands (if begins with prefix)'''
+        # ignore messages from the dm channel
+        if isinstance(message.channel, discord.DMChannel):
+            return
         if message.author.bot and message.content.startswith(self.bot.prefix.get(message.guild.id, self.bot.default_prefix)):
             context = await self.bot.get_context(message)
             if context.valid:

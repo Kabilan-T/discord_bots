@@ -92,6 +92,25 @@ class BaseBot(commands.Bot):
                 self.log.info(f"Unloaded extension {extension}")
         return (self.succeeded, self.failed, self.unloaded)
     
+    async def unload_specific_extension(self, extension: str):
+        '''Unload a specific extension'''
+        if extension in self.extensions:
+            await self.unload_extension(extension)
+            self.log.info(f"Unloaded extension {extension}")
+        else:
+            self.log.warning(f"Extension {extension} not found")
+        return extension
+    
+    async def load_specific_extension(self, extension: str):
+        '''Load a specific extension'''
+        try:
+            await self.load_extension(extension)
+            self.log.info(f"Loaded extension {extension}")
+        except Exception as e:
+            exception = f"{type(e).__name__}: {e}"
+            self.log.error(f"Failed to load extension {extension}\n{exception}")
+        return extension
+    
     async def get_prefix(self, message):
         '''Get the prefix for the bot'''
         if message.guild is None:
