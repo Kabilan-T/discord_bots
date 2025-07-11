@@ -574,7 +574,7 @@ class CosmicCon(commands.Cog):
         embed = discord.Embed(title="Red Pill or Blue Pill",
                             description=f"{member.mention}, choose your reality:\nReact with 🔴 for Red Pill or 🔵 for Blue Pill",
                             color=self.bot.default_color)
-        message = await context.send(embed=embed)
+        message = await context.send(f"{member.mention}", embed=embed)
         await message.add_reaction('🔴')
         await message.add_reaction('🔵')
 
@@ -595,7 +595,7 @@ class CosmicCon(commands.Cog):
             embed = discord.Embed(title="Red Pill",
                                 description=f"{member.mention} chose the Red Pill. They will be kicked from the server.\n\nReact with ✅ to confirm or ❌ to cancel.",
                                 color=self.bot.default_color)
-            await message.edit(embed=embed)
+            message = await context.send(f"{context.author.mention}", embed=embed)
             await message.clear_reactions()
             await message.add_reaction('✅')
             await message.add_reaction('❌')
@@ -630,7 +630,7 @@ class CosmicCon(commands.Cog):
             embed = discord.Embed(title="Blue Pill",
                                 description=f"{member.mention} chose the Blue Pill. They will receive a gift.\n\nReact with :ring: for temporary power or :snake: for eternal life.",
                                 color=self.bot.default_color)
-            await message.edit(embed=embed)
+            message = await context.send(f"{context.author.mention}", embed=embed)
             await message.clear_reactions()
             await message.add_reaction('💍')
             await message.add_reaction('🐍')
