@@ -507,7 +507,7 @@ class CosmicCon(commands.Cog):
     async def glitch_in_the_matrix(self, context: Context, *members: typing.Optional[discord.Member]):
         ''' Suffle the display names of the specified members or all online members '''
         if not members:
-            members = [member for member in context.guild.members if member.status != discord.Status.offline and not member.bot]
+            members = [member for member in context.guild.members if not member.bot]
         if not members:
             embed = discord.Embed(title="Glitch in the Matrix",
                                 description="No members online to suffer from the glitch",
