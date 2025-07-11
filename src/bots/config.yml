@@ -6,10 +6,10 @@ auto:
   default_color: 0x3498DB
   extensions:
     - 'cogs.general'
-    - 'cogs.auto.utilities'
-    - 'cogs.auto.moderation'
-    - 'cogs.auto.roles'
     - 'cogs.auto.announcements'
+    - 'cogs.auto.moderation'
+    - 'cogs.auto.utilities'
+    - 'cogs.auto.roles'
     - 'cogs.manage'
 eve:
   name: EVE
@@ -22,7 +22,6 @@ eve:
     - 'cogs.eve.voice'
     - 'cogs.eve.watchlist'
     - 'cogs.eve.meme'
-    - 'cogs.eve.bingo'
     - 'cogs.manage'
 mo:
   name: M-O
@@ -34,8 +33,6 @@ mo:
     - 'cogs.general'
     - 'cogs.mo.radio'
     - 'cogs.mo.instagram'
-    - 'cogs.mo.search'
-    #- 'cogs.mo.rss'
     - 'cogs.manage'
 go4:
   name: GO-4
@@ -46,7 +43,7 @@ go4:
   extensions:
     - 'cogs.general'
     - 'cogs.go4.assistant'
-    - 'cogs.go4.thirukkural'
     - 'cogs.go4.cosmic_con'
+    - 'cogs.go4.thirukkural'
     - 'cogs.manage'
 
