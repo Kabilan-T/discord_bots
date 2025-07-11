@@ -500,6 +500,168 @@ class CosmicCon(commands.Cog):
                                     color=self.bot.default_color)
                 await after.channel.send(embed=embed)
                 self.bot.log.info(f"{member.name} has been relieved from the ring bearer duty", member.guild)
+
+    ## Matrix reference
+    @commands.has_permissions(manage_nicknames=True)
+    @commands.command(name='glitch_in_the_matrix', description = "Who are you, really?")
+    async def glitch_in_the_matrix(self, context: Context, *members: typing.Optional[discord.Member]):
+        ''' Suffle the display names of the specified members or all online members '''
+        if not members:
+            members = [member for member in context.guild.members if member.status != discord.Status.offline and not member.bot]
+        if not members:
+            embed = discord.Embed(title="Glitch in the Matrix",
+                                description="No members online to suffer from the glitch",
+                                color=self.bot.default_color)
+            await context.send(embed=embed)
+            return
+        # Shuffle the display names
+        shuffled_names = random.sample([member.display_name for member in members], len(members))
+        for member, new_name in zip(members, shuffled_names):
+            try:
+                await member.edit(nick=new_name)
+            except discord.Forbidden:
+                embed = discord.Embed(title="Glitch in the Matrix",
+                                    description=f"{member.mention} is safe from the glitch (no permission to change nickname)",
+                                    color=self.bot.default_color)
+                await context.send(embed=embed)
+                continue
+            except discord.HTTPException:
+                embed = discord.Embed(title="Glitch in the Matrix",
+                                    description=f"{member.mention} could not be glitched (HTTP Exception)",
+                                    color=self.bot.default_color)
+                await context.send(embed=embed)
+                continue
+        embed = discord.Embed(title="Glitch in the Matrix",
+                            description="Everyone's identity has been shuffled",
+                            color=self.bot.default_color)
+        await context.send(embed=embed)
+        self.bot.log.info(f"Display names shuffled by {context.author.name} in {context.guild.name}", context.guild)
+
+    @commands.has_permissions(manage_nicknames=True)
+    @commands.command(name='reset_glitch', description = "Stabilize the Matrix")
+    async def reset_glitch(self, context: Context):
+        ''' Reset all display names to their original names '''
+        members = [member for member in context.guild.members]
+        if not members:
+            embed = discord.Embed(title="Reset Glitch",
+                                description="No members to reset",
+                                color=self.bot.default_color)
+            await context.send(embed=embed)
+            return
+        for member in members:
+            try:
+                await member.edit(nick=member.name)
+            except discord.Forbidden:
+                continue
+            except discord.HTTPException:
+                continue
+        embed = discord.Embed(title="Reset Glitch",
+                            description="Everyone's identity has been restored. The Matrix is stable again.",
+                            color=self.bot.default_color)
+        await context.send(embed=embed)
+        self.bot.log.info(f"Display names reset by {context.author.name} in {context.guild.name}", context.guild)
+    
+    @commands.has_permissions(administrator=True)
+    @commands.command(name='redpill_or_bluepill', description = "Choose your reality")
+    async def redpill_or_bluepill(self, context: Context, member: discord.Member):
+        ''' Give the user a choice between red pill and blue pill '''
+        if not member or member.bot:
+            embed = discord.Embed(title="Red Pill or Blue Pill",
+                                description="You need to choose a valid member",
+                                color=self.bot.default_color)
+            await context.send(embed=embed)
+            return
+        embed = discord.Embed(title="Red Pill or Blue Pill",
+                            description=f"{member.mention}, choose your reality:\nReact with 🔴 for Red Pill or 🔵 for Blue Pill",
+                            color=self.bot.default_color)
+        message = await context.send(embed=embed)
+        await message.add_reaction('🔴')
+        await message.add_reaction('🔵')
+
+        def check(reaction, user):
+            return user == member and str(reaction.message.id) == str(message.id) and str(reaction.emoji) in ['🔴', '🔵']
+        
+        try:
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
+        except asyncio.TimeoutError:
+            embed = discord.Embed(title="Red Pill or Blue Pill",
+                                description="You took too long to decide",
+                                color=self.bot.default_color)
+            await message.edit(embed=embed)
+            return
+        if str(reaction.emoji) == '🔴':
+             # If the user chose red pill - kick them from the server but ask for confirmation
+            self.bot.log.info(f"{member.name} chose Red Pill in {context.guild.name}", context.guild)
+            embed = discord.Embed(title="Red Pill",
+                                description=f"{member.mention} chose the Red Pill. They will be kicked from the server.\n\nReact with ✅ to confirm or ❌ to cancel.",
+                                color=self.bot.default_color)
+            await message.edit(embed=embed)
+            await message.clear_reactions()
+            await message.add_reaction('✅')
+            await message.add_reaction('❌')
+
+            def confirm_check(reaction, user):
+                return user == context.author and str(reaction.message.id) == str(message.id) and str(reaction.emoji) in ['✅', '❌']
+
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=confirm_check)
+            except asyncio.TimeoutError:
+                embed = discord.Embed(title="Red Pill",
+                                    description="You took too long to decide",
+                                    color=self.bot.default_color)
+                await message.edit(embed=embed)
+                return
+            if str(reaction.emoji) != '✅':
+                embed = discord.Embed(title="Red Pill",
+                                    description="You chose not to kick the user",
+                                    color=self.bot.default_color)
+                await message.edit(embed=embed)
+                return
+            embed = discord.Embed(title="Red Pill",
+                                description=f"{member.mention} will now experience the harsh reality of the Matrix.",
+                                color=self.bot.default_color)
+            await context.send(embed=embed)
+            await member.kick(reason=f"Kicked by {context.author.name} for choosing Red Pill")
+            self.bot.log.info(f"{member.name} has been kicked from {context.guild.name} for choosing Red Pill", context.guild)
+        
+        elif str(reaction.emoji) == '🔵':
+            # If the user chose blue pill - give them a gift (one ring or horcrux) but ask for confirmation
+            self.bot.log.info(f"{member.name} chose Blue Pill in {context.guild.name}", context.guild)
+            embed = discord.Embed(title="Blue Pill",
+                                description=f"{member.mention} chose the Blue Pill. They will receive a gift.\n\nReact with :ring: for temporary power or :snake: for eternal life.",
+                                color=self.bot.default_color)
+            await message.edit(embed=embed)
+            await message.clear_reactions()
+            await message.add_reaction('💍')
+            await message.add_reaction('🐍')
+            def gift_check(reaction, user):
+                return user == context.author and str(reaction.message.id) == str(message.id) and str(reaction.emoji) in ['💍', '🐍']
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=gift_check)
+            except asyncio.TimeoutError:
+                embed = discord.Embed(title="Blue Pill",
+                                    description="You took too long to decide",
+                                    color=self.bot.default_color)
+                await message.edit(embed=embed)
+                return
+            if str(reaction.emoji) == '💍':
+                # If the user chose the ring - give them the one ring
+                embed = discord.Embed(title="One Ring",
+                                    description=f"{member.mention} has been given the One Ring. They will have temporary power for 1 hour.",
+                                    color=self.bot.default_color)
+                await message.edit(embed=embed)
+                await self.one_ring(context, member)
+                return
+            elif str(reaction.emoji) == '🐍':
+                # If the user chose the horcrux - give them a horcrux
+                embed = discord.Embed(title="Horcrux :snake:",
+                                    description=f"{member.mention} has been given a Horcrux. They will have eternal life as long as the horcrux exists.",
+                                    color=self.bot.default_color)
+                await message.edit(embed=embed)
+                await self.horcrux(context, member, *context.guild.members)
+                return
+            
+
         
 
 async def setup(bot):
