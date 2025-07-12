@@ -538,24 +538,24 @@ class CosmicCon(commands.Cog):
         self.bot.log.info(f"Display names shuffled by {context.author.name} in {context.guild.name}", context.guild)
 
     @commands.has_permissions(manage_nicknames=True)
-    @commands.command(name='reset_glitch', description = "Stabilize the Matrix")
-    async def reset_glitch(self, context: Context):
+    @commands.command(name='identity_protocol', description = "Purge false identities")
+    async def identity_protocol(self, context: Context):
         ''' Reset all display names to their original names '''
         members = [member for member in context.guild.members]
         if not members:
-            embed = discord.Embed(title="Reset Glitch",
-                                description="No members to reset",
+            embed = discord.Embed(title="Identity Protocol",
+                                description="No members to purge",
                                 color=self.bot.default_color)
             await context.send(embed=embed)
             return
         for member in members:
             try:
-                await member.edit(nick=member.name)
+                await member.edit(nick=None)
             except discord.Forbidden:
                 continue
             except discord.HTTPException:
                 continue
-        embed = discord.Embed(title="Reset Glitch",
+        embed = discord.Embed(title="Identity Protocol",
                             description="Everyone's identity has been restored. The Matrix is stable again.",
                             color=self.bot.default_color)
         await context.send(embed=embed)
