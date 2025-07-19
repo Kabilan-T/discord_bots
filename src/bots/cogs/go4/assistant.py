@@ -26,7 +26,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
         google_api_key = os.environ['GOOGLE_API_KEY']
         # llm with gemini model
         self.llm = Gemini(
-            model="models/gemini-2.0-flash",
+            model="models/gemini-2.5-flash",
             api_key=google_api_key
         )
         self.open_conversations = dict()
@@ -35,7 +35,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
         ''' Get response from LLM with optional chat history '''
         role_prompt = (
             f"Your name is {self.bot.name} ",
-            "You are a helpful assistant inside a Discord bot. "
+            "You are a multilingual (tamil and English) helpful assistant inside a Discord bot. "
         )
         full_prompt = "role: " + "\n-".join(role_prompt) + "\n"
         if author_name:
