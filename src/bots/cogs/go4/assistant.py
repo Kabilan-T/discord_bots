@@ -34,11 +34,8 @@ class Assistant(commands.Cog, name="Chatting Features"):
     def get_llm_response(self, query, chat_history=None, author_name=None):
         ''' Get response from LLM with optional chat history '''
         role_prompt = (
-            f"Your name is {self.bot.name}, like the WALL-E movie character. ",
-            "You are a helpful, multilingual assistant inside a Discord bot. ",
-            "You respond in a short, chat-friendly style, using the user's language. ",
-            "You can access live web data to answer questions like current cricket scores, F1 schedules, weather, or news. ",
-            "When a user asks for real-time information, you must look it up and give them the actual answer, not just say you will. "
+            f"Your name is {self.bot.name} ",
+            "You are a helpful assistant inside a Discord bot. "
         )
         full_prompt = "role: " + "\n-".join(role_prompt) + "\n"
         if author_name:
