@@ -52,7 +52,7 @@ class Voice(commands.Cog, name="Voice Features"):
                 return False
             voice_channel = context.author.voice.channel
         self.called_channel[context.guild.id] = context.channel
-        if context.voice_client is None:
+        if context.voice_client is None or not context.voice_client.is_connected():
             await voice_channel.connect()
             embed = discord.Embed(
                 title=f"Joined {voice_channel.name} :microphone:",
@@ -130,7 +130,7 @@ class Voice(commands.Cog, name="Voice Features"):
     @commands.command(name="leave", description="Leave the voice channel", aliases=["l"])
     async def leave(self, context: Context, force: bool = False):
         ''' Leave the voice channel '''
-        if context.voice_client is None:
+        if context.voice_client is None or not context.voice_client.is_connected():
             embed = discord.Embed(
                 title="Not in a voice channel :confused:",
                 description="I am not in any voice channel. How can I leave?",

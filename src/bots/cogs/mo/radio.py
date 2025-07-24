@@ -298,7 +298,7 @@ class Radio(commands.Cog, name="Radio FM"):
                 return False
             voice_channel = context.author.voice.channel
         self.called_channel[context.guild.id] = context.channel
-        if context.voice_client is None:
+        if context.voice_client is None or not context.voice_client.is_connected():
             await voice_channel.connect()
             self.now_playing.pop(context.guild.id, None)
             embed = discord.Embed(
@@ -333,7 +333,7 @@ class Radio(commands.Cog, name="Radio FM"):
     async def disconnect(self, context: Context, force: bool = False):
         ''' Disconnect the bot from the voice channel '''
         voice_client = discord.utils.get(self.bot.voice_clients, guild=context.guild)
-        if voice_client is None:
+        if voice_client is None or not voice_client.is_connected():
             embed = discord.Embed(
                     title="Radio FM",
                     description="I am not in a voice channel",
