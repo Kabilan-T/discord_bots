@@ -133,7 +133,7 @@ class Radio(commands.Cog, name="Radio FM"):
     @commands.command(name="stop_radio", description="Stop radio in the voice channel", aliases=["stop", "st"])
     async def radio_stop(self, context: Context):
         ''' Stop radio in the voice channel '''
-        voice_client = discord.utils.get(self.bot.voice_clients, guild=context.guild)
+        voice_client = context.voice_client
         if voice_client is None:
             embed = discord.Embed(
                     title="Radio FM",
@@ -332,7 +332,7 @@ class Radio(commands.Cog, name="Radio FM"):
     @commands.command(name="leave", description="Disconnect the bot from the voice channel", aliases=["l"])
     async def disconnect(self, context: Context, force: bool = False):
         ''' Disconnect the bot from the voice channel '''
-        voice_client = discord.utils.get(self.bot.voice_clients, guild=context.guild)
+        voice_client = context.voice_client
         if voice_client is None:
             embed = discord.Embed(
                     title="Radio FM",
