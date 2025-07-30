@@ -116,7 +116,7 @@ class Voice(commands.Cog, name="Voice Features"):
         file = os.path.join(tmp, "message.mp3")
         os.makedirs(os.path.dirname(file), exist_ok=True)
         tts.save(file)
-        context.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: self.bot.log.info(f"Speaking done '{e}'", context.guild))
+        context.voice_client.play(discord.FFmpegPCMAudio(file))
         context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source)
         context.voice_client.source.volume = self.volume / 100
         embed = discord.Embed(
@@ -285,8 +285,8 @@ class Voice(commands.Cog, name="Voice Features"):
             file = os.path.join(tmp, "greet.mp3")
             os.makedirs(os.path.dirname(file), exist_ok=True)
             tts.save(file)
-            await asyncio.sleep(3)
-            member.guild.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda e: self.bot.log.info(f"Greeting done '{e}'", member.guild))
+            await asyncio.sleep(3) 
+            member.guild.voice_client.play(discord.FFmpegPCMAudio(file))
             member.guild.voice_client.source = discord.PCMVolumeTransformer(member.guild.voice_client.source)
             member.guild.voice_client.source.volume = self.volume / 100
             self.bot.log.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}", member.guild)
