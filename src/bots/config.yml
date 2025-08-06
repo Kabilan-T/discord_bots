@@ -33,6 +33,7 @@ mo:
     - 'cogs.general'
     - 'cogs.mo.radio'
     - 'cogs.mo.instagram'
+    - 'cogs.mo.transcriber'
     - 'cogs.manage'
 go4:
   name: GO-4
@@ -43,7 +44,7 @@ go4:
   extensions:
     - 'cogs.general'
     - 'cogs.go4.assistant'
-    - 'cogs.go4.cosmic_con'
     - 'cogs.go4.thirukkural'
+    - 'cogs.go4.cosmic_con'
     - 'cogs.manage'
 
