@@ -74,7 +74,7 @@ Replace `<bot_name>` with the bot name you want to start. The bot names are `aut
 * ```bash run.bash auto```: Starts the AUTO bot.
 * ```bash run.bash eve```: Starts the EVE bot.
 * ```bash run.bash mo```: Starts the MO bot.
-* ```bash run.bash go4```: Starts the GO4 bot (if implemented).
+* ```bash run.bash go4```: Starts the GO4 bot.
 
 The bots will start executing and you can see the logs in the terminal.
 
