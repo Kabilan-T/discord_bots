@@ -23,6 +23,7 @@ class General(commands.Cog, name="General"):
     def __init__(self, bot):
         '''Initializes the general cog'''
         self.bot = bot
+        self.owner_id = int(os.getenv("BOT_OWNER_ID", 0))  # export BOT_OWNER_ID=[your_discord_id]
     
     @commands.command( name="hello", description="Say hello to the bot.", aliases=["hi", "hey"])
     async def hello(self, context: Context):
@@ -177,6 +178,116 @@ class General(commands.Cog, name="General"):
             color=self.bot.default_color,
             )
         await context.send(embed=embed)
+
+    @commands.command(name="about", description="Get information about the bot.")
+    @commands.has_permissions(send_messages=True)
+    async def about(self, context: Context):
+        """Send information about the bot"""
+        repository_url = "https://github.com/Kabilan-T/discord_bots"
+        embed = discord.Embed(
+            title="About",
+            description = (
+                f"**{self.bot.name}** is a Discord bot developed as part of the "
+                f"[Discord Bots Project]({repository_url}). "
+                "It is designed to provide various custom and novel features for a bot.\n\n"
+                "As a hobby project, the bot may occasionally encounter bugs or unexpected behavior, "
+                "but contributions are always welcomed 🙂\n\n"
+                f"To know more, visit the repository here: [discord_bots]({repository_url}?tab=readme-ov-file#discord-bots)"
+            ),
+            color=self.bot.default_color,
+        )
+        await context.send(embed=embed)
+
+    @commands.command(name="feedback", description="Send feedback to the bot developer.")
+    @commands.has_permissions(send_messages=True)
+    async def feedback(self, context: Context, *, message: str):
+        '''Send feedback to the bot developer.'''
+        feedback = discord.Embed(
+            title="Feedback",
+            description=message,
+            color=self.bot.default_color,
+        )
+        feedback.add_field(name="User", value=f"{context.author.name} (ID: `{context.author.id}`)", inline=False)
+        if context.guild:
+            feedback.add_field(name="Guild", value=f"{context.guild.name} (ID: `{context.guild.id}`)", inline=False)
+            feedback.add_field(name="Channel", value=f"{context.channel.name} (ID: `{context.channel.id}`)", inline=False)
+            feedback.add_field(name="Message", value=f"ID: `{context.message.id}`", inline=False)
+            feedback.add_field(name="Respond_with", value=f"`{self.bot.default_prefix}respond {context.guild.id} {context.channel.id} {context.message.id} <response>`", inline=False)
+        # Default success embed if owner cannot be contacted
+        embed_default = discord.Embed(
+            title="Thank You!",
+            description="Your feedback is logged.",
+            color=self.bot.default_color,
+        )
+        # If owner exists, try sending DM
+        if self.owner_id:
+            try:
+                owner = await self.bot.fetch_user(self.owner_id)
+                if owner:
+                    await owner.send(embed=feedback)
+                    embed_success = discord.Embed(
+                        title="Thank You!",
+                        description="Your feedback has been sent to the bot developer. They might respond to it if needed.",
+                        color=self.bot.default_color,
+                    )
+                    self.bot.log.info(f"Feedback from {context.author.name} (ID: {context.author.id}) sent to the owner.", guild=context.guild)
+                    await context.send(embed=embed_success)
+                    return
+            except discord.Forbidden:
+                pass
+            except discord.HTTPException:
+                pass
+        # Fallback if owner not set or DM failed
+        self.bot.log.warning(f"Feedback from {context.author.name} (ID: {context.author.id}) could not be sent to the owner.\n{feedback.to_dict()}",guild=context.guild)
+        await context.send(embed=embed_default)
+
+    @commands.command(name="respond_to_feedback", description="Respond to a feedback message.", aliases=["respond"], hidden=True)
+    async def respond_to_feedback(self, context: Context, guild_id: int, channel_id: int, message_id: int, *, response: str):
+        '''Respond to a feedback message.'''
+        # Only allow the bot owner to use this command
+        if context.author.id != self.owner_id:
+            embed = discord.Embed(
+                title="Unauthorized",
+                description="You are not authorized to use this command.",
+                color=discord.Color.red()
+            )
+            await context.send(embed=embed)
+            return
+        channel = self.bot.get_channel(channel_id)
+        reply_embed = discord.Embed(
+            title="Response from the Developer",
+            description=response,
+            color=self.bot.default_color
+        )
+        confirm_embed = discord.Embed(
+            title="Response to Feedback",
+            color=self.bot.default_color
+        )
+        if not channel:
+            confirm_embed.description = "The feedback channel could not be found."
+            await context.send(embed=confirm_embed)
+            return
+        try:
+            message = await channel.fetch_message(message_id)
+        except discord.NotFound:
+            confirm_embed.description = "The feedback message could not be found."
+            await context.send(embed=confirm_embed)
+            return
+        except discord.Forbidden:
+            confirm_embed.description = "I cannot access that channel."
+            await context.send(embed=confirm_embed)
+            return
+        # Send the embed reply to the feedback message
+        await message.reply(embed=reply_embed)
+        confirm_embed.description = f"Your reply has been sent to the feedback message (`{message_id}`)."
+        await context.send(embed=confirm_embed)
+        # Confirmation embed for the owner
+        confirm_embed = discord.Embed(
+            title="Response Sent",
+            description=f"Your reply has been sent to the feedback message (`{message_id}`).",
+            color=discord.Color.blue()
+        )
+        await context.send(embed=confirm_embed)
 
     @commands.Cog.listener()
     async def on_message(self, message):
