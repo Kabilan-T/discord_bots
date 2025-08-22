@@ -8,18 +8,37 @@ The following bots are currently available in the project:
 
 ### 1. AUTO 
 
-This bot is designed to perform managing tasks such as sending welcome messages, assigning roles, and moderating the server by warning, muting, and kicking users. \
+AUTO is the auto-pilot for the ship. It's job is to ensure smooth operation of the server by providing various administrative tools and features. The main functionalities include:
+- Moderation tools for handling member behavior.
+- Utilities for managing messages and voice channels.
+- Role management, including defaults and reaction roles.
+- Announcements such as welcomes, farewells, and daily highlights.
 Main file: [`auto.py`](src/auto.py)
 
 ### 2. EVE
 
-This bot is designed for fun and entertainment purposes. It can play a game of BINGO with the users in the server and it can join the voice channel and greet the users who join the channel. With Google text-to-speech, it can also read out the user messages in the voice channel aiding the users who are unable to talk in the voice channel. \
+EVE is the explorer probe of the ship, designed to make the community more engaging and entertaining.
+The main functionalities include:
+- Voice interactions with greetings, text-to-speech, and customization.
+- Watchlist management for movies and shows with announcements.
+- Meme collection and template management for fun interactions.
 Main file: [`eve.py`](src/eve.py)
 
 ### 3. M-O
 
-This bot is designed to perform utility tasks on the server. Right now, it can fetch the media content from Instagram and post it on the server. More features can be added to this bot to perform more utility tasks. \
+M-O is the clean-up specialist. Give it a task and it will make sure the server stays tidy and organized. The main functionalities include:
+- Radio streaming in voice channels with station management.
+- Instagram integration. Ask M-O to watch a channel. It will fetch media content, bio, info, and posts from the instagram links posted in the channel.
 Main file: [`mo.py`](src/mo.py)
+
+### 4. GO-4
+
+O-4 is the security and assistant officer, responsible for knowledge, assistance, and playful features. It can hold dialogues with users and provide help using LLMs. While playful, it also grants administrators some powerful and unique capabilities. The main functionalities include:
+
+- Conversational interactions powered by language models.
+- Posting a Thirukkural daily, with access to Kurals in Tamil and English.
+- Pop-culture inspired commands through the CosmicCon module.
+Main file: [`go4.py`](src/go4.py)
 
 ## Usage
 
@@ -35,6 +54,8 @@ export AUTO_BOT_TOKEN="<Enter auto bot token here>"
 export EVE_BOT_TOKEN="<Enter eve bot token here>"
 
 export MO_BOT_TOKEN="<Enter mo bot token here>"
+
+export GO4_BOT_TOKEN="<Enter go4 bot token here>"
 ```
 
 Follow the instructions in the [Installation](#installation) section to create the virtual environment and install the required packages.
@@ -53,6 +74,7 @@ Replace `<bot_name>` with the bot name you want to start. The bot names are `aut
 * ```bash run.bash auto```: Starts the AUTO bot.
 * ```bash run.bash eve```: Starts the EVE bot.
 * ```bash run.bash mo```: Starts the MO bot.
+* ```bash run.bash go4```: Starts the GO4 bot (if implemented).
 
 The bots will start executing and you can see the logs in the terminal.
 
@@ -86,12 +108,12 @@ source ~/.bashrc
 ```
 bash setup.bash
 ```
-or make the script executable and run the script.
+optional: `--with-auto-update` flag to enable automatic updates (cron job to run `update.bash` every 6 hours, which fetches the latest changes from the repository and applies them).
 
 ```
-chmod +x setup.bash
-./setup.bash
+bash setup.bash --with-auto-update
 ```
+
 
 
 Credits: [Vijhay Anandd](https://github.com/vijayanandrp)  for [Thirukkural Dataset](https://github.com/vijayanandrp/Thirukkural-Tamil-Dataset)
