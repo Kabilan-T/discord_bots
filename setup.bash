@@ -6,14 +6,27 @@ if [[ ! $(basename "$(pwd)") == "discord_bots" ]]; then
     exit 1
 fi
 
-# Check if update.bash exists
-if crontab -l | grep -q "update.bash"; then
-    echo "Cron job already exists."
+# Parse argument
+WITH_AUTO_UPDATE=false
+if [[ "$1" == "--with-auto-update" ]]; then
+    WITH_AUTO_UPDATE=true
+fi
+
+
+# Conditionally add cron job
+if $WITH_AUTO_UPDATE; then
+    echo "Checking for auto-update cron job..."
+    if crontab -l 2>/dev/null | grep -q "update.bash"; then
+        echo "Cron job already exists."
+    else
+        current_directory=$(pwd)
+        mkdir -p "$current_directory/logs"
+        # Add the cron job to run the update.bash script every 6 hours
+        (crontab -l 2>/dev/null; echo "0 */6 * * * bash $current_directory/update.bash >> $current_directory/logs/update.log 2>&1") | crontab -
+        echo "Cron job added to run update.bash every 6 hours."
+    fi
 else
-    current_directory=$(pwd)
-    # Add the cron job to run the update.sh script every 6 hours
-    (crontab -l ; echo "0 */6 * * * bash $current_directory/update.bash >> $current_directory/logs/update.log") | crontab -
-    echo "Cron job added to run the update.sh script every 6 hours."
+    echo "Skipping auto-update setup. Run './setup.bash --with-auto-update' if you want to enable it."
 fi
 
 # Check if runtime.txt file exists
