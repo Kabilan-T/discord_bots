@@ -33,11 +33,11 @@ Main file: [`mo.py`](src/mo.py)
 
 ### 4. GO-4
 
-O-4 is the security and assistant officer, responsible for knowledge, assistance, and playful features. It can hold dialogues with users and provide help using LLMs. While playful, it also grants administrators some powerful and unique capabilities. The main functionalities include:
+GO-4 is the security and assistant officer, responsible for knowledge, assistance, and playful features. It can hold dialogues with users and provide help using LLMs. While playful, it also grants administrators some powerful and unique capabilities. The main functionalities include:
 
 - Conversational interactions powered by language models.
 - Posting a Thirukkural daily, with access to Kurals in Tamil and English.
-- Pop-culture inspired commands through the CosmicCon module.
+- Pop-culture-inspired commands through the CosmicCon module.
 Main file: [`go4.py`](src/go4.py)
 
 ## Usage
