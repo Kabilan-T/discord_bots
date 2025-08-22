@@ -78,7 +78,7 @@ case "$bot_name" in
         "$python_path" src/go4.py
         ;;
     *)
-        echo "Invalid bot name. Available bots: auto, eve, mo"
+        echo "Invalid bot name. Available bots: auto, eve, mo and go4"
         exit 1
         ;;
 esac
