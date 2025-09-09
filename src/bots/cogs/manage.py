@@ -200,6 +200,72 @@ class Manage(commands.Cog, name="Manage"):
             )
         await context.send(embed=embed)
         await self.reload(context)
+        
+    @commands.command( name="get_update_log", description="Send the recent update log file.")
+    @commands.has_permissions(administrator=True)
+    async def getupdatelog(self, context: Context):
+        '''Get the recent update log file'''
+        file_name = os.path.join(os.path.dirname(self.bot.log.log_dir), 'update.log')
+        if os.path.exists(file_name):
+            with open(file_name, 'r') as f:
+                text = f.read()
+            file = discord.File(filename=file_name.split("/")[-1],
+                                fp=io.StringIO(text))
+            embed = discord.Embed(
+                title="Update Log File :scroll:",
+                description="Here is the recent update log file. :file_folder:",
+                color=self.bot.default_color,
+                )
+            await context.reply(embed=embed, file=file)
+            self.bot.log.info(f"Update log file sent to {context.author.name}", context.guild)
+        else:
+            embed = discord.Embed(
+                title="Update Log File",
+                description="No update log file found.",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed)
+
+    @commands.command( name="run_command", description="Run a command in the terminal.")
+    @commands.has_permissions(administrator=True)
+    async def runcommand(self, context: Context, *, command: str):
+        '''Run a command in the terminal'''
+        timeout_seconds = 60 # 60 seconds timeout
+        try:
+            process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.bot.log.info(f"Command '{command}' started", context.guild)
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout_seconds)
+            if stdout:
+                result = stdout.decode()
+            else:
+                result = stderr.decode()
+        except asyncio.TimeoutError:
+            result = f"Command execution timed out after {timeout_seconds} seconds."
+            process.kill()
+        except Exception as e:
+            result = f"An error occurred while executing the command: {e}"
+            process.kill()
+        
+        # embed can have only 4096 characters
+        if len(result) < 4096:
+            embed = discord.Embed(
+                title="Command Output :computer:",
+                description=f"```{result}```",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed)
+        else:
+            with open(f"{tmp}/command_output.txt", "w") as f:
+                f.write(result)
+            file = discord.File(f"{tmp}/command_output.txt")
+            embed = discord.Embed(
+                title="Command Output :computer:",
+                description=f"Output is too long to send as text *[{len(result)} characters]*.\n Here is the file.",
+                color=self.bot.default_color,
+                )
+            await context.send(embed=embed, file=file)
+            os.remove(f"{tmp}/command_output.txt")
+        self.bot.log.info(f"Command '{command}' executed", context.guild)
 
     @commands.command( name="terminate", description="Terminate the bot.")
     @commands.has_permissions(administrator=True)
