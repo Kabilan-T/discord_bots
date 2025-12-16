@@ -30,7 +30,7 @@ export EVE_BOT_TOKEN="<Enter eve bot token here>"
 
 export MO_BOT_TOKEN="<Enter mo bot token here>"
 
-export GO4_BOT_TOKEN="<Enter mo bot token here>"
+export GO4_BOT_TOKEN="<Enter go4 bot token here>"
 
 EOF
     echo "Template created in tokens.sh. Please fill in your bot tokens and then rerun the script."

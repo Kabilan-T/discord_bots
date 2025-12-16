@@ -25,7 +25,7 @@ eve:
     - 'cogs.manage'
 mo:
   name: M-O
-  username: 'GO-4#3988'
+  username: 'MO#9127' 
   client_id: '1220391241825648691'
   default_prefix: 'mo!'
   default_color: 0x8A3AB9
@@ -33,11 +33,10 @@ mo:
     - 'cogs.general'
     - 'cogs.mo.radio'
     - 'cogs.mo.instagram'
-    - 'cogs.mo.transcriber'
     - 'cogs.manage'
 go4:
   name: GO-4
-  username: 'MO#9127'
+  username: 'GO-4#3988'
   client_id: '1379850203665924190'
   default_prefix: 'go4&'
   default_color: 0x5F9EA0
