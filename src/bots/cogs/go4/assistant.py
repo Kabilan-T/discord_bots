@@ -10,48 +10,50 @@
 #-------------------------------------------------------------------------------
 
 import os
-import yaml
 import discord
 import textwrap
-import asyncio
-import aiohttp
 from discord.ext import commands
 from discord.ext.commands import Context
-from llama_index.llms.gemini import Gemini
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage, SystemMessage
+
 
 class Assistant(commands.Cog, name="Chatting Features"):
     def __init__(self, bot):
         self.bot = bot
         self.conversation_limit = 8  # Limit for conversation history
         google_api_key = os.environ['GOOGLE_API_KEY']
+        model_name = os.environ.get('GOOGLE_GEMINI_MODEL', 'gemini-2.5-flash')
         # llm with gemini model
-        self.llm = Gemini(
-            model="models/gemini-2.5-flash",
-            api_key=google_api_key
+        self.llm = ChatGoogleGenerativeAI(
+            model=model_name,
+            google_api_key=google_api_key,
+            temperature=0.7,
         )
         self.open_conversations = dict()
     
     def get_llm_response(self, query, chat_history=None, author_name=None):
-        ''' Get response from LLM with optional chat history '''
+        messages = []
+        # System / role prompt
         role_prompt = (
-            f"Your name is {self.bot.name} ",
-            "You are a multilingual (tamil and English) helpful assistant inside a Discord bot. "
+            f"Your name is {self.bot.name}. "
+            "You are a multilingual (Tamil and English) helpful assistant inside a Discord bot."
         )
-        full_prompt = "role: " + "\n-".join(role_prompt) + "\n"
         if author_name:
-            full_prompt += f"The user's name is {author_name}. "
+            role_prompt += f" The user's name is {author_name}."
+        messages.append(SystemMessage(content=role_prompt))
+        # Add chat history
         if chat_history:
-            formatted_history = "\n".join(f"User: {msg[0]}\nAssistant: {msg[1]}" for msg in chat_history)
-            query = f"{full_prompt}Chat History:\n{formatted_history}\n\nNew User Message: {query}"
-        else:
-            query = f"{full_prompt}\n\nNew User Message: {query}"
-        # save the query for debugging
-        # with open(os.path.join(self.bot.data_dir, 'query.txt'), 'a') as f:
-        #     f.write(f"Query: {query}\n")
-        if len(query) > 4000: # check if the query is too long
+            for user_msg, assistant_msg in chat_history:
+                messages.append(HumanMessage(content=user_msg))
+                messages.append(SystemMessage(content=assistant_msg))
+        messages.append(HumanMessage(content=query))
+        # Safety: approximate length check
+        total_length = sum(len(m.content) for m in messages)
+        if total_length > 4000:
             raise ValueError("Query is getting too long ...")
-        response = self.llm.complete(query)
-        return str(response)
+        response = self.llm.invoke(messages)
+        return response.content
 
     @commands.command(name='chat', description='Open a conversation with bot', aliases=['c'])
     async def chat(self, context: Context):
