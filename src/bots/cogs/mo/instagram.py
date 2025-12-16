@@ -142,7 +142,7 @@ class Instagram(commands.Cog, name="Instagram"):
         except instaloader.exceptions.InstaloaderException as e:
             return None
 
-    async def download_media_from_stories(self, username):
+    async def download_stories_from_username(self, username):
         ''' download a story from instagram username'''
         try:
             profile = instaloader.Profile.from_username(self.loader.context, username)
@@ -361,9 +361,9 @@ class Instagram(commands.Cog, name="Instagram"):
     def load_session(self, guild : discord.Guild):
         # load the session from file
         session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
-        if os.path.exists(session_dir):
+        if os.path.exists(session_dir) and len(os.listdir(session_dir)) > 0:
             session_file = os.path.join(session_dir, os.listdir(session_dir)[0])
-            username = os.listdir(session_dir)[0].split(".")[0]
+            username = os.listdir(session_dir)[0].split("-")[1]
             self.loader.load_session_from_file(username, session_file)
             self.bot.log.info("Loaded session of "+str(username)+" for guild "+str(guild.name), guild)
         else:
@@ -374,7 +374,7 @@ class Instagram(commands.Cog, name="Instagram"):
         session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
         self.clear_session(guild)
         username = self.loader.test_login()
-        session_file = os.path.join(session_dir, f"{username}.session")
+        session_file = os.path.join(session_dir, f"session-{username}")
         self.loader.save_session_to_file(session_file)
         self.bot.log.info("Saved session of "+str(username)+" for guild "+str(guild.name), guild)
     
