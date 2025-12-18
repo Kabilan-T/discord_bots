@@ -14,46 +14,13 @@ import discord
 import textwrap
 from discord.ext import commands
 from discord.ext.commands import Context
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage, SystemMessage
+from .utils.llm_workflow_graph import get_agent_response
 
 
 class Assistant(commands.Cog, name="Chatting Features"):
     def __init__(self, bot):
         self.bot = bot
-        self.conversation_limit = 8  # Limit for conversation history
-        google_api_key = os.environ['GOOGLE_API_KEY']
-        model_name = os.environ.get('GOOGLE_GEMINI_MODEL', 'gemini-2.5-flash')
-        # llm with gemini model
-        self.llm = ChatGoogleGenerativeAI(
-            model=model_name,
-            google_api_key=google_api_key,
-            temperature=0.7,
-        )
         self.open_conversations = dict()
-    
-    def get_llm_response(self, query, chat_history=None, author_name=None):
-        messages = []
-        # System / role prompt
-        role_prompt = (
-            f"Your name is {self.bot.name}. "
-            "You are a multilingual (Tamil and English) helpful assistant inside a Discord bot."
-        )
-        if author_name:
-            role_prompt += f" The user's name is {author_name}."
-        messages.append(SystemMessage(content=role_prompt))
-        # Add chat history
-        if chat_history:
-            for user_msg, assistant_msg in chat_history:
-                messages.append(HumanMessage(content=user_msg))
-                messages.append(SystemMessage(content=assistant_msg))
-        messages.append(HumanMessage(content=query))
-        # Safety: approximate length check
-        total_length = sum(len(m.content) for m in messages)
-        if total_length > 4000:
-            raise ValueError("Query is getting too long ...")
-        response = self.llm.invoke(messages)
-        return response.content
 
     @commands.command(name='chat', description='Open a conversation with bot', aliases=['c'])
     async def chat(self, context: Context):
@@ -73,7 +40,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
             await context.reply(embed=embed)
             return
         # Initialize empty chat history
-        self.open_conversations[channel][author] = []
+        self.open_conversations[channel][author] = None
         embed = discord.Embed(
             title='Let\'s Chat! :speech_balloon:',
             description="Hello! I have opened a chat session with you in this channel",
@@ -167,13 +134,13 @@ class Assistant(commands.Cog, name="Chatting Features"):
                 await message.reply(embed=embed)
                 self.bot.log.info(f'Ended chat session with {author.name} in {channel.name}', guild=message.guild)
             else:
-                # Get chat history for this user
-                chat_history = self.open_conversations[channel][author] 
+                # Get conversation state
+                conversation_state = self.open_conversations[channel][author] 
                 try:
                     # Get response from LLM with chat history
-                    response = self.get_llm_response(message.content, chat_history, author_name=author.display_name)
+                    response, last_state = get_agent_response(message.content, conversation_state)
+                    self.open_conversations[channel][author] = last_state
                 except ValueError as e:
-                    chat_history.pop()  # Remove oldest message already in history
                     embed = discord.Embed(
                         title="I'm Sorry! :confused:",
                         description='The query is getting too long. Please end the chat session and start a new one.',
@@ -181,11 +148,6 @@ class Assistant(commands.Cog, name="Chatting Features"):
                     )
                     await message.reply(embed=embed)
                     return
-                # Add this exchange to chat history (keeping last N messages if you want to limit)
-                chat_history.append((message.content, response))
-                # Limit chat history length to prevent memory issues
-                if len(chat_history) > self.conversation_limit: 
-                    chat_history.pop(0)
                 # Send response
                 parts = self.split_message(response)
                 for part in parts:
