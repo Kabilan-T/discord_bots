@@ -10,9 +10,9 @@
 import os
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, START, END
-from .llm_agents import AgentState
-from .llm_agents import agent_history_maintainer_node
-from .llm_agents import simple_conversation_node
+from llm_agents import AgentState
+from llm_agents import agent_history_maintainer_node
+from llm_agents import simple_conversation_node
 
 # Initialize the graph 
 workflow = StateGraph(AgentState)
@@ -26,9 +26,9 @@ workflow.add_edge("SimpleChat", END)
 
 agent_workflow = workflow.compile()
 
-def get_agent_response(user_message: str, previous_state: AgentState = None):
+def get_agent_response(user_message: str, user_name: str, previous_state: AgentState = None):
     ''' Get response from the agent workflow '''
-    user_msg = HumanMessage(content=user_message)
+    user_msg = HumanMessage(content=f'Name: {user_name}: Message: {user_message}')
     initial_state = {"latest_message": [user_msg]}
     if previous_state is None:
         initial_state["agent_history"] = [user_msg]
@@ -48,10 +48,11 @@ def get_agent_response(user_message: str, previous_state: AgentState = None):
 if __name__ == "__main__":
     last_state = None
     while True:
+        user_name = input("Enter your name: ")
         user_input = input("You: ")
         if user_input.lower() in ["exit", "quit"]:
             break
-        response, last_state = get_agent_response(user_input, last_state)
+        response, last_state = get_agent_response(user_input, user_name, last_state)
         print(f"Bot: {response}")
          
 

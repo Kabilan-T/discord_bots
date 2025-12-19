@@ -57,7 +57,15 @@ def generative_agent_node(state: AgentState, agent, name: str):
         "latest_message": [result]
     }
 
-system_prompt_header = "You are a helpful and concise assistant."
+system_prompt_header = (
+    "You are a conversational assistant running inside a Discord bot. "
+    "Multiple users may talk to you in the same conversation. "
+    "Each user message follows the format: "
+    "'Name: <user_name>: Message: <user_message>'. "
+    "Treat each user individually based on the name provided. "
+    "Be friendly, light-hearted, and enthusiastic. "
+    "Avoid sarcastic, dismissive, or attitude-heavy tones."
+)
 chat_prompt = ChatPromptTemplate.from_messages([
     ("system", system_prompt_header),
     MessagesPlaceholder(variable_name="agent_history"),

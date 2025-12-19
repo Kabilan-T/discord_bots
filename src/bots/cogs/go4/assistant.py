@@ -29,9 +29,9 @@ class Assistant(commands.Cog, name="Chatting Features"):
         author = context.author
         # Initialize chat history for this user in this channel
         if channel not in self.open_conversations:
-            self.open_conversations[channel] = {}
+            self.open_conversations[channel] = {'conversation_state': None, 'users': list()}
         
-        if author in self.open_conversations[channel]:
+        if author in self.open_conversations[channel].get('users', []):
             embed = discord.Embed(
                 title='Already Chatting! :speech_balloon:',
                 description="You already have an active chat session in this channel.",
@@ -40,7 +40,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
             await context.reply(embed=embed)
             return
         # Initialize empty chat history
-        self.open_conversations[channel][author] = None
+        self.open_conversations[channel]['users'].append(author)
         embed = discord.Embed(
             title='Let\'s Chat! :speech_balloon:',
             description="Hello! I have opened a chat session with you in this channel",
@@ -56,9 +56,9 @@ class Assistant(commands.Cog, name="Chatting Features"):
         channel = context.channel
         author = context.author
         
-        if channel in self.open_conversations and author in self.open_conversations[channel]:
-            del self.open_conversations[channel][author]
-            if not self.open_conversations[channel]:  # If no more users in this channel
+        if channel in self.open_conversations and author in self.open_conversations[channel].get('users', []):
+            self.open_conversations[channel]['users'].remove(author)
+            if not self.open_conversations[channel]['users']:  # If no more users in this channel
                 del self.open_conversations[channel]
             
             embed = discord.Embed(
@@ -121,10 +121,10 @@ class Assistant(commands.Cog, name="Chatting Features"):
             return
         channel = message.channel
         author = message.author
-        if channel in self.open_conversations and author in self.open_conversations[channel]:
+        if channel in self.open_conversations and author in self.open_conversations[channel].get('users', []):
             if message.content.lower() == 'end':
-                del self.open_conversations[channel][author]
-                if not self.open_conversations[channel]:  # If no more users in this channel
+                self.open_conversations[channel]['users'].remove(author)
+                if not self.open_conversations[channel]['users']:  # If no more users in this channel
                     del self.open_conversations[channel]
                 embed = discord.Embed(
                     title='Closing Chat :wave:',
@@ -135,11 +135,11 @@ class Assistant(commands.Cog, name="Chatting Features"):
                 self.bot.log.info(f'Ended chat session with {author.name} in {channel.name}', guild=message.guild)
             else:
                 # Get conversation state
-                conversation_state = self.open_conversations[channel][author] 
+                conversation_state = self.open_conversations[channel].get('conversation_state', None)
                 try:
                     # Get response from LLM with chat history
-                    response, last_state = get_agent_response(message.content, conversation_state)
-                    self.open_conversations[channel][author] = last_state
+                    response, last_state = get_agent_response(message.content, author.display_name, conversation_state)
+                    self.open_conversations[channel]['conversation_state'] = last_state
                 except ValueError as e:
                     embed = discord.Embed(
                         title="I'm Sorry! :confused:",
