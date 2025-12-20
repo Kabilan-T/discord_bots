@@ -15,7 +15,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 google_api_key = os.environ['GOOGLE_API_KEY']
-model_name = os.environ.get('GOOGLE_GEMINI_MODEL', 'gemini-2.5-flash')
+model_name = os.environ.get('GOOGLE_GEMINI_MODEL', 'models/gemma-3-27b-it')
 # llm with gemini model
 llm = ChatGoogleGenerativeAI(
     model=model_name,
@@ -63,11 +63,11 @@ system_prompt_header = (
     "Each user message follows the format: "
     "'Name: <user_name>: Message: <user_message>'. "
     "Treat each user individually based on the name provided. "
-    "Be friendly, light-hearted, and enthusiastic. "
+    "Be friendly, light-hearted, but less enthusiastic. "
     "Avoid sarcastic, dismissive, or attitude-heavy tones."
 )
 chat_prompt = ChatPromptTemplate.from_messages([
-    ("system", system_prompt_header),
+    ("human", system_prompt_header),
     MessagesPlaceholder(variable_name="agent_history"),
     MessagesPlaceholder(variable_name="latest_message"),
 ])

@@ -10,9 +10,9 @@
 import os
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, START, END
-from llm_agents import AgentState
-from llm_agents import agent_history_maintainer_node
-from llm_agents import simple_conversation_node
+from .llm_agents import AgentState
+from .llm_agents import agent_history_maintainer_node
+from .llm_agents import simple_conversation_node
 
 # Initialize the graph 
 workflow = StateGraph(AgentState)
@@ -31,9 +31,9 @@ def get_agent_response(user_message: str, user_name: str, previous_state: AgentS
     user_msg = HumanMessage(content=f'Name: {user_name}: Message: {user_message}')
     initial_state = {"latest_message": [user_msg]}
     if previous_state is None:
-        initial_state["agent_history"] = [user_msg]
+        initial_state["agent_history"] = []
     else:
-        initial_state["agent_history"] = previous_state["agent_history"] + [user_msg]
+        initial_state["agent_history"] = previous_state["agent_history"] + []
 
     for step in agent_workflow.stream(initial_state):
         if "__end__" in step:
