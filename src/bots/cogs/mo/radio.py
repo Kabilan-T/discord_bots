@@ -299,7 +299,11 @@ class Radio(commands.Cog, name="Radio FM"):
             voice_channel = context.author.voice.channel
         self.called_channel[context.guild.id] = context.channel
         if context.voice_client is None:
-            await voice_channel.connect()
+            try:
+                await voice_channel.connect()
+            except:
+                await self.hard_disconnect(context.guild, force=True)
+                await voice_channel.connect()
             self.now_playing.pop(context.guild.id, None)
             embed = discord.Embed(
                 title=f"Joined {voice_channel.name} :microphone:",
@@ -319,7 +323,11 @@ class Radio(commands.Cog, name="Radio FM"):
             self.bot.log.warning(f"{self.bot.name} tried to join voice channel {voice_channel.name} in {context.guild.name} when already in it", context.guild)
             return False
         else:
-            await context.voice_client.move_to(voice_channel)
+            try:
+                await context.voice_client.move_to(voice_channel)
+            except:
+                await self.hard_disconnect(context.guild, force=True)
+                await voice_channel.connect()
             embed = discord.Embed(
                 title=f"Moved to {voice_channel.name} :person_running:",
                 description="I have moved to the voice channel",
@@ -344,7 +352,7 @@ class Radio(commands.Cog, name="Radio FM"):
             return
         voice_client.stop()
         self.now_playing.pop(context.guild.id, None)
-        await voice_client.disconnect(force=force)
+        await self.hard_disconnect(context.guild, force=force)
         embed = discord.Embed(
                 title="Radio FM",
                 description="I have disconnected from the voice channel",
@@ -432,7 +440,7 @@ class Radio(commands.Cog, name="Radio FM"):
                     if voice_client.is_playing():
                         voice_client.stop()
                         self.now_playing.pop(before.channel.guild.id, None)
-                    await voice_client.disconnect()
+                    await self.hard_disconnect(before.channel.guild, force=True)
                     embed = discord.Embed(
                         title="Radio FM",
                         description="I have disconnected as no one is in the voice channel",
@@ -442,6 +450,21 @@ class Radio(commands.Cog, name="Radio FM"):
                     if called_channel is not None:
                         await called_channel.send(embed=embed)
                     self.bot.log.info(f"Disconnected from voice channel {before.channel.name} in {before.channel.guild.name}")
+
+    async def _hard_disconnect(self, guild: discord.Guild, *, force: bool = True):
+        ''' Forcefully disconnect the bot from the voice channel in the guild '''
+        voice_client = guild.voice_client
+        if voice_client is None:
+            return
+        try:
+            if voice_client.is_playing():
+                voice_client.stop()
+        except Exception:
+            pass
+        try:
+            await voice_client.disconnect(force=force)
+        except Exception:
+            pass
     
 async def setup(bot):
     await bot.add_cog(Radio(bot))

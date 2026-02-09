@@ -52,35 +52,27 @@ class Voice(commands.Cog, name="Voice Features"):
                 return False
             voice_channel = context.author.voice.channel
         self.called_channel[context.guild.id] = context.channel
-        if context.voice_client is None:
+        if context.guild.voice_client is not None:
+            await self._hard_disconnect(context.guild, force=True)
+        try:
             await voice_channel.connect()
-            embed = discord.Embed(
-                title=f"Joined {voice_channel.name} :microphone:",
-                description="I have joined the voice channel",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.info(f"{self.bot.name} joined voice channel {voice_channel.name} in {context.guild.name}", context.guild)
-            return True
-        elif context.voice_client.channel == voice_channel:
-            embed = discord.Embed(
-                title=f"Already in {voice_channel.name} :confused:",
-                description="I am already in the voice channel",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.warning(f"{self.bot.name} tried to join voice channel {voice_channel.name} in {context.guild.name} when already in it", context.guild)
-            return False
-        else:
-            await context.voice_client.move_to(voice_channel)
-            embed = discord.Embed(
-                title=f"Moved to {voice_channel.name} :person_running:",
-                description="I have moved to the voice channel",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.info(f"{self.bot.name} moved to voice channel {voice_channel.name} in {context.guild.name}", context.guild)
-            return True
+        except Exception as e:
+            self.bot.log.warning(f"Voice connect failed, retrying after hard reset: {e}", context.guild)
+            await self._hard_disconnect(context.guild, force=True)
+            await asyncio.sleep(1)
+            await voice_channel.connect()
+
+        embed = discord.Embed(
+            title=f"Joined {voice_channel.name} :microphone:",
+            description="I have joined the voice channel",
+            color=self.bot.default_color,
+        )
+        await context.reply(embed=embed)
+        self.bot.log.info(
+            f"{self.bot.name} joined voice channel {voice_channel.name} in {context.guild.name}",
+            context.guild,
+        )
+        return True
     
     @commands.command(name="say", description="Say the text in the voice channel",  aliases=["s"])
     async def say(self, context: Context, *, text: str):
@@ -140,8 +132,7 @@ class Voice(commands.Cog, name="Voice Features"):
             self.bot.log.warning(f"{context.author} tried to use leave command without being in a voice channel", context.guild)
             return
         channel = context.voice_client.channel
-        context.voice_client.stop()
-        await context.voice_client.disconnect(force=force)
+        await self._hard_disconnect(context.guild, force=force)
         embed = discord.Embed(
             title="Left the voice channel :wave:",
             description="I have left the voice channel",
@@ -273,8 +264,9 @@ class Voice(commands.Cog, name="Voice Features"):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if member.bot: return
-        if member.guild.voice_client is None or member.guild.voice_client.is_playing(): return # ignore if bot is not in a voice channel or is speaking
-        if before.channel != after.channel and after.channel == member.guild.voice_client.channel:
+        voice_client = member.guild.voice_client
+        if voice_client is None or voice_client.is_playing(): return # ignore if bot is not in a voice channel or is speaking
+        if before.channel != after.channel and after.channel == voice_client.channel:
             greet_message = "Vanakkam " + f"{member.display_name}"
             if str(member.guild.id) in self.greet_messages.keys():
                 if str(member.id) in self.greet_messages[str(member.guild.id)].keys():
@@ -286,17 +278,18 @@ class Voice(commands.Cog, name="Voice Features"):
             os.makedirs(os.path.dirname(file), exist_ok=True)
             tts.save(file)
             await asyncio.sleep(3) 
-            member.guild.voice_client.play(discord.FFmpegPCMAudio(file))
-            member.guild.voice_client.source = discord.PCMVolumeTransformer(member.guild.voice_client.source)
-            member.guild.voice_client.source.volume = self.volume / 100
-            self.bot.log.info(f"{self.bot.name} greeted {member.display_name} in voice channel {member.guild.voice_client.channel.name} in {member.guild.name}", member.guild)
-        elif before.channel != after.channel and before.channel == member.guild.voice_client.channel:
+            voice_client.play(discord.FFmpegPCMAudio(file))
+            voice_client.source = discord.PCMVolumeTransformer(voice_client.source)
+            voice_client.source.volume = self.volume / 100
+            self.bot.log.info(f"{self.bot.name} greeted {member.display_name} in voice channel {voice_client.channel.name} in {member.guild.name}", member.guild)
+        elif before.channel != after.channel and before.channel == voice_client.channel:
             if len(before.channel.members) == 1:
                 await asyncio.sleep(5)
+                voice_client_2 = before.channel.guild.voice_client
                 if len(before.channel.members) == 1:
-                    if before.channel.guild.voice_client.is_playing():
-                        before.channel.guild.voice_client.stop()
-                    await before.channel.guild.voice_client.disconnect()
+                    if voice_client_2.is_playing():
+                        voice_client_2.stop()
+                    await self._hard_disconnect(before.channel.guild, force=True)
                     embed = discord.Embed(
                         title="I'm leaving :wave:",
                         description=f"I have left the voice channel {before.channel.name} as I was alone",
@@ -306,6 +299,21 @@ class Voice(commands.Cog, name="Voice Features"):
                     if called_channel is not None:
                         await called_channel.send(embed=embed)
                     self.bot.log.info(f"{self.bot.name} left voice channel {before.channel.name} in {before.channel.guild.name} as the last member left", before.channel.guild)
+
+    async def _hard_disconnect(self, guild: discord.Guild, *, force: bool = True):
+        ''' Forcefully disconnect the bot from the voice channel in the guild '''
+        voice_client = guild.voice_client
+        if voice_client is None:
+            return
+        try:
+            if voice_client.is_playing():
+                voice_client.stop()
+        except Exception:
+            pass
+        try:
+            await voice_client.disconnect(force=force)
+        except Exception:
+            pass
     
     def save_greet_messages(self):
         ''' Save the greet messages to a file '''
