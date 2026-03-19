@@ -17,7 +17,7 @@ instaloader==4.14.1
 
 # Discord / messaging
 PyNaCl==1.5.0
-discord.py==2.5.2
+discord.py==2.7.1
 
 # Google TTS / audio
 gTTS==2.5.0
