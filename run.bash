@@ -49,33 +49,22 @@ fi
 
 echo "Virtual environment 'discord_bots_env' activated."
 
-# Read Python version from runtime.txt
-python_version=$(cat runtime.txt)
-
-# Check if the desired Python version exists and is available in the system
-python_path=$(which "python$python_version")
-
-if [ -z "$python_path" ]; then
-    echo "Python $python_version is not installed. Please install the required version."
-    exit 1
-fi
-
 # Source token file
 source tokens.sh
 
 # Run the corresponding bot based on the provided argument
 case "$bot_name" in
     "auto")
-        "$python_path" src/auto.py
+        python src/auto.py
         ;;
     "eve")
-        "$python_path" src/eve.py
+        python src/eve.py
         ;;
     "mo")
-        "$python_path" src/mo.py
+        python src/mo.py
         ;;
     "go4")
-        "$python_path" src/go4.py
+        python src/go4.py
         ;;
     *)
         echo "Invalid bot name. Available bots: auto, eve, mo and go4"
