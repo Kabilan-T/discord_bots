@@ -13,7 +13,9 @@ import os
 import re
 import yaml
 import math
+import shutil
 import asyncio
+import functools
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -37,8 +39,7 @@ class Instagram(commands.Cog, name="Instagram"):
         '''Download a media from instagram and show it'''
         match = re.match(instagram_regex, message)
         if match is not None:
-            print("Matched")
-            await self.send_media(context.reply, message, context.guild)
+            await self.send_media(message, context.reply, context.guild)
         else:
             embed = discord.Embed(
                     title="Sorry! There is some problem. :sweat:",
@@ -103,7 +104,12 @@ class Instagram(commands.Cog, name="Instagram"):
                 size = os.path.getsize(tmp_download_dir+"/"+file) # in bytes
                 media_files.append({"file": media_file, "size": size})
         self.bot.log.info("Downloaded "+str(len(media_files))+" files from instagram", guild)
-        os.system("rm -rf "+tmp_download_dir+"/*")
+        for item in os.listdir(tmp_download_dir):
+            item_path = os.path.join(tmp_download_dir, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
         embed = self.get_media_description(media, media_type, guild)
         # Check if any file exceeds the maximum size
         skip_files = list()
@@ -119,6 +125,7 @@ class Instagram(commands.Cog, name="Instagram"):
             embed.description = f"Sorry! There is some problem. :sweat:\nAll files exceed the maximum attachment size of 25MB:  ({', '.join(skipped_sizes)})"
             await replier(embed=embed)
             self.bot.log.warning(f"Failed to send media. All files exceed the maximum attachment size of 25MB ({', '.join(skipped_sizes)})", guild)
+            return
         num_files = len(media_files)
         if num_files > max_num_attachment:
             #Send files in chunks (split files evenly)
@@ -134,19 +141,25 @@ class Instagram(commands.Cog, name="Instagram"):
             self.bot.log.info(f"Sending {num_files} attachments from instagram", guild)
 
     async def download_media_from_shortcode(self, shortcode):
-        ''' download a media from instagram shortcode'''
+        ''' download a media from instagram shortcode (runs in executor to avoid blocking event loop)'''
         try:
-            post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
-            self.loader.download_post(post, target=tmp_download_dir)
+            loop = asyncio.get_event_loop()
+            post = await loop.run_in_executor(None, functools.partial(
+                instaloader.Post.from_shortcode, self.loader.context, shortcode))
+            await loop.run_in_executor(None, functools.partial(
+                self.loader.download_post, post, target=tmp_download_dir))
             return post
         except instaloader.exceptions.InstaloaderException as e:
             return None
 
     async def download_stories_from_username(self, username):
-        ''' download a story from instagram username'''
+        ''' download a story from instagram username (runs in executor to avoid blocking event loop)'''
         try:
-            profile = instaloader.Profile.from_username(self.loader.context, username)
-            self.loader.download_stories([profile.userid],  filename_target=tmp_download_dir)
+            loop = asyncio.get_event_loop()
+            profile = await loop.run_in_executor(None, functools.partial(
+                instaloader.Profile.from_username, self.loader.context, username))
+            await loop.run_in_executor(None, functools.partial(
+                self.loader.download_stories, [profile.userid], filename_target=tmp_download_dir))
             return profile
         except instaloader.exceptions.InstaloaderException as e:
             return None
@@ -195,8 +208,16 @@ class Instagram(commands.Cog, name="Instagram"):
         '''Unset the channel to watch for instagram links'''
         if channel == None:
             channel = context.channel
-        if str(context.guild.id) not in self.channels_to_watch.keys():
-            self.channels_to_watch[str(context.guild.id)] = list()
+        if str(context.guild.id) not in self.channels_to_watch.keys() or \
+                str(channel.id) not in self.channels_to_watch[str(context.guild.id)]:
+            embed = discord.Embed(
+                    title="Instagram channel unset",
+                    description=channel.mention+" is not in the watch list.",
+                    color=self.bot.default_color,
+                    )
+            await context.send(embed=embed)
+            self.bot.log.warning("Channel "+str(channel.id)+" not in watch list.", context.guild)
+            return
         self.channels_to_watch[str(context.guild.id)].remove(str(channel.id))
         self.save_channel_watch_list()
         embed = discord.Embed(
@@ -382,7 +403,7 @@ class Instagram(commands.Cog, name="Instagram"):
         # clear the session
         session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
         if os.path.exists(session_dir):
-            os.system("rm -rf "+session_dir)
+            shutil.rmtree(session_dir)
             self.bot.log.info("Cleared session for guild "+str(guild.name), guild)
         else:
             self.bot.log.info("No existing session found for guild "+str(guild.name), guild)
