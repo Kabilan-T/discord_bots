@@ -23,7 +23,6 @@ discord.py==2.5.2
 gTTS==2.5.0
 pydub==0.25.1
 
-# LangChain and LangGraph
+# LangChain
 langchain_core==1.2.1
 langchain_google_genai==4.0.0
-langgraph==1.0.5
