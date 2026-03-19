@@ -130,9 +130,9 @@ class Radio(commands.Cog, name="Radio FM"):
             await context.reply(embed=embed)
             self.bot.log.info(f"{context.author} set the volume to {volume} in {context.guild.name}", context.guild)
 
-    @commands.command(name="stop_radio", description="Stop radio in the voice channel", aliases=["stop", "st"])
+    @commands.command(name="stop_radio", description="Stop radio but stay in the voice channel", aliases=["stop", "st"])
     async def radio_stop(self, context: Context):
-        ''' Stop radio in the voice channel '''
+        ''' Stop radio but stay in the voice channel '''
         voice_client = context.voice_client
         if voice_client is None:
             embed = discord.Embed(
@@ -145,7 +145,6 @@ class Radio(commands.Cog, name="Radio FM"):
             return
         voice_client.stop()
         self.now_playing.pop(context.guild.id, None)
-        await voice_client.disconnect(force=True)
         embed = discord.Embed(
                 title="Radio FM",
                 description="I have stopped the radio",
@@ -302,7 +301,7 @@ class Radio(commands.Cog, name="Radio FM"):
             try:
                 await voice_channel.connect()
             except:
-                await self.hard_disconnect(context.guild, force=True)
+                await self._hard_disconnect(context.guild, force=True)
                 await voice_channel.connect()
             self.now_playing.pop(context.guild.id, None)
             embed = discord.Embed(
@@ -326,7 +325,7 @@ class Radio(commands.Cog, name="Radio FM"):
             try:
                 await context.voice_client.move_to(voice_channel)
             except:
-                await self.hard_disconnect(context.guild, force=True)
+                await self._hard_disconnect(context.guild, force=True)
                 await voice_channel.connect()
             embed = discord.Embed(
                 title=f"Moved to {voice_channel.name} :person_running:",
@@ -352,7 +351,7 @@ class Radio(commands.Cog, name="Radio FM"):
             return
         voice_client.stop()
         self.now_playing.pop(context.guild.id, None)
-        await self.hard_disconnect(context.guild, force=force)
+        await self._hard_disconnect(context.guild, force=force)
         embed = discord.Embed(
                 title="Radio FM",
                 description="I have disconnected from the voice channel",
@@ -440,7 +439,7 @@ class Radio(commands.Cog, name="Radio FM"):
                     if voice_client.is_playing():
                         voice_client.stop()
                         self.now_playing.pop(before.channel.guild.id, None)
-                    await self.hard_disconnect(before.channel.guild, force=True)
+                    await self._hard_disconnect(before.channel.guild, force=True)
                     embed = discord.Embed(
                         title="Radio FM",
                         description="I have disconnected as no one is in the voice channel",
