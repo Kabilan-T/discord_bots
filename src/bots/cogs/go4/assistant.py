@@ -139,24 +139,27 @@ class Assistant(commands.Cog, name="Chatting Features"):
 
     @commands.command(name='chats', description='List all tracked conversations')
     async def list_chats(self, context: Context):
-        ''' List all active LLM conversations '''
-        if not self.conversations:
+        ''' List all active LLM conversations in this server '''
+        guild_convs = [(cid, conv) for cid, conv in self.conversations.items()
+                       if conv['guild_id'] == context.guild.id]
+
+        if not guild_convs:
             embed = discord.Embed(
                 title='No Conversations',
-                description='There are no tracked conversations.',
+                description='There are no tracked conversations in this server.',
                 color=self.bot.default_color,
             )
             await context.reply(embed=embed)
             return
 
         lines = []
-        for i, (conv_id, conv) in enumerate(self.conversations.items(), 1):
+        for i, (conv_id, conv) in enumerate(guild_convs, 1):
             ts = conv['created_at'].strftime("%Y-%m-%d %H:%M:%S")
             msg_count = len(conv['history'])
             lines.append(f"`{i}.` **{conv['user']}** — {ts} ({msg_count} messages) `{conv_id}`")
 
         embed = discord.Embed(
-            title=f'Conversations ({len(self.conversations)})',
+            title=f'Conversations ({len(guild_convs)})',
             description='\n'.join(lines),
             color=self.bot.default_color,
         )
@@ -165,7 +168,8 @@ class Assistant(commands.Cog, name="Chatting Features"):
     @commands.command(name='clear_chat', description='Clear a conversation by its list number')
     async def clear_chat(self, context: Context, sl_no: int):
         ''' Clear a specific conversation (use the number from the chats list) '''
-        conv_list = list(self.conversations.keys())
+        conv_list = [cid for cid, conv in self.conversations.items()
+                     if conv['guild_id'] == context.guild.id]
         if not conv_list:
             embed = discord.Embed(
                 title='No Conversations',
