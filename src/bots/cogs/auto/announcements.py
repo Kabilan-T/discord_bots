@@ -67,7 +67,7 @@ class Announcements(commands.Cog, name="Announcements"):
         
     def load_holiday_data(self):
         ''' Load holidays data from file '''
-        data_fpath = os.path.join(self.bot.data_dir, "holidays_2025.yml")
+        data_fpath = os.path.join(self.bot.data_dir, "holidays_2026.yml")
         if not os.path.exists(data_fpath):
             self.bot.log.warning(f"Holidays file not found in {data_fpath}")
             return None

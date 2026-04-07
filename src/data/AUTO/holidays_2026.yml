@@ -1,0 +1,157 @@
+'2026-01-01':
+- name: New Year's Day
+  description: New Year's Day is a public holiday in DE.
+  types: National holiday
+'2026-01-04':
+- name: World Braille Day
+  description: Celebrates the life and achievements of Louis Braille, who invented
+    the braille code for the visually impaired.
+  types: United Nations observance
+'2026-01-07':
+- name: International Programmers' Day
+  description: Many people celebrate International Programmers' Day on January 7,
+    while others observe this event on the 256th day of the year.
+  types: Worldwide observance
+'2026-01-19':
+- name: Martin Luther King Jr. Day
+  description: Martin Luther King Jr. Day is a public holiday in US.
+  types: National holiday
+'2026-02-14':
+- name: Valentine's Day
+  description: Valentine's Day, also called Saint Valentine's Day, is observed on
+    February 14 each year.
+  types: Worldwide observance
+'2026-02-16':
+- name: Washington's Birthday
+  description: Washington's Birthday is a public holiday in US.
+  types: National holiday
+'2026-03-08':
+- name: International Women's Day
+  description: International Women's Day is a global day celebrating the social, economic,
+    cultural, and political achievements of women.
+  types: United Nations observance
+'2026-03-14':
+- name: Pi Day
+  description: Pi Day is an annual celebration of the mathematical constant π (pi),
+    held on March 14.
+  types: Worldwide observance
+'2026-04-01':
+- name: April Fools' Day
+  description: April Fools' Day is an annual custom on April 1 consisting of practical
+    jokes and hoaxes.
+  types: Worldwide observance
+'2026-04-03':
+- name: Good Friday
+  description: Good Friday is a public holiday in DE.
+  types: National holiday
+'2026-04-06':
+- name: Easter Monday
+  description: Easter Monday is a public holiday in DE.
+  types: National holiday
+'2026-04-22':
+- name: Earth Day
+  description: Earth Day is an annual event on April 22 to demonstrate support for
+    environmental protection.
+  types: United Nations observance
+'2026-05-01':
+- name: Labor Day
+  description: Labor Day is a public holiday in DE.
+  types: National holiday
+'2026-05-04':
+- name: May Day
+  description: May Day is a public holiday in GB.
+  types: National holiday
+- name: Star Wars Day
+  description: Star Wars Day is an informal commemorative day observed annually on
+    May 4.
+  types: Worldwide observance
+'2026-05-14':
+- name: Ascension Day
+  description: Ascension Day is a public holiday in DE.
+  types: National holiday
+'2026-05-25':
+- name: Whit Monday
+  description: Whit Monday is a public holiday in DE.
+  types: National holiday
+- name: Memorial Day
+  description: Memorial Day is a public holiday in US.
+  types: National holiday
+- name: Spring Bank Holiday
+  description: Spring Bank Holiday is a public holiday in GB.
+  types: National holiday
+'2026-06-05':
+- name: World Environment Day
+  description: World Environment Day is celebrated every year on June 5 and is the
+    United Nations' principal vehicle for encouraging awareness and action for the
+    protection of our environment.
+  types: United Nations observance
+'2026-06-19':
+- name: Juneteenth National Independence Day
+  description: Juneteenth National Independence Day is a public holiday in US.
+  types: National holiday
+'2026-07-03':
+- name: Independence Day (observed)
+  description: Independence Day (observed) is a public holiday in US.
+  types: National holiday
+'2026-07-04':
+- name: Independence Day
+  description: Independence Day is a public holiday in US.
+  types: National holiday
+'2026-08-12':
+- name: International Youth Day
+  description: International Youth Day is a United Nations observance day held on
+    August 12.
+  types: United Nations observance
+'2026-09-07':
+- name: Labor Day
+  description: Labor Day is a public holiday in US.
+  types: National holiday
+'2026-09-13':
+- name: International Programmers' Day (256th day)
+  description: Observed on the 256th day of non-leap years (September 13), celebrating
+    all programmers.
+  types: Worldwide observance
+'2026-10-03':
+- name: German Unity Day
+  description: German Unity Day is a public holiday in DE.
+  types: National holiday
+'2026-10-12':
+- name: Columbus Day
+  description: Columbus Day is a public holiday in US.
+  types: National holiday
+'2026-10-31':
+- name: Halloween
+  description: Halloween is a celebration observed in many countries on the evening
+    of October 31.
+  types: Worldwide observance
+'2026-11-11':
+- name: Veterans Day
+  description: Veterans Day is a public holiday in US.
+  types: National holiday
+- name: Remembrance Day
+  description: Remembrance Day is observed in Commonwealth countries to remember the
+    members of their armed forces who have died in wars.
+  types: Observance
+'2026-11-26':
+- name: Thanksgiving Day
+  description: Thanksgiving Day is a public holiday in US.
+  types: National holiday
+'2026-12-25':
+- name: Christmas Day
+  description: Christmas Day is a public holiday in DE.
+  types: National holiday
+'2026-12-26':
+- name: Second Day of Christmas
+  description: Second Day of Christmas is a public holiday in DE.
+  types: National holiday
+- name: Boxing Day
+  description: Boxing Day is a public holiday in GB.
+  types: National holiday
+'2026-12-28':
+- name: Boxing Day (observed)
+  description: Boxing Day (observed) is a public holiday in GB.
+  types: National holiday
+'2026-12-31':
+- name: New Year's Eve
+  description: New Year's Eve is the last day of the year, December 31.
+  types: Worldwide observance
