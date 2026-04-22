@@ -115,7 +115,7 @@ class DevControl(commands.Cog, name="Developer Control"):
             embed = discord.Embed(
                 title="Error",
                 description="The specified guild could not be found.",
-                color=self.bot.error_color
+                color=discord.Color.red()
             )
             await context.send(embed=embed)
             return
@@ -124,7 +124,7 @@ class DevControl(commands.Cog, name="Developer Control"):
             embed = discord.Embed(
                 title="Error",
                 description="The specified channel could not be found in the specified guild.",
-                color=self.bot.error_color
+                color=discord.Color.red()
             )
             await context.send(embed=embed)
             return
@@ -145,7 +145,7 @@ class DevControl(commands.Cog, name="Developer Control"):
             embed = discord.Embed(
                 title="Error",
                 description="I do not have permission to send messages in the specified channel.",
-                color=self.bot.error_color
+                color=discord.Color.red()
             )
             await context.send(embed=embed)
 
@@ -166,7 +166,7 @@ class DevControl(commands.Cog, name="Developer Control"):
             embed = discord.Embed(
                 title="Error",
                 description="The specified guild could not be found.",
-                color=self.bot.error_color
+                color=discord.Color.red()
             )
             await context.send(embed=embed)
             return
@@ -203,7 +203,7 @@ class DevControl(commands.Cog, name="Developer Control"):
             embed = discord.Embed(
                 title="Error",
                 description="The specified guild could not be found.",
-                color=self.bot.error_color
+                color=discord.Color.red()
             )
             await context.send(embed=embed)
             return
@@ -212,7 +212,7 @@ class DevControl(commands.Cog, name="Developer Control"):
             embed = discord.Embed(
                 title="Error",
                 description="The specified channel could not be found in the specified guild.",
-                color=self.bot.error_color
+                color=discord.Color.red()
             )
             await context.send(embed=embed)
             return
@@ -224,7 +224,7 @@ class DevControl(commands.Cog, name="Developer Control"):
             embed = discord.Embed(
                 title="Error",
                 description="I do not have permission to read messages in the specified channel.",
-                color=self.bot.error_color
+                color=discord.Color.red()
             )
             await context.send(embed=embed)
             return

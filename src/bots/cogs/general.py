@@ -98,7 +98,7 @@ class General(commands.Cog, name="General"):
             embed = discord.Embed(
                 title="Error",
                 description="You do not have permission to send messages in this channel.",
-                color=self.bot.error_color,
+                color=discord.Color.red(),
                 )
             await context.reply(embed=embed)
             return
