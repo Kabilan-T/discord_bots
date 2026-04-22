@@ -103,6 +103,7 @@ class General(commands.Cog, name="General"):
             await context.reply(embed=embed)
             return
         await channel.send(message)
+        self.bot.log.info(f"{context.author} used echo to send the text '{message}' in {channel.name}", context.guild)
     
     @commands.command( name="dm", description="Send a direct message to a user.")
     @commands.has_permissions(moderate_members=True)
@@ -137,6 +138,7 @@ class General(commands.Cog, name="General"):
             color=self.bot.default_color,
             )
         await context.reply(embed=embed)
+        self.bot.log.info(f"{context.author} used DM to send the text '{message}' to {user.name}", context.guild)
     
     @commands.command( name="prefix", description="Change the bot prefix.")
     @commands.has_permissions(moderate_members=True)
@@ -240,54 +242,6 @@ class General(commands.Cog, name="General"):
         # Fallback if owner not set or DM failed
         self.bot.log.warning(f"Feedback from {context.author.name} (ID: {context.author.id}) could not be sent to the owner.\n{feedback.to_dict()}",guild=context.guild)
         await context.send(embed=embed_default)
-
-    @commands.command(name="respond_to_feedback", description="Respond to a feedback message.", aliases=["respond"], hidden=True)
-    async def respond_to_feedback(self, context: Context, guild_id: int, channel_id: int, message_id: int, *, response: str):
-        '''Respond to a feedback message.'''
-        # Only allow the bot owner to use this command
-        if context.author.id != self.owner_id:
-            embed = discord.Embed(
-                title="Unauthorized",
-                description="You are not authorized to use this command.",
-                color=discord.Color.red()
-            )
-            await context.send(embed=embed)
-            return
-        channel = self.bot.get_channel(channel_id)
-        reply_embed = discord.Embed(
-            title="Response from the Developer",
-            description=response,
-            color=self.bot.default_color
-        )
-        confirm_embed = discord.Embed(
-            title="Response to Feedback",
-            color=self.bot.default_color
-        )
-        if not channel:
-            confirm_embed.description = "The feedback channel could not be found."
-            await context.send(embed=confirm_embed)
-            return
-        try:
-            message = await channel.fetch_message(message_id)
-        except discord.NotFound:
-            confirm_embed.description = "The feedback message could not be found."
-            await context.send(embed=confirm_embed)
-            return
-        except discord.Forbidden:
-            confirm_embed.description = "I cannot access that channel."
-            await context.send(embed=confirm_embed)
-            return
-        # Send the embed reply to the feedback message
-        await message.reply(embed=reply_embed)
-        confirm_embed.description = f"Your reply has been sent to the feedback message (`{message_id}`)."
-        await context.send(embed=confirm_embed)
-        # Confirmation embed for the owner
-        confirm_embed = discord.Embed(
-            title="Response Sent",
-            description=f"Your reply has been sent to the feedback message (`{message_id}`).",
-            color=discord.Color.blue()
-        )
-        await context.send(embed=confirm_embed)
 
     @commands.Cog.listener()
     async def on_message(self, message):

@@ -190,7 +190,10 @@ class BaseBot(commands.Bot):
                 description=f"An unexpected error occurred while executing the command.",
                 color=discord.Color.red(),
             )
-            self.log.error(f"Unknown error in command '{context.command.name}' by @{context.author.name} in #{context.channel.name} of {context.guild.name}\nException: `{e}`", context.guild)
+            if isinstance(context.channel, discord.channel.DMChannel):
+                self.log.error(f"Unknown error in command '{context.command.name}' by @{context.author.name} in DMs\nException: `{e}`", context.guild)
+            else:
+                self.log.error(f"Unknown error in command '{context.command.name}' by @{context.author.name} in #{context.channel.name} of {context.guild.name}\nException: `{e}`", context.guild)
             await context.send(embed=embed)
 
     async def on_connect(self):

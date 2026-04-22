@@ -11,6 +11,7 @@ auto:
     - 'cogs.auto.utilities'
     - 'cogs.auto.roles'
     - 'cogs.manage'
+    - 'cogs.dev_control'
 eve:
   name: EVE
   username: 'EVE#4830'
@@ -23,6 +24,7 @@ eve:
     - 'cogs.eve.watchlist'
     - 'cogs.eve.meme'
     - 'cogs.manage'
+    - 'cogs.dev_control'
 mo:
   name: M-O
   username: 'MO#9127' 
@@ -34,6 +36,7 @@ mo:
     - 'cogs.mo.radio'
     - 'cogs.mo.instagram'
     - 'cogs.manage'
+    - 'cogs.dev_control'
 go4:
   name: GO-4
   username: 'GO-4#3988'
@@ -46,4 +49,5 @@ go4:
     - 'cogs.go4.thirukkural'
     - 'cogs.go4.cosmic_con'
     - 'cogs.manage'
+    - 'cogs.dev_control'
 
