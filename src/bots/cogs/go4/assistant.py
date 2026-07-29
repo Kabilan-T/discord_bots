@@ -17,7 +17,7 @@ from datetime import datetime
 from collections import OrderedDict
 from discord.ext import commands
 from discord.ext.commands import Context
-from .utils.llm_workflow_graph import get_agent_response
+from .utils.llm_agent import get_agent_response
 
 
 class Assistant(commands.Cog, name="Chatting Features"):

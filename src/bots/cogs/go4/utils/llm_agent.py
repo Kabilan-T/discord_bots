@@ -11,7 +11,7 @@
 
 import os
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 google_api_key = os.environ['GOOGLE_API_KEY']
 
@@ -25,8 +25,7 @@ _llm_kwargs = dict(
 
 _google_search = [{'google_search': {}}]
 
-# gemini-2.5-flash-lite: 30 RPM / 1500 RPD free tier, 1M token context window
-llm = ChatGoogleGenerativeAI(model='gemini-2.5-flash-lite', **_llm_kwargs).bind_tools(_google_search)
+llm = ChatGoogleGenerativeAI(model='gemma-4-31b-it', **_llm_kwargs).bind_tools(_google_search)
 
 # Reserve ~28K for output, system prompt, and current message
 MAX_HISTORY_TOKENS = 900_000
@@ -52,3 +51,39 @@ def trim_history(history: list, max_tokens: int = MAX_HISTORY_TOKENS) -> list:
     while history and approximate_tokens(history) > max_tokens:
         history = history[1:]
     return history
+
+def get_agent_response(user_message: str, user_name: str, history: list = None):
+    """
+    Get a response from the LLM.
+
+    Args:
+        user_message:  The user's raw message text.
+        user_name:     Discord display name of the sender.
+        history:       List of prior LangChain messages for this session.
+
+    Returns:
+        (response_text, updated_history)
+    """
+    if history is None:
+        history = []
+
+    history = trim_history(list(history))
+
+    user_msg = HumanMessage(content=f"[{user_name}]: {user_message}")
+    messages = [SYSTEM_MESSAGE] + history + [user_msg]
+
+    response = llm.invoke(messages)
+
+    updated_history = history + [user_msg, response]
+    return response.text, updated_history
+
+
+if __name__ == "__main__":
+    last_history = None
+    user_name = input("Name: ")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() in ["exit", "quit"]:
+            break
+        response, last_history = get_agent_response(user_input, user_name, last_history)
+        print(f"GO-4: {response}")
