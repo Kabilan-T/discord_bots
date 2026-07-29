@@ -11,7 +11,6 @@
 
 import os
 import re
-import yaml
 import math
 import shutil
 import asyncio
@@ -27,12 +26,9 @@ instagram_regex = r"https?://(?:www\.)?instagram\.com/\S*"
 class Instagram(commands.Cog, name="Instagram"):
     def __init__(self, bot):
         self.bot = bot
-        self.loader = instaloader.Instaloader(sleep=True, quiet=True, 
+        self.loader = instaloader.Instaloader(sleep=True, quiet=True,
                                               download_pictures = True, download_videos= True,
                                               download_video_thumbnails = False, save_metadata= False)
-        # channels to watch for instagram links
-        self.channels_to_watch = dict()
-        self.load_channel_watch_list()
 
     @commands.command( name="show", description="Download a post from instagram.")
     async def show(self, context: Context, message: str):
@@ -50,18 +46,14 @@ class Instagram(commands.Cog, name="Instagram"):
     
     @commands.Cog.listener()
     async def on_message(self, message):
-        ''' Watch for instagram links and send the media'''
+        ''' Watch for instagram links in any channel and send the media'''
         if message.guild is None or message.author.bot or message.content == "":
             return
-        if str(message.channel.id) in self.channels_to_watch.get(str(message.guild.id), []):
-            match = re.search(instagram_regex, message.content)
-            if match is not None:
-                if len(message.content.split("/")) >= 5:
-                    # Link is of a media - get the media and send it
-                    self.bot.log.info("Got a link of a media from "+message.guild.name, message.guild)
-                    await self.send_media(match.group(0), message.reply, message.guild)
-                else:
-                    return
+        match = re.search(instagram_regex, message.content)
+        if match is not None and len(message.content.split("/")) >= 5:
+            # Link is of a media - get the media and send it
+            self.bot.log.info("Got a link of a media from "+message.guild.name, message.guild)
+            await self.send_media(match.group(0), message.reply, message.guild)
     
     async def send_media(self, instagram_url, replier, guild=None):
         ''' Download the media from instagram and send it'''
@@ -69,7 +61,10 @@ class Instagram(commands.Cog, name="Instagram"):
         max_attachment_size = 25 * 1024 * 1024  # Maximum size of individual attachment - 25MB
         if not self.loader.context.is_logged_in:
             self.load_session(guild) # load the session if available
-        media_type = instagram_url.split("/")[3]    
+        if not self.loader.context.is_logged_in:
+            self.bot.log.warning("Not logged in to instagram, skipping media fetch for "+str(instagram_url), guild)
+            return
+        media_type = instagram_url.split("/")[3]
         if media_type == "p":
             media = await self.download_media_from_shortcode(instagram_url.split("/")[-2])
             allowed_file_types = [".jpg", ".png", ".jpeg", ".gif", ".mp4"]
@@ -186,96 +181,6 @@ class Instagram(commands.Cog, name="Instagram"):
             self.bot.log.warning(f"get_media_description failed: {e}", guild)
         return embed
 
-    @commands.command( name="watch_channel", description="Set the channel to watch for instagram links.")
-    async def watchchannel(self, context: Context, channel: discord.TextChannel = None):
-        '''Set the channel to watch for instagram links'''
-        if channel == None:
-            channel = context.channel
-        if str(context.guild.id) not in self.channels_to_watch.keys():
-            self.channels_to_watch[str(context.guild.id)] = list()
-        self.channels_to_watch[str(context.guild.id)].append(str(channel.id))
-        self.save_channel_watch_list()
-        embed = discord.Embed(
-                title="Instagram channel set",
-                description="I will watch for instagram links in "+channel.mention+".",
-                color=self.bot.default_color,
-                )
-        await context.send(embed=embed)
-        self.bot.log.info("Added channel "+str(channel.id)+" to watch for instagram links.", context.guild)
-    
-    @commands.command( name="unwatch_channel", description="Unset the channel to watch for instagram links.")
-    async def unwatchchannel(self, context: Context, channel: discord.TextChannel = None): 
-        '''Unset the channel to watch for instagram links'''
-        if channel == None:
-            channel = context.channel
-        if str(context.guild.id) not in self.channels_to_watch.keys() or \
-                str(channel.id) not in self.channels_to_watch[str(context.guild.id)]:
-            embed = discord.Embed(
-                    title="Instagram channel unset",
-                    description=channel.mention+" is not in the watch list.",
-                    color=self.bot.default_color,
-                    )
-            await context.send(embed=embed)
-            self.bot.log.warning("Channel "+str(channel.id)+" not in watch list.", context.guild)
-            return
-        self.channels_to_watch[str(context.guild.id)].remove(str(channel.id))
-        self.save_channel_watch_list()
-        embed = discord.Embed(
-                title="Instagram channel unset",
-                description="I will remove "+channel.mention+" from my watch list for instagram links.",
-                color=self.bot.default_color,
-                )
-        await context.send(embed=embed)
-        self.bot.log.info("Removed channel "+str(channel.id)+" from watch for instagram links.", context.guild)
-
-    @commands.command( name="watch_list", description="Show the list of channels to watch for instagram links.")
-    async def watchlist(self, context: Context):
-        '''Show the list of channels to watch for instagram links'''
-        if str(context.guild.id) in self.channels_to_watch.keys():
-            watch_list = self.channels_to_watch.get(str(context.guild.id), [])
-            channels = [context.guild.get_channel(int(channel)) for channel in watch_list]
-            embed = discord.Embed(
-                title="Instagram watch list",
-                description="I am watching for instagram links in the following channels: \n"+", ".join([channel.mention for channel in channels if channel is not None]),
-                color=self.bot.default_color,
-                )
-            await context.send(embed=embed)
-        else:
-            embed = discord.Embed(
-                title="Instagram watch list",
-                description="I am not watching for instagram links in any channel in this server.",
-                color=self.bot.default_color,
-                )
-            await context.send(embed=embed)
-    
-    def load_channel_watch_list(self):
-        # load the channels to watch for instagram links
-        if os.path.exists(self.bot.data_dir):
-            guilds = os.listdir(self.bot.data_dir)
-            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
-            for guild_id in guilds:
-                if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml")):
-                    with open(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml"), 'r') as file:
-                        watch_list = yaml.safe_load(file)
-                        if watch_list is not None:
-                            if guild_id not in self.channels_to_watch.keys():
-                                self.channels_to_watch[guild_id] = list()
-                            self.channels_to_watch[guild_id].extend(watch_list.get("channels", []))
-                    self.bot.log.info("Loaded watch list for guild "+str(guild_id))
-                else:
-                    self.bot.log.info("No watch list found for guild "+str(guild_id))
-    
-    def save_channel_watch_list(self):
-        # save the channels to watch for instagram links
-        if os.path.exists(self.bot.data_dir):
-            guilds = os.listdir(self.bot.data_dir)
-            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
-            for guild_id in guilds:
-                if guild_id in self.channels_to_watch.keys():
-                    with open(os.path.join(self.bot.data_dir, guild_id, "instagram_watch_list.yml"), 'w+') as file:
-                        yaml.dump({"channels": self.channels_to_watch[guild_id]}, file)
-                    self.bot.log.info("Saved watch list for guild "+str(guild_id))
-    
     @commands.command(name="login_instagram", description="Log in to instagram.")
     @commands.has_permissions(administrator=True)
     async def login_instagram(self, context: Context):
@@ -380,33 +285,33 @@ class Instagram(commands.Cog, name="Instagram"):
             return False
     
     def load_session(self, guild : discord.Guild):
-        # load the session from file
-        session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
+        # load the shared session from file (one instagram login is shared across all guilds)
+        session_dir = os.path.join(self.bot.data_dir, "session")
         if os.path.exists(session_dir) and len(os.listdir(session_dir)) > 0:
             session_file = os.path.join(session_dir, os.listdir(session_dir)[0])
             username = os.listdir(session_dir)[0].split("-")[1]
             self.loader.load_session_from_file(username, session_file)
-            self.bot.log.info("Loaded session of "+str(username)+" for guild "+str(guild.name), guild)
+            self.bot.log.info("Loaded session of "+str(username), guild)
         else:
-            self.bot.log.warning("No session found for guild "+str(guild.name), guild)
-    
+            self.bot.log.warning("No session found", guild)
+
     def save_session(self, guild : discord.Guild):
-        # save the session to file
-        session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
+        # save the shared session to file (one instagram login is shared across all guilds)
+        session_dir = os.path.join(self.bot.data_dir, "session")
         self.clear_session(guild)
         username = self.loader.test_login()
         session_file = os.path.join(session_dir, f"session-{username}")
         self.loader.save_session_to_file(session_file)
-        self.bot.log.info("Saved session of "+str(username)+" for guild "+str(guild.name), guild)
-    
+        self.bot.log.info("Saved session of "+str(username), guild)
+
     def clear_session(self, guild : discord.Guild):
-        # clear the session
-        session_dir = os.path.join(self.bot.data_dir, str(guild.id),"session")
+        # clear the shared session (one instagram login is shared across all guilds)
+        session_dir = os.path.join(self.bot.data_dir, "session")
         if os.path.exists(session_dir):
             shutil.rmtree(session_dir)
-            self.bot.log.info("Cleared session for guild "+str(guild.name), guild)
+            self.bot.log.info("Cleared session", guild)
         else:
-            self.bot.log.info("No existing session found for guild "+str(guild.name), guild)
+            self.bot.log.info("No existing session found", guild)
 
 
 async def setup(bot):

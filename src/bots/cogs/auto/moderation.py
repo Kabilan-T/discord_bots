@@ -188,7 +188,7 @@ class Moderation(commands.Cog, name="Moderation"):
                     with open(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml"), "r") as file:
                         if int(guild_id) not in self.warns.keys():
                             self.warns[int(guild_id)] = dict()
-                        self.warns[int(guild_id)] = yaml.safe_load(file)
+                        self.warns[int(guild_id)] = yaml.safe_load(file) or dict()
                 else:
                     self.warns[int(guild_id)] = dict()
     

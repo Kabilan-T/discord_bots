@@ -11,6 +11,8 @@
 
 import os
 import io
+import socket
+import aiohttp
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -185,6 +187,38 @@ class DevControl(commands.Cog, name="Developer Control"):
                 color=self.bot.default_color
             )
             await context.send(embed=embed)
+
+    @commands.command(name="fetch_server_info", description="Fetch the public IP and hostname of the machine the bot is running on. Developer only command.", aliases=["server_info"], hidden=True)
+    async def fetch_server_info(self, context: Context):
+        '''Fetch the public IP and hostname of the machine the bot is running on. Developer only command.'''
+        # Only allow the bot owner to use this command
+        if context.author.id != self.owner_id:
+            embed = discord.Embed(
+                title="Unauthorized",
+                description="You are not authorized to use this command.",
+                color=discord.Color.red()
+            )
+            await context.send(embed=embed)
+            return
+        hostname = socket.gethostname()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://api.ipify.org", timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    public_ip = await response.text()
+        except (aiohttp.ClientError, TimeoutError):
+            embed = discord.Embed(
+                title="Error",
+                description="Could not fetch the public IP address. Please try again later.",
+                color=discord.Color.red()
+            )
+            await context.send(embed=embed)
+            return
+        embed = discord.Embed(
+            title="Server Info",
+            description=f"Hostname: `{hostname}`\nPublic IP: `{public_ip}`",
+            color=self.bot.default_color
+        )
+        await context.send(embed=embed)
 
     @commands.command(name="fetch_messages", description="Fetch recent messages from a specified channel. Developer only command.", aliases=["fetch_msgs"], hidden=True)
     async def fetch_messages(self, context: Context, guild_id: int, channel_id: int, limit: int = 100):

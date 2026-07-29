@@ -13,11 +13,10 @@ requests==2.31.0
 zipfile36==0.1.3
 
 # Instagram downloading
-instaloader==4.14.1
+instaloader==4.15.3
 
 # Discord / messaging
-PyNaCl==1.5.0
-discord.py==2.7.1
+discord.py[voice]==2.7.1
 
 # Google TTS / audio
 gTTS==2.5.0

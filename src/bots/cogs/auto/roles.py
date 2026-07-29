@@ -147,7 +147,7 @@ class Roles(commands.Cog, name="Roles"):
             for guild_id in guilds:
                 if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "config.yaml")):
                     with open(os.path.join(self.bot.data_dir, guild_id, "config.yaml"), "r") as file:
-                        config = yaml.load(file, Loader=yaml.FullLoader)
+                        config = yaml.load(file, Loader=yaml.FullLoader) or dict()
                     self.role_channel[int(guild_id)] = config.get("role_channel")
                     self.default_role[int(guild_id)] = config.get("default_role") 
     
@@ -158,7 +158,7 @@ class Roles(commands.Cog, name="Roles"):
             for guild_id in guilds:
                 if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "reaction_roles.yaml")):
                     with open(os.path.join(self.bot.data_dir, guild_id, "reaction_roles.yaml"), "r") as file:
-                        reaction_roles = yaml.load(file, Loader=yaml.FullLoader)
+                        reaction_roles = yaml.load(file, Loader=yaml.FullLoader) or dict()
                     self.reaction_roles[int(guild_id)] = reaction_roles
 
 

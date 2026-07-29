@@ -26,7 +26,7 @@ class Watchlist(commands.Cog, name='Watchlist'):
         self.watchlist = dict()
         self.announcement_config = dict()
         self.load_watchlist()
-        self.api_key = '99fff185'  # OMDb API key (free) -# Hide this key later
+        self.api_key = os.getenv("OMDB_API_KEY")  # export OMDB_API_KEY=[your_omdb_api_key]
 
     @commands.command(name='watchlist', description="Show the watchlist", aliases=['list', 'wl'])
     async def show_watchlist(self, context: Context):

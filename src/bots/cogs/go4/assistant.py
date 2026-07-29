@@ -89,7 +89,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
         if isinstance(error, commands.MissingRequiredArgument):
             embed = discord.Embed(
                 title='Missing Question',
-                description=f'Usage: `{self.bot.prefix[context.guild.id]}ask <your question>`',
+                description=f'Usage: `{self.bot.prefix.get(context.guild.id, self.bot.default_prefix)}ask <your question>`',
                 color=self.bot.default_color,
             )
             await context.reply(embed=embed)
@@ -101,7 +101,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
             return
         if message.guild is None:
             return
-        if message.content.startswith(self.bot.prefix[message.guild.id]):
+        if message.content.startswith(self.bot.prefix.get(message.guild.id, self.bot.default_prefix)):
             return
         if not message.reference:
             return
