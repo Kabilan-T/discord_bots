@@ -11,7 +11,6 @@
 
 import os
 import asyncio
-import yaml
 import discord
 import typing
 import random
@@ -219,19 +218,8 @@ class CosmicCon(commands.Cog):
             await context.send(embed=embed)
             return
         horcruxes = [member.id for member in horcruxes if member.id != soul_member.id]
-        guild_data_path = os.path.join(self.bot.data_dir, str(context.guild.id))
-        horcrux_file_path = os.path.join(guild_data_path, 'horcruxes.yml')
-        # Create guild directory if it doesn't exist
-        if not os.path.exists(guild_data_path):
-            os.makedirs(guild_data_path)
         # Load existing horcrux data (if any)
-        horcrux_book = dict()
-        if os.path.exists(horcrux_file_path):
-            with open(horcrux_file_path, 'r') as file:
-                try:
-                    horcrux_book = yaml.safe_load(file) or dict()  # Ensure it loads as a dictionary
-                except yaml.YAMLError:
-                    horcrux_book = dict()
+        horcrux_book = self.bot.load_guild_yaml(context.guild.id, 'horcruxes.yml')
         # Update soul data
         if soul_member.id not in horcrux_book:
             horcrux_book[soul_member.id] = horcruxes
@@ -240,8 +228,7 @@ class CosmicCon(commands.Cog):
             existing_horcruxes.update(horcruxes)
             horcrux_book[soul_member.id] = list(existing_horcruxes)
         # Save updated horcrux data
-        with open(horcrux_file_path, 'w') as file:
-            yaml.dump(horcrux_book, file, default_flow_style=False)
+        self.bot.save_guild_yaml(context.guild.id, 'horcruxes.yml', horcrux_book)
 
         embed = discord.Embed(title="Horcrux :snake:",
                             description=f"{soul_member.mention}'s soul has been split into {len(horcruxes)} pieces",
@@ -251,15 +238,7 @@ class CosmicCon(commands.Cog):
 
     async def refer_dark_book(self, member: discord.Member, guild: discord.Guild):
         ''' Check if the member is a horcrux '''
-        guild_data_path = os.path.join(self.bot.data_dir, str(guild.id))
-        horcrux_file_path = os.path.join(guild_data_path, 'horcruxes.yml')
-        if not os.path.exists(horcrux_file_path):
-            return False
-        with open(horcrux_file_path, 'r') as file:
-            try:
-                horcrux_book = yaml.safe_load(file) or dict()  # Ensure it loads as a dictionary
-            except yaml.YAMLError:
-                horcrux_book = dict()
+        horcrux_book = self.bot.load_guild_yaml(guild.id, 'horcruxes.yml')
         # if member.id is not in keys, return False
         if member.id not in horcrux_book.keys():
             return False

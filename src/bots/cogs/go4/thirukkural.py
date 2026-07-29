@@ -27,7 +27,7 @@ class Thirukkural(commands.Cog, name="Thirukkural"):
 
     def load_kurals(self):
         """ Load Thirukkural data from JSON file """
-        data_path = os.path.join(self.bot.data_dir, "thirukkural.json")
+        data_path = self.bot.bot_data_path("thirukkural.json")
         if not os.path.exists(data_path):
             self.bot.log.warning(f"Thirukkural data file not found at {data_path}")
             return None

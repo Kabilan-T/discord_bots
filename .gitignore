@@ -1,6 +1,8 @@
 logs/*
 tmp/*
-*/data/*/*/*
+data.bak.*/
+*/data/*/guilds/
+*/data/*/bot/session/
 */__pycache__/*
 */__init__.py
 *tokens.sh

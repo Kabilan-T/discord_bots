@@ -9,9 +9,7 @@
 
 #-------------------------------------------------------------------------------
 
-import os
 import asyncio
-import yaml
 import discord
 import typing
 import datetime
@@ -180,29 +178,16 @@ class Moderation(commands.Cog, name="Moderation"):
 
     def read_warns(self):
         '''Read the warns from the file'''
-        if os.path.exists(os.path.join(self.bot.data_dir)):
-            guilds = os.listdir(self.bot.data_dir)
-            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
-            for guild_id in guilds:
-                if os.path.exists(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml")):
-                    with open(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml"), "r") as file:
-                        if int(guild_id) not in self.warns.keys():
-                            self.warns[int(guild_id)] = dict()
-                        self.warns[int(guild_id)] = yaml.safe_load(file) or dict()
-                else:
-                    self.warns[int(guild_id)] = dict()
-    
+        for guild_id in self.bot.list_guild_ids():
+            self.warns[guild_id] = self.bot.load_guild_yaml(guild_id, "warns.yml")
+
     def save_warns(self, guild_id: int):
         '''Save the warns to the file'''
-        if not os.path.exists(os.path.join(self.bot.data_dir, str(guild_id))):
-            os.makedirs(os.path.join(self.bot.data_dir, str(guild_id)))
-        with open(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml"), "w+") as file:
-            yaml.dump(self.warns[guild_id], file)
-    
+        self.bot.save_guild_yaml(guild_id, "warns.yml", self.warns[guild_id])
+
     def delete_warns_file(self, guild_id: int):
         '''Delete the warns file'''
-        if os.path.exists(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml")):
-            os.remove(os.path.join(self.bot.data_dir, str(guild_id), "warns.yml"))
+        self.bot.delete_guild_file(guild_id, "warns.yml")
     
     @commands.command( name="warn", description="Warn a member in the server.")
     async def warn(self, context: Context, member: discord.Member, *, reason: str = None):

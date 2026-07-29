@@ -10,7 +10,6 @@
 #-------------------------------------------------------------------------------
 
 import os
-import yaml
 import asyncio
 import typing
 import discord
@@ -418,48 +417,33 @@ class Watchlist(commands.Cog, name='Watchlist'):
         
     def save_watchlist(self):
         # Save the watchlist to a file
-        if os.path.exists(self.bot.data_dir):
-            guilds = os.listdir(self.bot.data_dir)
-            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
-            for guild_id in guilds:
-                if guild_id in self.watchlist.keys():
-                    with open(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml'), 'w+') as file:
-                        yaml.dump(self.watchlist[guild_id], file)
-                if guild_id in self.announcement_config.keys():
-                    with open(os.path.join(self.bot.data_dir, guild_id, 'announcement_config.yaml'), 'w+') as file:
-                        yaml.dump(self.announcement_config[guild_id], file)
-                    self.bot.log.info(f"Saved watchlist for guild {guild_id}")
-    
+        for guild_id in self.bot.list_guild_ids():
+            guild_id = str(guild_id)
+            if guild_id in self.watchlist.keys():
+                self.bot.save_guild_yaml(guild_id, 'watchlist.yml', self.watchlist[guild_id])
+            if guild_id in self.announcement_config.keys():
+                self.bot.save_guild_yaml(guild_id, 'announcement_config.yml', self.announcement_config[guild_id])
+                self.bot.log.info(f"Saved watchlist for guild {guild_id}")
+
     def load_watchlist(self):
         # Load the watchlist from a file
-        if os.path.exists(self.bot.data_dir):
-            guilds = os.listdir(self.bot.data_dir)
-            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
-            for guild_id in guilds:
-                if os.path.exists(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml')):
-                    with open(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml'), 'r') as file:
-                        watchlist = yaml.load(file, Loader=yaml.FullLoader)
-                        if watchlist is not None:
-                            if guild_id not in self.watchlist:
-                                self.watchlist[guild_id] = list()
-                            self.watchlist[guild_id] = watchlist
-                            self.bot.log.info(f"Loaded watchlist for guild {guild_id}")
-                else:
-                    self.bot.log.info(f"No watchlist found for guild {guild_id}")
-                if os.path.exists(os.path.join(self.bot.data_dir, guild_id, 'announcement_config.yaml')):
-                    with open(os.path.join(self.bot.data_dir, guild_id, 'announcement_config.yaml'), 'r') as file:
-                        announcement_config = yaml.load(file, Loader=yaml.FullLoader)
-                        if announcement_config is not None:
-                            if guild_id not in self.announcement_config:
-                                self.announcement_config[guild_id] = dict()
-                            self.announcement_config[guild_id] = announcement_config
-                            self.bot.log.info(f"Loaded announcement config for guild {guild_id}")
-    
+        for guild_id in self.bot.list_guild_ids():
+            guild_id = str(guild_id)
+            watchlist = self.bot.load_guild_yaml(guild_id, 'watchlist.yml', default=None)
+            if watchlist is not None:
+                self.watchlist[guild_id] = watchlist
+                self.bot.log.info(f"Loaded watchlist for guild {guild_id}")
+            else:
+                self.bot.log.info(f"No watchlist found for guild {guild_id}")
+            announcement_config = self.bot.load_guild_yaml(guild_id, 'announcement_config.yml', default=None)
+            if announcement_config is not None:
+                self.announcement_config[guild_id] = announcement_config
+                self.bot.log.info(f"Loaded announcement config for guild {guild_id}")
+
     def delete_watchlist(self, guild_id):
         # Delete the watchlist for a guild
-        if os.path.exists(os.path.join(self.bot.data_dir, guild_id)):
-            os.remove(os.path.join(self.bot.data_dir, guild_id, 'watchlist.yaml'))
-            self.bot.log.info(f"Deleted watchlist for guild {guild_id}")
+        self.bot.delete_guild_file(guild_id, 'watchlist.yml')
+        self.bot.log.info(f"Deleted watchlist for guild {guild_id}")
         self.watchlist.pop(guild_id, None)
 
 

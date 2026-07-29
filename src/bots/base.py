@@ -11,6 +11,7 @@
 
 import os
 import yaml
+import shutil
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -117,23 +118,103 @@ class BaseBot(commands.Bot):
             return self.default_prefix
         return self.prefix.get(message.guild.id, self.default_prefix)
 
+    def guild_dir(self, guild_id) -> str:
+        '''Get the data directory for a guild'''
+        return os.path.join(self.data_dir, "guilds", str(guild_id))
+
+    def guild_path(self, guild_id, *parts) -> str:
+        '''Get a path inside a guild's data directory'''
+        return os.path.join(self.guild_dir(guild_id), *parts)
+
+    def ensure_guild_dir(self, guild_id) -> str:
+        '''Create the guild's data directory if it doesn't exist'''
+        guild_dir = self.guild_dir(guild_id)
+        if not os.path.exists(guild_dir):
+            os.makedirs(guild_dir)
+        return guild_dir
+
+    def bot_data_path(self, *parts) -> str:
+        '''Get a path inside the bot-level (non-guild-specific) data directory'''
+        bot_dir = os.path.join(self.data_dir, "bot")
+        if not os.path.exists(bot_dir):
+            os.makedirs(bot_dir)
+        return os.path.join(bot_dir, *parts)
+
+    def list_guild_ids(self) -> list:
+        '''List all guild IDs that have a data directory'''
+        guilds_dir = os.path.join(self.data_dir, "guilds")
+        if not os.path.exists(guilds_dir):
+            return []
+        return [int(guild_id) for guild_id in os.listdir(guilds_dir)
+                if guild_id.isdigit() and os.path.isdir(os.path.join(guilds_dir, guild_id))]
+
+    def load_guild_yaml(self, guild_id, filename, default=None):
+        '''Load a YAML file from a guild's data directory'''
+        if default is None:
+            default = dict()
+        file_path = self.guild_path(guild_id, filename)
+        if not os.path.exists(file_path):
+            return default
+        with open(file_path, 'r') as file:
+            return yaml.safe_load(file) or default
+
+    def save_guild_yaml(self, guild_id, filename, data):
+        '''Save a YAML file to a guild's data directory'''
+        self.ensure_guild_dir(guild_id)
+        with open(self.guild_path(guild_id, filename), 'w+') as file:
+            yaml.dump(data, file)
+
+    def update_guild_yaml(self, guild_id, filename, update_fn, default=None):
+        '''Load, mutate and save a guild's YAML file in one step'''
+        data = update_fn(self.load_guild_yaml(guild_id, filename, default))
+        self.save_guild_yaml(guild_id, filename, data)
+        return data
+
+    def delete_guild_file(self, guild_id, filename):
+        '''Delete a file from a guild's data directory'''
+        file_path = self.guild_path(guild_id, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+    def clear_guild_data(self, guild_id):
+        '''Clear all data for a guild'''
+        guild_dir = self.guild_dir(guild_id)
+        if os.path.exists(guild_dir):
+            shutil.rmtree(guild_dir)
+        self.ensure_guild_dir(guild_id)
+
+    def load_bot_yaml(self, filename, default=None):
+        '''Load a YAML file from the bot-level data directory'''
+        if default is None:
+            default = dict()
+        file_path = self.bot_data_path(filename)
+        if not os.path.exists(file_path):
+            return default
+        with open(file_path, 'r') as file:
+            return yaml.safe_load(file) or default
+
+    def save_bot_yaml(self, filename, data):
+        '''Save a YAML file to the bot-level data directory'''
+        with open(self.bot_data_path(filename), 'w+') as file:
+            yaml.dump(data, file)
+
     async def on_ready(self):
         ''' Called when the bot is ready '''
-        self.log.info(f"Logged in as {self.user.name} ({self.user.id})")    
+        self.log.info(f"Logged in as {self.user.name} ({self.user.id})")
         for guild in self.guilds:
-            self.prefix[guild.id] = self.default_prefix    
-            if not os.path.exists(os.path.join(self.data_dir, str(guild.id))):
-                os.makedirs(os.path.join(self.data_dir, str(guild.id)))
+            self.prefix[guild.id] = self.default_prefix
+            is_new = not os.path.exists(self.guild_dir(guild.id))
+            self.ensure_guild_dir(guild.id)
+            if is_new:
                 self.log.info(f"Data directory created for {guild.name}")
             else:
                 self.log.info(f"Data directory for {guild.name} already exists")
-                if os.path.exists(os.path.join(self.data_dir, str(guild.id), 'custom_settings.yml')):
-                    with open(os.path.join(self.data_dir, str(guild.id), 'custom_settings.yml'), 'r') as file:
-                        guild_settings = yaml.safe_load(file)
+                settings = self.load_guild_yaml(guild.id, 'settings.yml')
+                if settings:
                     self.log.info(f"Loaded custom settings for {guild.name}")
-                    self.prefix[guild.id] = guild_settings.get('prefix', self.default_prefix) 
-                    if guild_settings.get('log_channel', None) is not None:
-                        self.log.set_log_channel(guild.id, self.get_channel(guild_settings.get('log_channel', None)))
+                    self.prefix[guild.id] = settings.get('prefix', self.default_prefix)
+                    if settings.get('log_channel', None) is not None:
+                        self.log.set_log_channel(guild.id, self.get_channel(settings.get('log_channel', None)))
                 else:
                     self.log.info(f"No custom settings found for {guild.name}")
             self.log.info(f"{self.name} is ready in {guild.name}; prefix: {self.prefix[guild.id]}", guild)

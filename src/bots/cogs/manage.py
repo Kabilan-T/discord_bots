@@ -11,7 +11,6 @@
 
 import os
 import io
-import yaml
 import zipfile
 import asyncio
 import subprocess
@@ -122,14 +121,7 @@ class Manage(commands.Cog, name="Manage"):
     async def setlogchannel(self, context: Context, channel: discord.TextChannel):
         '''Set the log channel for the bot'''
         self.bot.log.set_log_channel(context.guild.id, channel)
-        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml')):
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'r') as file:
-                guild_settings = yaml.safe_load(file)
-                guild_settings['log_channel'] = channel.id
-        else:
-            guild_settings = {'log_channel': channel.id}
-        with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'w+') as file:
-            yaml.dump(guild_settings, file)
+        self.bot.update_guild_yaml(context.guild.id, 'settings.yml', lambda settings: {**settings, 'log_channel': channel.id})
         embed = discord.Embed(
             title="Log Channel",
             description=f"Log channel has been set to {channel.mention}",
@@ -159,8 +151,8 @@ class Manage(commands.Cog, name="Manage"):
     @commands.has_permissions(administrator=True)
     async def getdata(self, context: Context):
         '''Get the data of the bot'''
-        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id))):
-            dir_path = os.path.join(self.bot.data_dir, str(context.guild.id))
+        if os.path.exists(self.bot.guild_dir(context.guild.id)):
+            dir_path = self.bot.guild_dir(context.guild.id)
             zip_file_path = os.path.join(self.bot.data_dir, f"{context.guild.id}.zip")
             with zipfile.ZipFile(zip_file_path, 'w') as zipf:
                 for root, dirs, files in os.walk(dir_path):
@@ -188,9 +180,7 @@ class Manage(commands.Cog, name="Manage"):
     @commands.has_permissions(administrator=True)
     async def cleardata(self, context: Context):
         '''Clear the data of the bot'''
-        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id))):
-            for file in os.listdir(os.path.join(self.bot.data_dir, str(context.guild.id))):
-                os.remove(os.path.join(self.bot.data_dir, str(context.guild.id), file))
+        self.bot.clear_guild_data(context.guild.id)
         self.bot.log.info(f"Data cleared", context.guild)
         self.bot.log.remove_log_channel(context.guild.id)
         embed = discord.Embed(

@@ -10,7 +10,6 @@
 #-------------------------------------------------------------------------------
 
 import os
-import yaml
 import gtts
 import asyncio
 import aiohttp
@@ -389,22 +388,15 @@ class Radio(commands.Cog, name="Radio FM"):
         
     def get_radio_list(self, guild_id):
         ''' Get radio list from the config file '''
-        if os.path.exists(self.bot.data_dir):
-            if str(guild_id) in os.listdir(self.bot.data_dir):
-                if os.path.exists(os.path.join(self.bot.data_dir, str(guild_id), "radio.yml")):
-                    with open(os.path.join(self.bot.data_dir, str(guild_id), "radio.yml"), "r") as file:
-                        radio_list = yaml.load(file, Loader=yaml.FullLoader)
-                        return radio_list
-        self.bot.log.warning(f"No radio list found for {str(guild_id)}")
-        return dict()
-    
+        radio_list = self.bot.load_guild_yaml(guild_id, "radio.yml", default=None)
+        if radio_list is None:
+            self.bot.log.warning(f"No radio list found for {str(guild_id)}")
+            return dict()
+        return radio_list
+
     def save_radio_list(self, guild_id, radio_list):
         ''' Save radio list to the config file '''
-        if os.path.exists(self.bot.data_dir):
-            if not str(guild_id) in os.listdir(self.bot.data_dir):
-                os.mkdir(os.path.join(self.bot.data_dir, str(guild_id)))
-            with open(os.path.join(self.bot.data_dir, str(guild_id), "radio.yml"), "w+") as file:
-                yaml.dump(radio_list, file)
+        self.bot.save_guild_yaml(guild_id, "radio.yml", radio_list)
         self.bot.log.info(f"Saved radio list for {str(guild_id)}")
         return
     

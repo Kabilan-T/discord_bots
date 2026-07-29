@@ -10,7 +10,6 @@
 #-------------------------------------------------------------------------------
 
 import os
-import yaml
 import regex
 import asyncio
 import discord
@@ -51,6 +50,8 @@ class Meme(commands.Cog, name="Meme Maintainer"):
             self.bot.log.warning(f"Couldn't find meme template similar to {meme_name} in guild {guild_id}", context.guild)
             return
         meme_data = self.meme_templates[guild_id][closest_match[0]]
+        if not meme_data.startswith("http"):
+            meme_data = self.bot.guild_path(guild_id, "meme_collection", meme_data)
         embed = discord.Embed(color=self.bot.default_color)
         file = discord.File(meme_data, filename="meme.png")
         embed.set_image(url=f"attachment://meme.png")
@@ -75,17 +76,16 @@ class Meme(commands.Cog, name="Meme Maintainer"):
             await context.reply(embed=embed)
             self.bot.log.warning(f"Meme with the name {meme_name} already exists in guild {guild_id}", context.guild)
             return
-        guild_path = os.path.join(self.bot.data_dir, guild_id)
-        meme_dir = os.path.join(guild_path, "meme_collection")
+        meme_dir = self.bot.guild_path(guild_id, "meme_collection")
         if not os.path.exists(meme_dir):
             os.makedirs(meme_dir)
         # Check if a URL is provided or an image is attached
         if context.message.attachments:
             attachment = context.message.attachments[0]
-            file_path = os.path.join(meme_dir, f"{meme_name}.png")
+            meme_filename = f"{meme_name}.png"
             # Download and save the image
-            await attachment.save(file_path)
-            self.meme_templates[guild_id][meme_name] = file_path
+            await attachment.save(os.path.join(meme_dir, meme_filename))
+            self.meme_templates[guild_id][meme_name] = meme_filename
         else:
             embed = discord.Embed(
                 title="Invalid input",
@@ -129,7 +129,10 @@ class Meme(commands.Cog, name="Meme Maintainer"):
                 title=meme_name,
                 color=self.bot.default_color
             )
-            file = discord.File(self.meme_templates[guild_id][meme_name], filename="meme.png")
+            meme_data = self.meme_templates[guild_id][meme_name]
+            if not meme_data.startswith("http"):
+                meme_data = self.bot.guild_path(guild_id, "meme_collection", meme_data)
+            file = discord.File(meme_data, filename="meme.png")
             embed.set_thumbnail(url=f"attachment://meme.png")
             await context.send(embed=embed, files = [file])
             continue
@@ -154,11 +157,12 @@ class Meme(commands.Cog, name="Meme Maintainer"):
         removed_meme = self.meme_templates[guild_id].pop(meme_name)
         # Delete the associated image file if it's not a URL
         if not removed_meme.startswith("http"):
+            removed_meme_path = self.bot.guild_path(guild_id, "meme_collection", removed_meme)
             try:
-                os.remove(removed_meme)
-                self.bot.log.info(f"Removed image file {removed_meme} for meme {meme_name} in guild {guild_id}")
+                os.remove(removed_meme_path)
+                self.bot.log.info(f"Removed image file {removed_meme_path} for meme {meme_name} in guild {guild_id}")
             except OSError as e:
-                self.bot.log.warning(f"Failed to remove image file {removed_meme} for meme {meme_name} in guild {guild_id}: {e}")
+                self.bot.log.warning(f"Failed to remove image file {removed_meme_path} for meme {meme_name} in guild {guild_id}: {e}")
         # Save the updated meme templates
         self.save_meme_templates(guild_id)
         embed = discord.Embed(
@@ -198,10 +202,12 @@ class Meme(commands.Cog, name="Meme Maintainer"):
         self.meme_templates[guild_id][new_name] = self.meme_templates[guild_id].pop(old_name)
         # Rename the associated image file if it's not a URL
         if not self.meme_templates[guild_id][new_name].startswith("http"):
-            old_file_path = self.meme_templates[guild_id][new_name]
-            new_file_path = os.path.join(os.path.dirname(old_file_path), f"{new_name}.png")
+            old_filename = self.meme_templates[guild_id][new_name]
+            new_filename = f"{new_name}.png"
+            old_file_path = self.bot.guild_path(guild_id, "meme_collection", old_filename)
+            new_file_path = self.bot.guild_path(guild_id, "meme_collection", new_filename)
             os.rename(old_file_path, new_file_path)
-            self.meme_templates[guild_id][new_name] = new_file_path
+            self.meme_templates[guild_id][new_name] = new_filename
             self.bot.log.info(f"Renamed image file from {old_file_path} to {new_file_path} for meme {new_name} in guild {guild_id}")
         # Save the updated meme templates
         self.save_meme_templates(guild_id)
@@ -215,28 +221,15 @@ class Meme(commands.Cog, name="Meme Maintainer"):
 
     def load_meme_templates(self):
         """Load meme templates for each guild from YAML files."""
-        if os.path.exists(self.bot.data_dir):
-            guilds = os.listdir(self.bot.data_dir)
-            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
-            for guild_id in guilds:
-                fpath = os.path.join(self.bot.data_dir, guild_id, "meme_templates.yml")
-                if os.path.exists(fpath):
-                    with open(fpath, 'r') as file:
-                        self.meme_templates[guild_id] = yaml.safe_load(file) or {}
-                        self.bot.log.info(f"Loaded meme templates for guild {guild_id} from `{fpath}`")
-                else:
-                    self.bot.log.info(f"No meme templates found for guild {guild_id}")
+        for guild_id in self.bot.list_guild_ids():
+            guild_id = str(guild_id)
+            self.meme_templates[guild_id] = self.bot.load_guild_yaml(guild_id, "meme_templates.yml")
+            self.bot.log.info(f"Loaded meme templates for guild {guild_id}")
 
     def save_meme_templates(self, guild_id):
         """Save meme templates for a specific guild to a YAML file."""
-        guild_path = os.path.join(self.bot.data_dir, guild_id)
-        if not os.path.exists(guild_path):
-            os.makedirs(guild_path)
-            self.bot.log.info(f"Created directory for guild {guild_id} at {guild_path}")
-        fpath = os.path.join(guild_path, "meme_templates.yml")
-        with open(fpath, 'w+') as file:
-            yaml.dump(self.meme_templates.get(guild_id, {}), file)
-            self.bot.log.info(f"Saved meme templates for guild {guild_id} to `{fpath}`")
+        self.bot.save_guild_yaml(guild_id, "meme_templates.yml", self.meme_templates.get(guild_id, {}))
+        self.bot.log.info(f"Saved meme templates for guild {guild_id}")
 
 async def setup(bot):
     await bot.add_cog(Meme(bot))

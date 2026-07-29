@@ -9,8 +9,6 @@
 
 #-------------------------------------------------------------------------------
 
-import os
-import yaml
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -30,15 +28,7 @@ class Roles(commands.Cog, name="Roles"):
     async def setdefaultrole(self, context: Context, role: discord.Role):
         '''Set the default role for the new members joining the server'''
         self.default_role[context.guild.id] = role.id
-        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml")):
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "r") as file:
-                config = yaml.load(file, Loader=yaml.FullLoader)
-            config["default_role"] = role.id
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "w+") as file:
-                yaml.dump(config, file)
-        else:
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "w+") as file:
-                yaml.dump({"default_role": role.id}, file)
+        self.bot.update_guild_yaml(context.guild.id, 'settings.yml', lambda settings: {**settings, 'default_role': role.id})
         self.bot.log.info(f"Default role set to {role.name} by {context.author.name}", context.guild)
         embed = discord.Embed(
             title="Default Role Set",
@@ -52,15 +42,7 @@ class Roles(commands.Cog, name="Roles"):
     async def setrolechannel(self, context: Context, channel: discord.TextChannel):
         '''Set the channel for reaction roles'''
         self.role_channel[context.guild.id] = channel.id
-        if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml")):
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "r") as file:
-                config = yaml.load(file, Loader=yaml.FullLoader)
-            config["role_channel"] = channel.id
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "w+") as file:
-                yaml.dump(config, file)
-        else:
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), "config.yaml"), "w+") as file:
-                yaml.dump({"role_channel": channel.id}, file)
+        self.bot.update_guild_yaml(context.guild.id, 'settings.yml', lambda settings: {**settings, 'role_channel': channel.id})
         self.bot.log.info(f"Role channel set to {channel.mention} by {context.author.name}", context.guild)
         embed = discord.Embed(
             title="Role Channel Set",
@@ -92,8 +74,7 @@ class Roles(commands.Cog, name="Roles"):
         message = await channel.send(embed=embed)
         await message.add_reaction(emoji)
         self.reaction_roles[context.guild.id][message.id] = {"role": role.id, "emoji": emoji}
-        with open(os.path.join(self.bot.data_dir, str(context.guild.id), "reaction_roles.yaml"), "w+") as file:
-            yaml.dump(self.reaction_roles[context.guild.id], file)
+        self.bot.save_guild_yaml(context.guild.id, 'reaction_roles.yml', self.reaction_roles[context.guild.id])
         self.bot.log.info(f"Reaction role {role.name} with emoji {emoji} added by {context.author.name}", context.guild)
         embed = discord.Embed(
             title="Reaction Role Added",
@@ -141,25 +122,16 @@ class Roles(commands.Cog, name="Roles"):
                 self.bot.log.info(f"Role {role.name} removed from {member.display_name} by removing the reaction", guild)
         
     def read_config(self):
-        if os.path.exists(os.path.join(self.bot.data_dir)):
-            guilds = os.listdir(self.bot.data_dir)
-            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
-            for guild_id in guilds:
-                if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "config.yaml")):
-                    with open(os.path.join(self.bot.data_dir, guild_id, "config.yaml"), "r") as file:
-                        config = yaml.load(file, Loader=yaml.FullLoader) or dict()
-                    self.role_channel[int(guild_id)] = config.get("role_channel")
-                    self.default_role[int(guild_id)] = config.get("default_role") 
-    
+        for guild_id in self.bot.list_guild_ids():
+            settings = self.bot.load_guild_yaml(guild_id, 'settings.yml')
+            self.role_channel[guild_id] = settings.get("role_channel")
+            self.default_role[guild_id] = settings.get("default_role")
+
     def read_reaction_roles(self):
-        if os.path.exists(os.path.join(self.bot.data_dir)):
-            guilds = os.listdir(self.bot.data_dir)
-            guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
-            for guild_id in guilds:
-                if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "reaction_roles.yaml")):
-                    with open(os.path.join(self.bot.data_dir, guild_id, "reaction_roles.yaml"), "r") as file:
-                        reaction_roles = yaml.load(file, Loader=yaml.FullLoader) or dict()
-                    self.reaction_roles[int(guild_id)] = reaction_roles
+        for guild_id in self.bot.list_guild_ids():
+            reaction_roles = self.bot.load_guild_yaml(guild_id, 'reaction_roles.yml')
+            if reaction_roles:
+                self.reaction_roles[guild_id] = reaction_roles
 
 
 async def setup(bot):

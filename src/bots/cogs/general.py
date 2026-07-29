@@ -11,7 +11,6 @@
 
 import os
 import io
-import yaml
 import zipfile
 import typing
 import discord
@@ -47,10 +46,10 @@ class General(commands.Cog, name="General"):
             for cog in self.bot.cogs:
                 if cog == "Manage" and not context.author.guild_permissions.administrator:
                     continue
-                cog_commands = self.bot.get_cog(cog).get_commands()
+                cog_commands = [command for command in self.bot.get_cog(cog).get_commands() if not command.hidden]
                 if len(cog_commands) > 0:
                     embed.add_field(name=cog,
-                                    value="\n".join([f"***`{command.name}`*** {' | '.join([f'**(`{alias}`)**' for alias in command.aliases]) if command.aliases else ''} - {command.description}"for command in cog_commands  if not command.hidden]),
+                                    value="\n".join([f"***`{command.name}`*** {' | '.join([f'**(`{alias}`)**' for alias in command.aliases]) if command.aliases else ''} - {command.description}"for command in cog_commands]),
                                     inline=False,
                                     )
             await context.send(embed=embed)
@@ -153,14 +152,7 @@ class General(commands.Cog, name="General"):
             await context.send(embed=embed)
         else:
             self.bot.prefix[context.guild.id] = prefix
-            if os.path.exists(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml')):
-                with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'r') as file:
-                    guild_settings = yaml.safe_load(file)
-                    guild_settings['prefix'] = prefix
-            else:
-                guild_settings = {'prefix': prefix}
-            with open(os.path.join(self.bot.data_dir, str(context.guild.id), 'custom_settings.yml'), 'w+') as file:
-                yaml.dump(guild_settings, file)
+            self.bot.update_guild_yaml(context.guild.id, 'settings.yml', lambda settings: {**settings, 'prefix': prefix})
             embed = discord.Embed(
                 title="Prefix",
                 description=f"The prefix has been changed to `{self.bot.prefix.get(context.guild.id, self.bot.default_prefix)}`",

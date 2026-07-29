@@ -318,23 +318,16 @@ class Voice(commands.Cog, name="Voice Features"):
     def save_greet_messages(self):
         ''' Save the greet messages to a file '''
         for guild_id, greet_set in self.greet_messages.items():
-            with open(os.path.join(self.bot.data_dir, str(guild_id), "greet_messages.txt"), "w+") as file:
-                for member_id, message in greet_set.items():
-                    file.write(f"{member_id} {message}\n")
+            self.bot.save_guild_yaml(guild_id, "greet_messages.yml", greet_set)
             self.bot.log.info(f"Greet messages saved")
-    
+
     def load_greet_messages(self):
         ''' Load the greet messages from a file '''
-        guilds = os.listdir(self.bot.data_dir)
-        guilds = [guild for guild in guilds if os.path.isdir(os.path.join(self.bot.data_dir, guild))]
-        for guild_id in guilds:
-            if os.path.exists(os.path.join(self.bot.data_dir, guild_id, "greet_messages.txt")):
-                with open(os.path.join(self.bot.data_dir, guild_id, "greet_messages.txt"), "r") as file:
-                    for line in file.readlines():
-                        member_id, message = line.split(" ", 1)
-                        if guild_id not in self.greet_messages.keys():
-                            self.greet_messages[guild_id] = dict()
-                        self.greet_messages[guild_id][member_id] = message.strip()
+        for guild_id in self.bot.list_guild_ids():
+            guild_id = str(guild_id)
+            greet_set = self.bot.load_guild_yaml(guild_id, "greet_messages.yml", default=None)
+            if greet_set is not None:
+                self.greet_messages[guild_id] = greet_set
         self.bot.log.info(f"Greet messages loaded")
 
 

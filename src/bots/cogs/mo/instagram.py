@@ -286,7 +286,7 @@ class Instagram(commands.Cog, name="Instagram"):
     
     def load_session(self, guild : discord.Guild):
         # load the shared session from file (one instagram login is shared across all guilds)
-        session_dir = os.path.join(self.bot.data_dir, "session")
+        session_dir = self.bot.bot_data_path("session")
         if os.path.exists(session_dir) and len(os.listdir(session_dir)) > 0:
             session_file = os.path.join(session_dir, os.listdir(session_dir)[0])
             username = os.listdir(session_dir)[0].split("-")[1]
@@ -297,7 +297,7 @@ class Instagram(commands.Cog, name="Instagram"):
 
     def save_session(self, guild : discord.Guild):
         # save the shared session to file (one instagram login is shared across all guilds)
-        session_dir = os.path.join(self.bot.data_dir, "session")
+        session_dir = self.bot.bot_data_path("session")
         self.clear_session(guild)
         username = self.loader.test_login()
         session_file = os.path.join(session_dir, f"session-{username}")
@@ -306,7 +306,7 @@ class Instagram(commands.Cog, name="Instagram"):
 
     def clear_session(self, guild : discord.Guild):
         # clear the shared session (one instagram login is shared across all guilds)
-        session_dir = os.path.join(self.bot.data_dir, "session")
+        session_dir = self.bot.bot_data_path("session")
         if os.path.exists(session_dir):
             shutil.rmtree(session_dir)
             self.bot.log.info("Cleared session", guild)
