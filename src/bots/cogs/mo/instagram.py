@@ -19,6 +19,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Context
 import instaloader
+from .utils import media_utils
 
 tmp_download_dir = "tmp"
 instagram_regex = r"https?://(?:www\.)?instagram\.com/\S*"
@@ -95,18 +96,12 @@ class Instagram(commands.Cog, name="Instagram"):
         media_files = list()
         for file in os.listdir(os.getcwd()+"/"+tmp_download_dir):
             if any(file.endswith(ext) for ext in allowed_file_types):
-                media_file = discord.File(tmp_download_dir+"/"+file)
-                size = os.path.getsize(tmp_download_dir+"/"+file) # in bytes
-                media_files.append({"file": media_file, "size": size})
+                file_path = tmp_download_dir+"/"+file
+                media_files.append({"path": file_path, "size": os.path.getsize(file_path)})
         self.bot.log.info("Downloaded "+str(len(media_files))+" files from instagram", guild)
-        for item in os.listdir(tmp_download_dir):
-            item_path = os.path.join(tmp_download_dir, item)
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                shutil.rmtree(item_path)
+        media_files = await self.fit_media_files(media_files, max_attachment_size, guild)
         embed = self.get_media_description(media, media_type, guild)
-        # Check if any file exceeds the maximum size
+        # Check if any file still exceeds the maximum size after compression/splitting
         skip_files = list()
         for file in media_files:
             if file["size"] > max_attachment_size:
@@ -120,6 +115,7 @@ class Instagram(commands.Cog, name="Instagram"):
             embed.description = f"Sorry! There is some problem. :sweat:\nAll files exceed the maximum attachment size of 25MB:  ({', '.join(skipped_sizes)})"
             await replier(embed=embed)
             self.bot.log.warning(f"Failed to send media. All files exceed the maximum attachment size of 25MB ({', '.join(skipped_sizes)})", guild)
+            self.cleanup_tmp_dir()
             return
         num_files = len(media_files)
         if num_files > max_num_attachment:
@@ -134,6 +130,31 @@ class Instagram(commands.Cog, name="Instagram"):
             #Send all files in one message
             await replier(embed=embed, files=[file["file"] for file in media_files])
             self.bot.log.info(f"Sending {num_files} attachments from instagram", guild)
+        self.cleanup_tmp_dir()
+
+    async def fit_media_files(self, media_files, max_size, guild=None):
+        ''' compress or split any file exceeding max_size (runs in executor to avoid blocking event loop)'''
+        loop = asyncio.get_event_loop()
+        fitted_files = list()
+        for file in media_files:
+            if file["size"] <= max_size:
+                fitted_files.append({"file": discord.File(file["path"]), "size": file["size"], "path": file["path"]})
+                continue
+            self.bot.log.info("Compressing/splitting oversized file "+file["path"], guild)
+            part_paths = await loop.run_in_executor(None, functools.partial(
+                media_utils.get_media_parts, file["path"], max_size))
+            for part_path in part_paths:
+                fitted_files.append({"file": discord.File(part_path), "size": os.path.getsize(part_path), "path": part_path})
+        return fitted_files
+
+    def cleanup_tmp_dir(self):
+        ''' remove all downloaded files from the tmp directory'''
+        for item in os.listdir(tmp_download_dir):
+            item_path = os.path.join(tmp_download_dir, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
 
     async def download_media_from_shortcode(self, shortcode):
         ''' download a media from instagram shortcode (runs in executor to avoid blocking event loop)'''

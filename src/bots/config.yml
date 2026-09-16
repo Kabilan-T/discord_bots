@@ -35,6 +35,7 @@ mo:
     - 'cogs.general'
     - 'cogs.mo.radio'
     - 'cogs.mo.instagram'
+    - 'cogs.mo.twitter'
     - 'cogs.manage'
     - 'cogs.dev_control'
 go4:
