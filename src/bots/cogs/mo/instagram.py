@@ -31,8 +31,8 @@ class Instagram(commands.Cog, name="Instagram"):
                                               download_pictures = True, download_videos= True,
                                               download_video_thumbnails = False, save_metadata= False)
 
-    @commands.command( name="show", description="Download a post from instagram.")
-    async def show(self, context: Context, message: str):
+    @commands.command( name="show_insta", description="Download a post from instagram.")
+    async def show_insta(self, context: Context, message: str):
         '''Download a media from instagram and show it'''
         match = re.match(instagram_regex, message)
         if match is not None:

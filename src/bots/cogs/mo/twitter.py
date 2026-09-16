@@ -28,8 +28,8 @@ class Twitter(commands.Cog, name="Twitter"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command( name="show", description="Download a post from twitter.")
-    async def show(self, context: Context, message: str):
+    @commands.command( name="show_tweet", description="Download a post from twitter.")
+    async def show_tweet(self, context: Context, message: str):
         '''Download a media from twitter and show it'''
         match = re.match(twitter_regex, message)
         if match is not None:
