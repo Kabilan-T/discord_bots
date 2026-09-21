@@ -131,8 +131,13 @@ class Twitter(commands.Cog, name="Twitter"):
                 fitted_files.append(file)
                 continue
             self.bot.log.info("Compressing/splitting oversized file "+file["path"], guild)
-            part_paths = await loop.run_in_executor(None, functools.partial(
-                media_utils.get_media_parts, file["path"], max_size))
+            try:
+                part_paths = await loop.run_in_executor(None, functools.partial(
+                    media_utils.get_media_parts, file["path"], max_size))
+            except Exception as e:
+                self.bot.log.warning("Failed to compress/split "+file["path"]+": "+str(e), guild)
+                fitted_files.append(file)
+                continue
             for part_path in part_paths:
                 fitted_files.append({"file": discord.File(part_path), "size": os.path.getsize(part_path), "path": part_path})
         return fitted_files

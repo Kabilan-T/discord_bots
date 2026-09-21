@@ -11,6 +11,7 @@
 
 import os
 import re
+import uuid
 import math
 import shutil
 import asyncio
@@ -65,15 +66,17 @@ class Instagram(commands.Cog, name="Instagram"):
         if not self.loader.context.is_logged_in:
             self.bot.log.warning("Not logged in to instagram, skipping media fetch for "+str(instagram_url), guild)
             return
+        request_dir = os.path.join(tmp_download_dir, uuid.uuid4().hex)  # isolates this request's files from any other concurrent download
+        os.makedirs(request_dir, exist_ok=True)
         media_type = instagram_url.split("/")[3]
         if media_type == "p":
-            media = await self.download_media_from_shortcode(instagram_url.split("/")[-2])
+            media = await self.download_media_from_shortcode(instagram_url.split("/")[-2], request_dir)
             allowed_file_types = [".jpg", ".png", ".jpeg", ".gif", ".mp4"]
         elif media_type == "reel":
-            media = await self.download_media_from_shortcode(instagram_url.split("/")[-2])
+            media = await self.download_media_from_shortcode(instagram_url.split("/")[-2], request_dir)
             allowed_file_types = [".mp4"]
         elif media_type == "stories":
-            media = await self.download_stories_from_username(instagram_url.split("/")[-2])
+            media = await self.download_stories_from_username(instagram_url.split("/")[-2], request_dir)
             allowed_file_types = [".jpg", ".png", ".jpeg", ".gif", ".mp4"]
         else:
             embed = discord.Embed(
@@ -83,6 +86,7 @@ class Instagram(commands.Cog, name="Instagram"):
                     )
             await replier(embed=embed)
             self.bot.log.warning("Failed to get media. Invalid instagram media type from "+str(instagram_url), guild)
+            shutil.rmtree(request_dir, ignore_errors=True)
             return
         if media is None:
             embed = discord.Embed(
@@ -92,11 +96,12 @@ class Instagram(commands.Cog, name="Instagram"):
                     )
             await replier(embed=embed)
             self.bot.log.warning("Failed to get media. Exception occured while trying to download the media from "+str(instagram_url), guild)
+            shutil.rmtree(request_dir, ignore_errors=True)
             return
         media_files = list()
-        for file in os.listdir(os.getcwd()+"/"+tmp_download_dir):
+        for file in os.listdir(request_dir):
             if any(file.endswith(ext) for ext in allowed_file_types):
-                file_path = tmp_download_dir+"/"+file
+                file_path = os.path.join(request_dir, file)
                 media_files.append({"path": file_path, "size": os.path.getsize(file_path)})
         self.bot.log.info("Downloaded "+str(len(media_files))+" files from instagram", guild)
         media_files = await self.fit_media_files(media_files, max_attachment_size, guild)
@@ -115,7 +120,7 @@ class Instagram(commands.Cog, name="Instagram"):
             embed.description = f"Sorry! There is some problem. :sweat:\nAll files exceed the maximum attachment size of 25MB:  ({', '.join(skipped_sizes)})"
             await replier(embed=embed)
             self.bot.log.warning(f"Failed to send media. All files exceed the maximum attachment size of 25MB ({', '.join(skipped_sizes)})", guild)
-            self.cleanup_tmp_dir()
+            shutil.rmtree(request_dir, ignore_errors=True)
             return
         num_files = len(media_files)
         if num_files > max_num_attachment:
@@ -130,7 +135,7 @@ class Instagram(commands.Cog, name="Instagram"):
             #Send all files in one message
             await replier(embed=embed, files=[file["file"] for file in media_files])
             self.bot.log.info(f"Sending {num_files} attachments from instagram", guild)
-        self.cleanup_tmp_dir()
+        shutil.rmtree(request_dir, ignore_errors=True)
 
     async def fit_media_files(self, media_files, max_size, guild=None):
         ''' compress or split any file exceeding max_size (runs in executor to avoid blocking event loop)'''
@@ -141,41 +146,37 @@ class Instagram(commands.Cog, name="Instagram"):
                 fitted_files.append({"file": discord.File(file["path"]), "size": file["size"], "path": file["path"]})
                 continue
             self.bot.log.info("Compressing/splitting oversized file "+file["path"], guild)
-            part_paths = await loop.run_in_executor(None, functools.partial(
-                media_utils.get_media_parts, file["path"], max_size))
+            try:
+                part_paths = await loop.run_in_executor(None, functools.partial(
+                    media_utils.get_media_parts, file["path"], max_size))
+            except Exception as e:
+                self.bot.log.warning("Failed to compress/split "+file["path"]+": "+str(e), guild)
+                fitted_files.append({"file": discord.File(file["path"]), "size": file["size"], "path": file["path"]})
+                continue
             for part_path in part_paths:
                 fitted_files.append({"file": discord.File(part_path), "size": os.path.getsize(part_path), "path": part_path})
         return fitted_files
 
-    def cleanup_tmp_dir(self):
-        ''' remove all downloaded files from the tmp directory'''
-        for item in os.listdir(tmp_download_dir):
-            item_path = os.path.join(tmp_download_dir, item)
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-
-    async def download_media_from_shortcode(self, shortcode):
+    async def download_media_from_shortcode(self, shortcode, target_dir):
         ''' download a media from instagram shortcode (runs in executor to avoid blocking event loop)'''
         try:
             loop = asyncio.get_event_loop()
             post = await loop.run_in_executor(None, functools.partial(
                 instaloader.Post.from_shortcode, self.loader.context, shortcode))
             await loop.run_in_executor(None, functools.partial(
-                self.loader.download_post, post, target=tmp_download_dir))
+                self.loader.download_post, post, target=target_dir))
             return post
         except instaloader.exceptions.InstaloaderException as e:
             return None
 
-    async def download_stories_from_username(self, username):
+    async def download_stories_from_username(self, username, target_dir):
         ''' download a story from instagram username (runs in executor to avoid blocking event loop)'''
         try:
             loop = asyncio.get_event_loop()
             profile = await loop.run_in_executor(None, functools.partial(
                 instaloader.Profile.from_username, self.loader.context, username))
             await loop.run_in_executor(None, functools.partial(
-                self.loader.download_stories, [profile.userid], filename_target=tmp_download_dir))
+                self.loader.download_stories, [profile.userid], filename_target=target_dir))
             return profile
         except instaloader.exceptions.InstaloaderException as e:
             return None

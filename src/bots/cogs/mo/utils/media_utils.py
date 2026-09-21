@@ -17,13 +17,14 @@ from PIL import Image
 
 target_part_size = 22 * 1024 * 1024  # slightly under Discord's 25MB cap, leaves margin for container overhead
 min_segment_duration = 30  # seconds - never split a video into a segment shorter than this
+subprocess_timeout = 300  # seconds - bounds ffmpeg/ffprobe calls so a stall can't hang a request forever
 
 def get_video_duration(file_path) -> float:
     ''' Get the duration of a video file in seconds using ffprobe '''
     result = subprocess.run(
         ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
          '-of', 'default=noprint_wrappers=1:nokey=1', file_path],
-        capture_output=True, text=True)
+        capture_output=True, text=True, timeout=subprocess_timeout)
     return float(result.stdout.strip())
 
 def compress_video(file_path, target_size) -> str:
@@ -34,12 +35,13 @@ def compress_video(file_path, target_size) -> str:
     video_bitrate = max(int(total_bitrate - audio_bitrate), 100_000)
     scale_args = ['-vf', 'scale=-2:720'] if video_bitrate < 1_000_000 else []
     output_path = file_path.replace('.mp4', '_compressed.mp4')
+    passlog_prefix = file_path + '.ffmpeg2pass'  # unique per file - stops concurrent compressions colliding on the same log
     for pass_num in (1, 2):
-        pass_args = ['-b:v', str(video_bitrate), '-pass', str(pass_num)]
+        pass_args = ['-b:v', str(video_bitrate), '-pass', str(pass_num), '-passlogfile', passlog_prefix]
         audio_args = ['-an'] if pass_num == 1 else ['-c:a', 'aac', '-b:a', str(audio_bitrate)]
         destination = os.devnull if pass_num == 1 else output_path
         subprocess.run(['ffmpeg', '-y', '-i', file_path, *scale_args, *pass_args,
-                        *audio_args, '-f', 'mp4', destination], capture_output=True)
+                        *audio_args, '-f', 'mp4', destination], capture_output=True, timeout=subprocess_timeout)
     return output_path
 
 def split_video(file_path, num_parts) -> list:
@@ -49,7 +51,7 @@ def split_video(file_path, num_parts) -> list:
     output_pattern = file_path.replace('.mp4', '_part%d.mp4')
     subprocess.run(['ffmpeg', '-y', '-i', file_path, '-c', 'copy', '-f', 'segment',
                     '-segment_time', str(segment_time), '-reset_timestamps', '1', output_pattern],
-                   capture_output=True)
+                   capture_output=True, timeout=subprocess_timeout)
     return sorted(glob.glob(file_path.replace('.mp4', '_part*.mp4')))
 
 def compress_image(file_path, target_size) -> str:
