@@ -11,7 +11,6 @@
 
 import os
 import re
-import uuid
 import math
 import shutil
 import asyncio
@@ -30,7 +29,8 @@ class Instagram(commands.Cog, name="Instagram"):
         self.bot = bot
         self.loader = instaloader.Instaloader(sleep=True, quiet=True,
                                               download_pictures = True, download_videos= True,
-                                              download_video_thumbnails = False, save_metadata= False)
+                                              download_video_thumbnails = False, save_metadata= False,
+                                              dirname_pattern=os.path.join(tmp_download_dir, '{target}'))
 
     @commands.command( name="show_insta", description="Download a post from instagram.")
     async def show_insta(self, context: Context, message: str):
@@ -66,17 +66,18 @@ class Instagram(commands.Cog, name="Instagram"):
         if not self.loader.context.is_logged_in:
             self.bot.log.warning("Not logged in to instagram, skipping media fetch for "+str(instagram_url), guild)
             return
-        request_dir = os.path.join(tmp_download_dir, uuid.uuid4().hex)  # isolates this request's files from any other concurrent download
+        target_id = instagram_url.split("/")[-2]  # shortcode (post/reel) or username (stories) - also used as the download folder name
+        request_dir = os.path.join(tmp_download_dir, target_id)
         os.makedirs(request_dir, exist_ok=True)
         media_type = instagram_url.split("/")[3]
         if media_type == "p":
-            media = await self.download_media_from_shortcode(instagram_url.split("/")[-2], request_dir)
+            media = await self.download_media_from_shortcode(target_id)
             allowed_file_types = [".jpg", ".png", ".jpeg", ".gif", ".mp4"]
         elif media_type == "reel":
-            media = await self.download_media_from_shortcode(instagram_url.split("/")[-2], request_dir)
+            media = await self.download_media_from_shortcode(target_id)
             allowed_file_types = [".mp4"]
         elif media_type == "stories":
-            media = await self.download_stories_from_username(instagram_url.split("/")[-2], request_dir)
+            media = await self.download_stories_from_username(target_id)
             allowed_file_types = [".jpg", ".png", ".jpeg", ".gif", ".mp4"]
         else:
             embed = discord.Embed(
@@ -157,26 +158,26 @@ class Instagram(commands.Cog, name="Instagram"):
                 fitted_files.append({"file": discord.File(part_path), "size": os.path.getsize(part_path), "path": part_path})
         return fitted_files
 
-    async def download_media_from_shortcode(self, shortcode, target_dir):
+    async def download_media_from_shortcode(self, shortcode):
         ''' download a media from instagram shortcode (runs in executor to avoid blocking event loop)'''
         try:
             loop = asyncio.get_event_loop()
             post = await loop.run_in_executor(None, functools.partial(
                 instaloader.Post.from_shortcode, self.loader.context, shortcode))
             await loop.run_in_executor(None, functools.partial(
-                self.loader.download_post, post, target=target_dir))
+                self.loader.download_post, post, target=shortcode))
             return post
         except instaloader.exceptions.InstaloaderException as e:
             return None
 
-    async def download_stories_from_username(self, username, target_dir):
+    async def download_stories_from_username(self, username):
         ''' download a story from instagram username (runs in executor to avoid blocking event loop)'''
         try:
             loop = asyncio.get_event_loop()
             profile = await loop.run_in_executor(None, functools.partial(
                 instaloader.Profile.from_username, self.loader.context, username))
             await loop.run_in_executor(None, functools.partial(
-                self.loader.download_stories, [profile.userid], filename_target=target_dir))
+                self.loader.download_stories, [profile.userid], filename_target=username))
             return profile
         except instaloader.exceptions.InstaloaderException as e:
             return None
