@@ -13,7 +13,7 @@ requests==2.31.0
 zipfile36==0.1.3
 
 # Instagram downloading
-instaloader==4.15.3
+instaloader==4.16
 
 # Media compression (image/video attachment size fitting)
 Pillow==12.3.0

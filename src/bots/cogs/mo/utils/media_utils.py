@@ -15,7 +15,7 @@ import glob
 import subprocess
 from PIL import Image
 
-target_part_size = 22 * 1024 * 1024  # slightly under Discord's 25MB cap, leaves margin for container overhead
+part_size_margin = 0.88  # aim video parts slightly under the size cap, leaves margin for container overhead
 min_segment_duration = 30  # seconds - never split a video into a segment shorter than this
 subprocess_timeout = 300  # seconds - bounds ffmpeg/ffprobe calls so a stall can't hang a request forever
 
@@ -73,9 +73,21 @@ def get_media_parts(file_path, max_size) -> list:
     if not file_path.lower().endswith('.mp4'):
         return [compress_image(file_path, max_size)]
     duration = get_video_duration(file_path)
-    num_parts = min(math.ceil(os.path.getsize(file_path) / target_part_size),
+    num_parts = min(math.ceil(os.path.getsize(file_path) / (max_size * part_size_margin)),
                     max(1, int(duration // min_segment_duration)))
     if num_parts == 1:
         return [compress_video(file_path, max_size)]
     parts = split_video(file_path, num_parts)
     return [part if os.path.getsize(part) <= max_size else compress_video(part, max_size) for part in parts]
+
+def group_media_files(media_files, max_num_files, max_total_size) -> list:
+    ''' Group media files into batches that fit in one Discord message, by file count and total upload size '''
+    batches = list()
+    batch_size = 0
+    for file in media_files:
+        if len(batches) == 0 or len(batches[-1]) >= max_num_files or batch_size + file["size"] > max_total_size:
+            batches.append(list())
+            batch_size = 0
+        batches[-1].append(file)
+        batch_size += file["size"]
+    return batches

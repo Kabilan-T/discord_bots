@@ -11,7 +11,6 @@
 
 import os
 import re
-import math
 import asyncio
 import functools
 import requests
@@ -22,6 +21,7 @@ from .utils import twitter_client
 from .utils import media_utils
 
 tmp_download_dir = "tmp"
+default_filesize_limit = 10 * 1024 * 1024  # Discord's upload limit for servers without boosts (and DMs) - 10MB
 twitter_regex = r"https?://(?:www\.)?(?:twitter|x)\.com/\S*"
 
 class Twitter(commands.Cog, name="Twitter"):
@@ -56,7 +56,8 @@ class Twitter(commands.Cog, name="Twitter"):
     async def send_media(self, twitter_url, replier, guild=None):
         ''' Download the media from twitter and send it'''
         max_num_attachment = 10  # Maximum files per message
-        max_attachment_size = 25 * 1024 * 1024  # Maximum size of individual attachment - 25MB
+        max_attachment_size = guild.filesize_limit if guild is not None else default_filesize_limit  # Maximum upload size per message - depends on the server boost level
+        max_size_text = f"{round(max_attachment_size / (1024 * 1024))}MB"
         tweet_id = twitter_client.extract_tweet_id(twitter_url)
         if tweet_id is None:
             embed = discord.Embed(
@@ -92,34 +93,29 @@ class Twitter(commands.Cog, name="Twitter"):
         media_files = await self.fit_media_files(media_files, max_attachment_size, guild)
         embed = self.get_media_description(status)
         # Check if any file still exceeds the maximum size after compression/splitting
-        skip_files = list()
-        for file in media_files:
-            if file["size"] > max_attachment_size:
-                skip_files.append(file)
-                media_files.remove(file)
+        skip_files = [file for file in media_files if file["size"] > max_attachment_size]
+        media_files = [file for file in media_files if file["size"] <= max_attachment_size]
         skipped_sizes = [f"{round(file['size'] / (1024 * 1024), 2)}MB" for file in skip_files]
         if len(skip_files) > 0:
-            embed.description = embed.description + f"\nSkipped {len(skip_files)} files ({', '.join(skipped_sizes)}) because they exceed the maximum attachment size of 25MB"
-            self.bot.log.info(f"Skipped {len(skip_files)} files ({', '.join(skipped_sizes)}) because they exceed the maximum attachment size of 25MB", guild)
+            embed.description = embed.description + f"\nSkipped {len(skip_files)} files ({', '.join(skipped_sizes)}) because they exceed the maximum attachment size of {max_size_text}"
+            self.bot.log.info(f"Skipped {len(skip_files)} files ({', '.join(skipped_sizes)}) because they exceed the maximum attachment size of {max_size_text}", guild)
         if len(media_files) == 0:
-            embed.description = f"Sorry! There is some problem. :sweat:\nAll files exceed the maximum attachment size of 25MB:  ({', '.join(skipped_sizes)})"
+            embed.description = f"Sorry! There is some problem. :sweat:\nAll files exceed the maximum attachment size of {max_size_text}:  ({', '.join(skipped_sizes)})"
             await replier(embed=embed)
-            self.bot.log.warning(f"Failed to send media. All files exceed the maximum attachment size of 25MB ({', '.join(skipped_sizes)})", guild)
+            self.bot.log.warning(f"Failed to send media. All files exceed the maximum attachment size of {max_size_text} ({', '.join(skipped_sizes)})", guild)
             self.cleanup_files(media_files + skip_files)
             return
+        #Send files in batches that fit in one message (file count and total size)
+        batches = media_utils.group_media_files(media_files, max_num_attachment, max_attachment_size)
         num_files = len(media_files)
-        if num_files > max_num_attachment:
-            #Send files in chunks (split files evenly)
-            chunk_size = min(max_num_attachment, math.ceil(num_files / math.ceil(num_files / max_num_attachment)))
-            original_description = embed.description
-            for i in range(0, num_files, chunk_size):
-                embed.description = original_description + f"\nShowing {i+1} to {min(i + chunk_size, num_files)} of {num_files} files"
-                await replier(embed=embed, files=[file["file"] for file in media_files[i:i + chunk_size]])
-                self.bot.log.info(f"Sending {i+1} to {min(i + chunk_size, num_files)} of {num_files} attachments from twitter", guild)
-        else:
-            #Send all files in one message
-            await replier(embed=embed, files=[file["file"] for file in media_files])
-            self.bot.log.info(f"Sending {num_files} attachments from twitter", guild)
+        original_description = embed.description
+        num_sent = 0
+        for batch in batches:
+            if len(batches) > 1:
+                embed.description = original_description + f"\nShowing {num_sent+1} to {num_sent+len(batch)} of {num_files} files"
+            await replier(embed=embed, files=[file["file"] for file in batch])
+            self.bot.log.info(f"Sending {num_sent+1} to {num_sent+len(batch)} of {num_files} attachments from twitter", guild)
+            num_sent += len(batch)
         self.cleanup_files(media_files + skip_files)
 
     async def fit_media_files(self, media_files, max_size, guild=None):
