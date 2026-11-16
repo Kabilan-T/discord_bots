@@ -53,6 +53,8 @@ go4:
   client_id: '1379850203665924190'
   default_prefix: 'go4&'
   default_color: 0x5F9EA0
+  bridge_port: 47314
+  bridge_about: 'GO-4 itself: Cosmic Con fun commands (order66, thanos_snap, avada_kedavra, r2d2, fusion_dance, ...) and Thirukkural (kural, random_kural, adhigaram)'
   assistant:
     model: 'claude-haiku-5-5'
     effort: 'low'    # thinking depth (low / medium / high): low keeps replies fast and cheap
@@ -63,6 +65,7 @@ go4:
     - 'cogs.go4.cosmic_con'
     - 'cogs.manage'
     - 'cogs.dev_control'
+    - 'cogs.bridge'
 
 # Local bridge between bots (used by GO-4 to run other bots' commands)
 bridge:
@@ -70,6 +73,7 @@ bridge:
     - 'Manage'
     - 'Developer Control'
     - 'General'
+    - 'Chatting Features'   # GO-4's assistant: it must not call ask/reset/... on itself
   blocked_commands:
     - 'login_instagram'
     - 'logout_instagram'

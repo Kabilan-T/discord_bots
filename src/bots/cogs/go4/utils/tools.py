@@ -9,6 +9,7 @@
 #-------------------------------------------------------------------------------
 
 import re
+import json
 import asyncio
 import itertools
 import discord
@@ -24,11 +25,12 @@ BOT_OUTPUT_CHARS = 400    # characters kept per message (the full text is alread
 @dataclass
 class ToolContext:
     bot: object
-    cog: object               # the Assistant cog (reminders, bridge client, router, config)
+    cog: object               # the Assistant cog (triggers, bridge client, router, config)
     guild: discord.Guild
     channel: discord.abc.Messageable
     requester: discord.Member
-    message: discord.Message  # the user's message that started this turn
+    message: discord.Message  # the user's message that started this turn (None when a trigger fires)
+    deferred: bool = False    # True when running for a trigger (nobody is watching)
 
 
 class ToolError(Exception):
@@ -219,63 +221,130 @@ def _parse_when(in_minutes, at_time, tz_name):
     raise ToolError('give either in_minutes or at_time')
 
 
-_reminder_ids = itertools.count(1)
+# ---- Triggers: do something later (timer) or when something happens (event) ----
+
+TRIGGER_EVENTS = ('time', 'online', 'joins_voice', 'leaves_voice', 'joins_server')
+TRIGGER_TOOLS = ('send_message', 'run_bot_command', 'create_poll')  # allowed fixed actions
+MAX_TRIGGERS = 20             # pending triggers per server
+MAX_TRIGGER_DAYS = 7          # how far ahead a timer / how long an event trigger may wait
+DEFAULT_EVENT_HOURS = 24      # event triggers expire after this unless told otherwise
+# Never run unattended (by a trigger): moderation, and Cosmic Con commands that ban/kick
+DEFERRED_BLOCKED_COMMANDS = {
+    'mute', 'unmute', 'deafen', 'undeafen', 'timeout', 'remove_timeout', 'warn', 'remove_warn', 'clear_warns',
+    'kick', 'softban', 'ban', 'unban', 'purge', 'purge_user',
+    'order66', 'thanos_snap', 'redpill_or_bluepill', 'horcrux',
+}
+_trigger_ids = itertools.count(1)
 
 
-async def set_reminder(ctx, text, in_minutes=None, at_time=None, timezone_name=None, for_user=None, channel=None):
-    target = resolve_channel(ctx, channel)
-    require_send(ctx, target)
-    member = resolve_member(ctx, for_user)
-    when = _parse_when(in_minutes, at_time, timezone_name)
-    delay = (when - datetime.now(timezone.utc)).total_seconds()
-    if delay < 5:
-        raise ToolError('that time is in the past')
-    if delay > 30 * 86400:
-        raise ToolError('reminders can be at most 30 days ahead')
-    reminders = ctx.cog.reminders
-    if sum(1 for r in reminders.values() if r['guild_id'] == ctx.guild.id) >= 50:
-        raise ToolError('too many reminders in this server (max 50)')
-    reminder_id = next(_reminder_ids)
-    by = ctx.requester.display_name
-    requester_id = ctx.requester.id
-    log, guild = ctx.bot.log, ctx.guild
+def check_deferred_command(command: str):
+    name = str(command).strip().split(' ', 1)[0].lower()
+    if name in DEFERRED_BLOCKED_COMMANDS:
+        raise ToolError(f'"{name}" is a moderation command and cannot be run by a trigger')
 
-    async def fire():
-        try:
-            await asyncio.sleep(delay)
-            note = f'⏰ {member.mention} reminder' + (f' (from {by})' if member.id != requester_id else '') + f': {text}'
-            await target.send(note, allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False))
-        except asyncio.CancelledError:
-            raise
-        except Exception as e:
-            log.warning(f'Reminder {reminder_id} failed: {e}', guild)
-        finally:
-            reminders.pop(reminder_id, None)
 
-    reminders[reminder_id] = {
-        'task': asyncio.create_task(fire()), 'guild_id': ctx.guild.id, 'creator_id': requester_id,
-        'for': member.display_name, 'text': text, 'when': when, 'channel': target.name,
+def _cut(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[:limit] + '…'
+
+
+def trigger_event_text(t: dict) -> str:
+    '''Human description of when a trigger fires'''
+    who = t.get('user_name') or 'anyone'
+    where = f" '{t['voice_channel_name']}'" if t.get('voice_channel_name') else ''
+    return {
+        'time': f"at {fmt_time(t['deadline'], timezone.utc)} UTC",
+        'online': f'when {who} comes online',
+        'joins_voice': f'when {who} joins voice{where}',
+        'leaves_voice': f'when {who} leaves voice{where}',
+        'joins_server': 'when a new member joins the server',
+    }[t['event']]
+
+
+def trigger_action_text(t: dict) -> str:
+    if t.get('instruction'):
+        return 'decide then: ' + _cut(t['instruction'], 150)
+    return f"{t['tool']} {_cut(json.dumps(t['tool_args'], ensure_ascii=False), 150)}"
+
+
+async def set_trigger(ctx, event, instruction=None, tool=None, tool_args=None, user=None, voice_channel=None,
+                      in_minutes=None, at_time=None, timezone_name=None, expires_in_hours=None):
+    if ctx.deferred:
+        raise ToolError('a trigger cannot create new triggers')
+    event = str(event).strip().lower()
+    if event not in TRIGGER_EVENTS:
+        raise ToolError(f'unknown event "{event}"; use one of: {", ".join(TRIGGER_EVENTS)}')
+    if bool(instruction) == bool(tool):
+        raise ToolError('give either tool + tool_args (fixed action) or instruction (decided when it fires), not both')
+    if tool:
+        if tool not in TRIGGER_TOOLS:
+            raise ToolError(f'tool must be one of: {", ".join(TRIGGER_TOOLS)}')
+        if not isinstance(tool_args, dict):
+            raise ToolError('tool_args must be an object with the arguments of that tool')
+        if tool == 'run_bot_command':
+            check_deferred_command(tool_args.get('command', ''))
+    triggers = ctx.cog.triggers
+    if sum(1 for t in triggers.values() if t['guild_id'] == ctx.guild.id) >= MAX_TRIGGERS:
+        raise ToolError(f'too many pending triggers in this server (max {MAX_TRIGGERS})')
+
+    now = datetime.now(timezone.utc)
+    member, voice = None, None
+    if event == 'time':
+        deadline = _parse_when(in_minutes, at_time, timezone_name)
+        if (deadline - now).total_seconds() < 5:
+            raise ToolError('that time is in the past')
+    else:
+        hours = float(expires_in_hours or DEFAULT_EVENT_HOURS)
+        deadline = now + timedelta(hours=max(0.1, hours))
+        if event == 'online' or user:
+            member = resolve_member(ctx, user)  # 'online' without a user means the person asking
+        if voice_channel and event in ('joins_voice', 'leaves_voice'):
+            voice = resolve_channel(ctx, voice_channel)
+            if not isinstance(voice, (discord.VoiceChannel, discord.StageChannel)):
+                raise ToolError(f'#{voice.name} is not a voice channel')
+    if deadline - now > timedelta(days=MAX_TRIGGER_DAYS):
+        raise ToolError(f'triggers can wait at most {MAX_TRIGGER_DAYS} days')
+
+    trigger_id = next(_trigger_ids)
+    trigger = {
+        'id': trigger_id, 'guild_id': ctx.guild.id, 'channel_id': ctx.channel.id, 'channel_name': ctx.channel.name,
+        'creator_id': ctx.requester.id, 'creator_name': ctx.requester.display_name,
+        'event': event, 'deadline': deadline,
+        'user_id': member.id if member else None, 'user_name': member.display_name if member else None,
+        'voice_channel_id': voice.id if voice else None, 'voice_channel_name': voice.name if voice else None,
+        'tool': tool, 'tool_args': dict(tool_args) if tool else None, 'instruction': instruction,
     }
-    return {'id': reminder_id, 'for': member.display_name, 'at_utc': fmt_time(when, timezone.utc) + ' UTC',
-            'discord_time': discord_time(when), 'channel': f'#{target.name}',
-            'note': 'reminders are kept in memory and are lost if the bot restarts'}
+    triggers[trigger_id] = trigger
+    trigger['task'] = asyncio.create_task(ctx.cog.trigger_timer(trigger_id))
+
+    result = {'id': trigger_id, 'fires': trigger_event_text(trigger), 'action': trigger_action_text(trigger),
+              'note': 'fires once; kept in memory, lost if GO-4 restarts'}
+    if event == 'time':
+        result['discord_time'] = discord_time(deadline)
+    else:
+        result['expires'] = discord_time(deadline)
+        if event == 'online' and member.status != discord.Status.offline:
+            result['warning'] = f'{member.display_name} is already online; it fires the next time they come online'
+        if event == 'joins_voice' and member and member.voice and member.voice.channel:
+            result['warning'] = f'{member.display_name} is already in voice ({member.voice.channel.name})'
+    return result
 
 
-async def list_reminders(ctx):
-    rows = [f"#{rid}: for {r['for']} at {fmt_time(r['when'], timezone.utc)} UTC {discord_time(r['when'])} in #{r['channel']}: {r['text']}"
-            for rid, r in sorted(ctx.cog.reminders.items()) if r['guild_id'] == ctx.guild.id]
-    return {'reminders': '\n'.join(rows) or 'no pending reminders'}
+async def list_triggers(ctx):
+    rows = [f"#{tid}: {trigger_event_text(t)} → {trigger_action_text(t)} (by {t['creator_name']}, in #{t['channel_name']})"
+            + ('' if t['event'] == 'time' else f", expires {discord_time(t['deadline'])}")
+            for tid, t in sorted(ctx.cog.triggers.items()) if t['guild_id'] == ctx.guild.id]
+    return {'triggers': '\n'.join(rows) or 'no pending triggers'}
 
 
-async def cancel_reminder(ctx, reminder_id):
-    reminder = ctx.cog.reminders.get(int(reminder_id))
-    if reminder is None or reminder['guild_id'] != ctx.guild.id:
-        raise ToolError(f'no reminder #{reminder_id}')
-    if reminder['creator_id'] != ctx.requester.id and not ctx.requester.guild_permissions.manage_messages:
+async def cancel_trigger(ctx, trigger_id):
+    trigger = ctx.cog.triggers.get(int(trigger_id))
+    if trigger is None or trigger['guild_id'] != ctx.guild.id:
+        raise ToolError(f'no trigger #{trigger_id}')
+    if trigger['creator_id'] != ctx.requester.id and not ctx.requester.guild_permissions.manage_messages:
         raise ToolError('only the person who set it (or a moderator) can cancel it')
-    reminder['task'].cancel()
-    ctx.cog.reminders.pop(int(reminder_id), None)
-    return {'cancelled': int(reminder_id)}
+    ctx.cog.triggers.pop(int(trigger_id), None)
+    trigger['task'].cancel()
+    return {'cancelled': int(trigger_id)}
 
 
 async def send_message(ctx, channel, text, title=None):
@@ -305,6 +374,8 @@ async def run_bot_command(ctx, bot, command):
     bot_key, info = _resolve_bot(ctx, bot)
     prefix = ctx.cog.bot_prefixes(ctx.guild.id).get(bot_key, info['prefix'])
     command = str(command).strip()
+    if ctx.deferred:
+        check_deferred_command(command)
     for p in (prefix, info['prefix']):
         if p and command.startswith(p):
             command = command[len(p):]
@@ -360,27 +431,35 @@ TOOLS = {
                  'allow_multiple': {'type': 'boolean', 'description': 'allow choosing several answers'},
                  'channel': {**_STR, 'description': 'channel name; omit for current channel'}},
                 ['question', 'options'])),
-    'set_reminder': (set_reminder,
-        'Set a reminder that pings a user later in a channel. Give either in_minutes or at_time.',
-        _schema({'text': {**_STR, 'description': 'what to remind about'},
-                 'in_minutes': {'type': 'number', 'description': 'minutes from now (for relative times like "in 2 hours")'},
-                 'at_time': {**_STR, 'description': 'clock time "YYYY-MM-DD HH:MM" or "HH:MM" (next occurrence)'},
-                 'timezone_name': {**_STR, 'description': 'time zone of at_time if the user named one: IST, CET, EST, PST, GMT, or e.g. Asia/Kolkata. Omit for UTC'},
-                 'for_user': {**_STR, 'description': 'who to ping; omit for the person asking'},
-                 'channel': {**_STR, 'description': 'channel name; omit for current channel'}},
-                ['text'])),
-    'list_reminders': (list_reminders, 'List pending reminders in this server.', _schema({})),
-    'cancel_reminder': (cancel_reminder, 'Cancel a pending reminder by its id.',
-        _schema({'reminder_id': _INT}, ['reminder_id'])),
+    'set_trigger': (set_trigger,
+        'Do something later or when something happens; fires once. Use it for reminders too. Event "time" needs in_minutes '
+        'or at_time; the other events wait up to expires_in_hours. Action: EITHER tool + tool_args when everything is known now '
+        '(e.g. reminder = send_message tagging the person; "{member}" in a text is replaced by the member who caused the event), '
+        'OR instruction when it depends on the situation then (you get it back, with your tools, when it fires). '
+        'Moderation commands are not allowed.',
+        _schema({'event': {'type': 'string', 'enum': list(TRIGGER_EVENTS)},
+                 'in_minutes': {'type': 'number', 'description': 'time: minutes from now'},
+                 'at_time': {**_STR, 'description': 'time: clock time "YYYY-MM-DD HH:MM" or "HH:MM" (next occurrence)'},
+                 'timezone_name': {**_STR, 'description': 'time zone of at_time if the user named one: IST, CET, EST, PST, or e.g. Asia/Kolkata. Omit for UTC'},
+                 'user': {**_STR, 'description': 'online/voice events: whose event (online defaults to the person asking; voice: omit for anyone)'},
+                 'voice_channel': {**_STR, 'description': 'voice events: only this voice channel'},
+                 'expires_in_hours': {'type': 'number', 'description': f'events: give up after this long (default {DEFAULT_EVENT_HOURS})'},
+                 'tool': {'type': 'string', 'enum': list(TRIGGER_TOOLS), 'description': 'fixed action: the tool to call'},
+                 'tool_args': {'type': 'object', 'description': 'fixed action: that tool\'s arguments, e.g. {"channel": "general", "text": "..."}'},
+                 'instruction': {**_STR, 'description': 'flexible action: what to do when it fires, in plain words with names'}},
+                ['event'])),
+    'list_triggers': (list_triggers, 'List pending triggers in this server.', _schema({})),
+    'cancel_trigger': (cancel_trigger, 'Cancel a pending trigger by its id.',
+        _schema({'trigger_id': _INT}, ['trigger_id'])),
     'send_message': (send_message,
         'Post a message in a channel (as GO-4). With a title it is sent as an embed (good for announcements).',
         _schema({'channel': _STR, 'text': _STR, 'title': {**_STR, 'description': 'optional embed title'}},
                 ['channel', 'text'])),
     'run_bot_command': (run_bot_command,
-        "Ask another bot to run one of its commands (listed in your instructions) for the user, visibly in this "
+        "Ask a bot (another bot or GO-4 itself) to run one of its commands (listed in your instructions) for the user, visibly in this "
         "channel. Runs with the user's own permissions. Give the command without prefix, e.g. 'play mirchi_fm'. "
         "The bot's reply is already shown in chat; you get a copy to check success.",
-        _schema({'bot': {**_STR, 'description': 'bot name, e.g. AUTO, EVE, M-O'},
+        _schema({'bot': {**_STR, 'description': 'bot name, e.g. AUTO, EVE, M-O, GO-4'},
                  'command': {**_STR, 'description': 'command name and arguments, without prefix'}},
                 ['bot', 'command'])),
 }

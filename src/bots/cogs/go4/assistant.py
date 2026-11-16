@@ -15,14 +15,14 @@ import textwrap
 import aiohttp
 import discord
 import anthropic
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import OrderedDict
 from zoneinfo import ZoneInfo
 from discord.ext import commands
 from discord.ext.commands import Context
 from bots.cogs.bridge import load_full_config, load_bridge_registry, get_bridge_secret, get_guild_prefix
 from .utils.llm_agent import Agent, Conversation
-from .utils.tools import ToolContext, ToolError
+from .utils.tools import ToolContext, ToolError, call_tool, trigger_event_text, trigger_action_text
 
 DEFAULTS = {'model': 'claude-haiku-5-5', 'effort': 'low'}  # overridable in config.yml go4.assistant
 TIMEZONE = 'UTC'            # clock times without a zone are UTC; replies add Discord timestamp tags for local time
@@ -53,12 +53,13 @@ class Assistant(commands.Cog, name="Chatting Features"):
         self.agent = Agent(self.client, conf['model'], self.tz, effort=conf['effort'], max_tokens=MAX_TOKENS,
                            max_steps=MAX_TOOL_STEPS, max_turns=MAX_HISTORY_TURNS,
                            max_history_tokens=MAX_HISTORY_TOKENS, log=bot.log)
-        self.bridge_bots = {key: info for key, info in load_bridge_registry().items() if key != bot.bot_name}
+        self.bridge_bots = load_bridge_registry()  # includes GO-4 itself (its own bridge runs its Cosmic Con / Thirukkural commands)
         self.all_prefixes = {c['default_prefix'] for c in full_config.values()
                              if isinstance(c, dict) and c.get('default_prefix')}
         self.conversations = OrderedDict()   # {conv_id: Conversation}
         self.message_to_conv = dict()        # {GO-4 message id: conv_id}
-        self.reminders = dict()              # {id: {...}} used by tools
+        self.triggers = dict()               # {id: {...}} pending triggers (set_trigger tool), in memory only
+        self.trigger_runs = set()            # event-fired trigger tasks that are running
         self.ai_channels = dict()            # {guild_id: channel_id}
         self.prefix_cache = dict()           # {guild_id: (timestamp, {bot_key: prefix})}
         self.commands_cache = dict()         # {guild_id: (timestamp, text)}
@@ -77,8 +78,8 @@ class Assistant(commands.Cog, name="Chatting Features"):
                 self.ai_channels[guild_id] = int(channel_id)
 
     async def cog_unload(self):
-        for reminder in self.reminders.values():
-            reminder['task'].cancel()
+        for trigger in self.triggers.values():
+            trigger['task'].cancel()
         if self.http is not None:
             await self.http.close()
         if self.client is not None:
@@ -154,7 +155,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
                 bot_voice.append(f"{info['name']}: not in voice")
         commands_text = await self._bot_commands_text(guild.id)
         return (f'Voice right now: {voice}. Bots: ' + '; '.join(bot_voice) + '.\n\n'
-                f'Commands of the other bots (use with run_bot_command, without the prefix):\n{commands_text}')
+                f'Bot commands, including your own (use with run_bot_command, without the prefix):\n{commands_text}')
 
     # ---- conversations --------------------------------------------------------
 
@@ -288,6 +289,119 @@ class Assistant(commands.Cog, name="Chatting Features"):
             else:
                 sent.append(await reply_target.channel.send(part, allowed_mentions=mentions))
         return sent
+
+    # ---- triggers (set_trigger tool) -------------------------------------------
+
+    async def trigger_timer(self, trigger_id: int):
+        '''Waits until the trigger's deadline: a timer fires then, an event trigger expires'''
+        trigger = self.triggers.get(trigger_id)
+        if trigger is None:
+            return
+        await asyncio.sleep(max(0, (trigger['deadline'] - datetime.now(timezone.utc)).total_seconds()))
+        trigger = self.triggers.pop(trigger_id, None)
+        if trigger is None:
+            return
+        if trigger['event'] == 'time':
+            await self.fire_trigger(trigger, 'the time was reached')
+        else:
+            guild = self.bot.get_guild(trigger['guild_id'])
+            self.bot.log.info(f'Trigger #{trigger_id} expired without firing ({trigger_event_text(trigger)})', guild)
+
+    def _match_triggers(self, guild_id: int, event: str, member: discord.Member, voice_channel=None):
+        '''Fire (and remove) every pending trigger of this guild waiting for this event'''
+        for trigger_id, trigger in list(self.triggers.items()):
+            if trigger['guild_id'] != guild_id or trigger['event'] != event:
+                continue
+            if trigger['user_id'] not in (None, member.id):
+                continue
+            if trigger['voice_channel_id'] and (voice_channel is None or voice_channel.id != trigger['voice_channel_id']):
+                continue
+            self.triggers.pop(trigger_id, None)
+            trigger['task'].cancel()
+            happened = {
+                'online': f'{member.display_name} ({member.mention}) came online',
+                'joins_voice': f"{member.display_name} ({member.mention}) joined voice channel '{getattr(voice_channel, 'name', '?')}'",
+                'leaves_voice': f"{member.display_name} ({member.mention}) left voice channel '{getattr(voice_channel, 'name', '?')}'",
+                'joins_server': f'{member.display_name} ({member.mention}) joined the server',
+            }[event]
+            task = asyncio.create_task(self.fire_trigger(trigger, happened, member))
+            self.trigger_runs.add(task)  # keep a reference until it finishes
+            task.add_done_callback(self.trigger_runs.discard)
+
+    async def fire_trigger(self, trigger: dict, happened: str, member: discord.Member = None):
+        '''Run a trigger's action as its creator: a fixed tool call, or the agent with the stored instruction'''
+        guild = self.bot.get_guild(trigger['guild_id'])
+        channel = guild.get_channel_or_thread(trigger['channel_id']) if guild else None
+        creator = guild.get_member(trigger['creator_id']) if guild else None
+        tag = f"Trigger #{trigger['id']}"
+        if channel is None or creator is None:
+            self.bot.log.warning(f'{tag} dropped: its channel or creator is gone', guild)
+            return
+        self.bot.log.info(f'{tag} fired ({happened}): {trigger_action_text(trigger)}', guild)
+        context = ToolContext(bot=self.bot, cog=self, guild=guild, channel=channel, requester=creator,
+                              message=None, deferred=True)
+        mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
+        try:
+            if trigger['tool']:
+                args = dict(trigger['tool_args'])
+                if member is not None:  # "{member}" in texts means whoever caused the event
+                    args = {k: v.replace('{member}', member.mention) if isinstance(v, str) else v for k, v in args.items()}
+                output = await call_tool(context, trigger['tool'], args)
+                if isinstance(output, dict) and output.get('error'):
+                    raise ToolError(output['error'])
+                self.bot.log.info(f'{tag} done', guild)
+                return
+            if self.client is None:
+                raise ToolError('ANTHROPIC_API_KEY is not configured')
+            conv_id = f"trigger-{trigger['id']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            conv = Conversation(creator.display_name, guild.id, channel.id, 'thread')
+            text = (f"[{tag}, set by {creator.display_name} ({creator.mention}), has fired: {happened}]\n"
+                    f"Task: {trigger['instruction']}\n"
+                    f"Do it now with your tools. Your reply is posted in #{channel.name}: keep it short, "
+                    f"and use mention tags for people you address.")
+            result = await self.agent.run(conv, context, [{'type': 'text', 'text': text}], text)
+            for part in self.split_message(result.text):
+                sent = await channel.send(part, allowed_mentions=mentions)
+                self.message_to_conv[sent.id] = conv_id  # replying continues this conversation
+            self._remember(conv_id, conv)
+            try:
+                self.record_usage(result)
+            except Exception as e:
+                self.bot.log.warning(f'GO-4 could not save usage: {e}', guild)
+            tools = f" tools: {', '.join(result.tools_used)}" if result.tools_used else ''
+            self.bot.log.info(f'{tag} handled with {result.model}: {result.calls} calls, in {result.input_tokens} '
+                              f'+ cache write {result.cache_write_tokens} + cache read {result.cache_read_tokens}, '
+                              f'out {result.output_tokens} tokens.{tools}', guild)
+        except Exception as e:
+            error = str(e) if isinstance(e, ToolError) else f'{type(e).__name__}: {e}'
+            self.bot.log.warning(f'{tag} failed: {error}', guild)
+            try:
+                await channel.send(f"⚠️ {creator.mention} your trigger #{trigger['id']} "
+                                   f"({trigger_event_text(trigger)}) failed: {error[:300]}", allowed_mentions=mentions)
+            except discord.HTTPException:
+                pass
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member: discord.Member, before, after):
+        if member.bot or not self.triggers or before.channel == after.channel:
+            return  # ignore mute/deafen changes
+        if before.channel is not None:
+            self._match_triggers(member.guild.id, 'leaves_voice', member, before.channel)
+        if after.channel is not None:
+            self._match_triggers(member.guild.id, 'joins_voice', member, after.channel)
+
+    @commands.Cog.listener()
+    async def on_presence_update(self, before: discord.Member, after: discord.Member):
+        if after.bot or not self.triggers:
+            return
+        if before.status == discord.Status.offline and after.status != discord.Status.offline:
+            self._match_triggers(after.guild.id, 'online', after)
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        if member.bot or not self.triggers:
+            return
+        self._match_triggers(member.guild.id, 'joins_server', member)
 
     # ---- listeners ------------------------------------------------------------
 
