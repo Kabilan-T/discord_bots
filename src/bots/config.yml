@@ -4,6 +4,8 @@ auto:
   client_id: '1220388740678029392'
   default_prefix: 'auto$'
   default_color: 0x3498DB
+  bridge_port: 47311
+  bridge_about: 'server admin: moderation (mute, timeout, warn, purge), roles, announcements, moving/disconnecting members in voice'
   extensions:
     - 'cogs.general'
     - 'cogs.auto.announcements'
@@ -12,12 +14,15 @@ auto:
     - 'cogs.auto.roles'
     - 'cogs.manage'
     - 'cogs.dev_control'
+    - 'cogs.bridge'
 eve:
   name: EVE
   username: 'EVE#4830'
   client_id: '1220389672291795005'
   default_prefix: 'eve?'
   default_color: 0xBEBEFE
+  bridge_port: 47312
+  bridge_about: 'voice: joins voice and speaks text aloud (join, say, leave, volume, language), movie watchlist, memes'
   extensions:
     - 'cogs.general'
     - 'cogs.eve.voice'
@@ -25,12 +30,15 @@ eve:
     - 'cogs.eve.meme'
     - 'cogs.manage'
     - 'cogs.dev_control'
+    - 'cogs.bridge'
 mo:
   name: M-O
   username: 'MO#9127' 
   client_id: '1220391241825648691'
   default_prefix: 'mo!'
   default_color: 0x8A3AB9
+  bridge_port: 47313
+  bridge_about: 'radio: plays radio stations in voice (play, stop, list stations, volume, join, leave)'
   extensions:
     - 'cogs.general'
     - 'cogs.mo.radio'
@@ -38,12 +46,16 @@ mo:
     - 'cogs.mo.twitter'
     - 'cogs.manage'
     - 'cogs.dev_control'
+    - 'cogs.bridge'
 go4:
   name: GO-4
   username: 'GO-4#3988'
   client_id: '1379850203665924190'
   default_prefix: 'go4&'
   default_color: 0x5F9EA0
+  assistant:
+    model: 'claude-haiku-5-5'
+    effort: 'low'    # thinking depth (low / medium / high): low keeps replies fast and cheap
   extensions:
     - 'cogs.general'
     - 'cogs.go4.assistant'
@@ -52,3 +64,12 @@ go4:
     - 'cogs.manage'
     - 'cogs.dev_control'
 
+# Local bridge between bots (used by GO-4 to run other bots' commands)
+bridge:
+  blocked_cogs:
+    - 'Manage'
+    - 'Developer Control'
+    - 'General'
+  blocked_commands:
+    - 'login_instagram'
+    - 'logout_instagram'

@@ -25,6 +25,5 @@ discord.py[voice]==2.7.1
 gTTS==2.5.0
 pydub==0.25.1
 
-# LangChain
-langchain_core==1.2.1
-langchain_google_genai==4.0.0
+# Claude API (GO-4 assistant)
+anthropic==2.9.0
