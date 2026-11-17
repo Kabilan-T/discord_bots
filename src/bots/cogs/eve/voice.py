@@ -37,7 +37,7 @@ class Voice(commands.Cog, name="Voice Features"):
         self.load_greet_messages()
         self.bot.log.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
 
-    @commands.command(name="join", description="Join the voice channel of the user", aliases=["j"])
+    @commands.command(name="join", description="Join a voice channel (id or name); without one, joins the voice channel of the user", aliases=["j"])
     async def join(self, context: Context, voice_channel: discord.VoiceChannel = None):
         ''' Join the voice channel of the user '''
         if voice_channel is None:
@@ -74,7 +74,7 @@ class Voice(commands.Cog, name="Voice Features"):
         )
         return True
     
-    @commands.command(name="say", description="Say the text in the voice channel",  aliases=["s"])
+    @commands.command(name="say", description="Say the text in the bot's voice channel; if not in voice, joins the user's channel (use join <channel> first otherwise)", aliases=["s"])
     async def say(self, context: Context, *, text: str):
         ''' Say the text in the voice channel '''
         if context.voice_client is None:

@@ -22,11 +22,11 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from bots.cogs.bridge import load_full_config, load_bridge_registry, get_bridge_secret, get_guild_prefix
 from .utils.llm_agent import Agent, Conversation
-from .utils.tools import ToolContext, ToolError, call_tool, trigger_event_text, trigger_action_text
+from .utils.tools import ToolContext, ToolError, call_tool, trigger_event_text, trigger_action_text, linkify_mentions
 
 DEFAULTS = {'model': 'claude-haiku-5-5', 'effort': 'low'}  # overridable in config.yml go4.assistant
 TIMEZONE = 'UTC'            # clock times without a zone are UTC; replies add Discord timestamp tags for local time
-MAX_TOKENS = 1024           # output cap per model call (replies are short)
+MAX_TOKENS = 2048           # output safety cap per model call (only tokens actually written are paid)
 REQUEST_TIMEOUT = 60        # seconds
 MAX_TOOL_STEPS = 4          # tool rounds per message
 MAX_HISTORY_TURNS = 20      # remembered exchanges per conversation (in memory only)
@@ -154,7 +154,10 @@ class Assistant(commands.Cog, name="Chatting Features"):
             else:
                 bot_voice.append(f"{info['name']}: not in voice")
         commands_text = await self._bot_commands_text(guild.id)
-        return (f'Voice right now: {voice}. Bots: ' + '; '.join(bot_voice) + '.\n\n'
+        channels = ', '.join(f"'{vc.name}' (id {vc.id})" for vc in guild.voice_channels
+                             if vc.permissions_for(requester).view_channel)
+        return (f'Voice right now: {voice}. Bots: ' + '; '.join(bot_voice) + '.\n'
+                f'Voice channels: {channels or "none"}.\n\n'
                 f'Bot commands, including your own (use with run_bot_command, without the prefix):\n{commands_text}')
 
     # ---- conversations --------------------------------------------------------
@@ -224,7 +227,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
         sent = list()
 
         async def progress(update: str):
-            for part in self.split_message(update):
+            for part in self.split_message(linkify_mentions(message.guild, update)):
                 msg = await message.channel.send(part, allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False))
                 self.message_to_conv[msg.id] = conv_id
 
@@ -266,7 +269,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
                         description='Something went wrong while generating a response. Please try again.',
                         color=self.bot.default_color), mention_author=False)
                     return
-            sent = await self._send_response(result.text, message)
+            sent = [] if result.already_sent else await self._send_response(result.text, message)
         for msg in sent:
             self.message_to_conv[msg.id] = conv_id
         self._remember(conv_id, conv)
@@ -277,13 +280,15 @@ class Assistant(commands.Cog, name="Chatting Features"):
         tools = f" tools: {', '.join(result.tools_used)}" if result.tools_used else ''
         self.bot.log.info(f'GO-4 replied to @{message.author.name} in {conv_id} with {result.model}: '
                           f'{result.calls} calls, in {result.input_tokens} + cache write {result.cache_write_tokens} '
-                          f'+ cache read {result.cache_read_tokens}, out {result.output_tokens} tokens.{tools}', message.guild)
+                          f'+ cache read {result.cache_read_tokens}, out {result.output_tokens} tokens.{tools}'
+                          + (f' stop: {result.stop_reason}' if result.stop_reason not in (None, 'end_turn', 'tool_use') else ''),
+                          message.guild)
 
     async def _send_response(self, response: str, reply_target: discord.Message) -> list:
         '''Split and send a response, returning all sent message objects'''
         mentions = discord.AllowedMentions(users=True, roles=False, everyone=False, replied_user=False)
         sent = list()
-        for i, part in enumerate(self.split_message(response)):
+        for i, part in enumerate(self.split_message(linkify_mentions(reply_target.guild, response))):
             if i == 0:
                 sent.append(await reply_target.reply(part, allowed_mentions=mentions, mention_author=False))
             else:
@@ -291,6 +296,14 @@ class Assistant(commands.Cog, name="Chatting Features"):
         return sent
 
     # ---- triggers (set_trigger tool) -------------------------------------------
+
+    def _note_trigger(self, trigger: dict, note: str):
+        '''Tell the conversations in the trigger's channel that it ran, so GO-4 does not keep asking about it'''
+        stamp = datetime.now(timezone.utc).strftime('%H:%M')
+        line = f"\n[later: trigger #{trigger['id']} fired at {stamp} UTC: {note}]"
+        for conv in self.conversations.values():
+            if conv.channel_id == trigger['channel_id'] and conv.history and conv.history[-1]['role'] == 'assistant':
+                conv.history[-1] = {'role': 'assistant', 'content': conv.history[-1]['content'] + line[:400]}
 
     async def trigger_timer(self, trigger_id: int):
         '''Waits until the trigger's deadline: a timer fires then, an event trigger expires'''
@@ -320,8 +333,8 @@ class Assistant(commands.Cog, name="Chatting Features"):
             trigger['task'].cancel()
             happened = {
                 'online': f'{member.display_name} ({member.mention}) came online',
-                'joins_voice': f"{member.display_name} ({member.mention}) joined voice channel '{getattr(voice_channel, 'name', '?')}'",
-                'leaves_voice': f"{member.display_name} ({member.mention}) left voice channel '{getattr(voice_channel, 'name', '?')}'",
+                'joins_voice': f"{member.display_name} ({member.mention}) joined voice channel '{getattr(voice_channel, 'name', '?')}' (id {getattr(voice_channel, 'id', '?')})",
+                'leaves_voice': f"{member.display_name} ({member.mention}) left voice channel '{getattr(voice_channel, 'name', '?')}' (id {getattr(voice_channel, 'id', '?')})",
                 'joins_server': f'{member.display_name} ({member.mention}) joined the server',
             }[event]
             task = asyncio.create_task(self.fire_trigger(trigger, happened, member))
@@ -350,6 +363,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
                 if isinstance(output, dict) and output.get('error'):
                     raise ToolError(output['error'])
                 self.bot.log.info(f'{tag} done', guild)
+                self._note_trigger(trigger, f'{happened}; {trigger_action_text(trigger)} → done')
                 return
             if self.client is None:
                 raise ToolError('ANTHROPIC_API_KEY is not configured')
@@ -360,7 +374,8 @@ class Assistant(commands.Cog, name="Chatting Features"):
                     f"Do it now with your tools. Your reply is posted in #{channel.name}: keep it short, "
                     f"and use mention tags for people you address.")
             result = await self.agent.run(conv, context, [{'type': 'text', 'text': text}], text)
-            for part in self.split_message(result.text):
+            self._note_trigger(trigger, f'{happened}; handled: {result.text[:200]}')
+            for part in self.split_message(linkify_mentions(guild, result.text)):
                 sent = await channel.send(part, allowed_mentions=mentions)
                 self.message_to_conv[sent.id] = conv_id  # replying continues this conversation
             self._remember(conv_id, conv)
@@ -375,6 +390,7 @@ class Assistant(commands.Cog, name="Chatting Features"):
         except Exception as e:
             error = str(e) if isinstance(e, ToolError) else f'{type(e).__name__}: {e}'
             self.bot.log.warning(f'{tag} failed: {error}', guild)
+            self._note_trigger(trigger, f'{happened}; FAILED: {error[:200]}')
             try:
                 await channel.send(f"⚠️ {creator.mention} your trigger #{trigger['id']} "
                                    f"({trigger_event_text(trigger)}) failed: {error[:300]}", allowed_mentions=mentions)

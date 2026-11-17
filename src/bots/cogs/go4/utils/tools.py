@@ -10,6 +10,7 @@
 
 import re
 import json
+import difflib
 import asyncio
 import itertools
 import discord
@@ -78,6 +79,48 @@ def resolve_member(ctx: ToolContext, ref):
         if name and (name in member.display_name.lower() or name in member.name.lower()):
             return member
     raise ToolError(f'member "{ref}" not found')
+
+
+_AT_WORD = re.compile(r'(?<![<\w])@([^\s@<>`]+)')
+
+
+def linkify_mentions(guild: discord.Guild, text: str) -> str:
+    '''Turn plain "@Name" into real Discord mentions: exact username / display name first
+    (longest first, so names with spaces work), else the closest single-word name'''
+    if not text or '@' not in text or guild is None:
+        return text
+    names = list()
+    for member in guild.members:
+        for name in {member.name, member.display_name, member.global_name or ''}:
+            if name:
+                names.append((name.lower(), member))
+    names.sort(key=lambda item: len(item[0]), reverse=True)
+    lower = text.lower()
+    out, i = list(), 0
+    while i < len(text):
+        if text[i] == '@' and (i == 0 or not (text[i - 1].isalnum() or text[i - 1] in '<_')):
+            rest = lower[i + 1:]
+            for name, member in names:
+                end = len(name)
+                if rest.startswith(name) and (end == len(rest) or not (rest[end].isalnum() or rest[end] == '_')):
+                    out.append(member.mention)
+                    i += 1 + end
+                    break
+            else:
+                match = _AT_WORD.match(text, i)
+                word = match.group(1).rstrip('.,!?:;)\'"') if match else ''
+                if word and word.lower() not in ('everyone', 'here'):
+                    close = difflib.get_close_matches(word.lower(), [n for n, _ in names], n=1, cutoff=0.8)
+                    if close:
+                        out.append(next(m for n, m in names if n == close[0]).mention)
+                        i += 1 + len(word)
+                        continue
+                out.append(text[i])
+                i += 1
+            continue
+        out.append(text[i])
+        i += 1
+    return ''.join(out)
 
 
 def require_send(ctx: ToolContext, channel):
@@ -351,6 +394,7 @@ async def send_message(ctx, channel, text, title=None):
     target = resolve_channel(ctx, channel)
     require_send(ctx, target)
     mentions = allowed_mentions_for(ctx, target)
+    text = linkify_mentions(ctx.guild, str(text))
     if title:
         embed = discord.Embed(title=str(title)[:256], description=str(text)[:4000], color=ctx.bot.default_color)
         embed.set_footer(text=f'Requested by {ctx.requester.display_name}')
@@ -458,6 +502,7 @@ TOOLS = {
     'run_bot_command': (run_bot_command,
         "Ask a bot (another bot or GO-4 itself) to run one of its commands (listed in your instructions) for the user, visibly in this "
         "channel. Runs with the user's own permissions. Give the command without prefix, e.g. 'play mirchi_fm'. "
+        "Voice channels as arguments: use the channel id (e.g. 'join 1182777670778486850'), not the name. "
         "The bot's reply is already shown in chat; you get a copy to check success.",
         _schema({'bot': {**_STR, 'description': 'bot name, e.g. AUTO, EVE, M-O, GO-4'},
                  'command': {**_STR, 'description': 'command name and arguments, without prefix'}},

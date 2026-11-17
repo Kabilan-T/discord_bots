@@ -38,6 +38,8 @@ class AgentResult:
     output_tokens: int = 0
     cache_write_tokens: int = 0
     cache_read_tokens: int = 0
+    stop_reason: str = None
+    already_sent: bool = False  # the final text was already posted as a progress message
 
 
 def _short(value, limit) -> str:
@@ -75,7 +77,7 @@ Tools (use them instead of guessing, but only when needed):
 - Actions: create_poll, send_message.
 - Later / on an event: set_trigger (timer, someone comes online, joins or leaves voice, new member joins; fires once). Use a fixed tool + tool_args when the action is fully known now (a reminder is a send_message tagging the person), or an instruction when it depends on the situation then. Then list_triggers / cancel_trigger.
 - Bot commands: run_bot_command with a command from the list in the live context. This includes your own commands (bot GO-4: Cosmic Con fun commands, Thirukkural); run them this way too. It runs with the requesting user's permissions and the bot answers visibly in the chat, so do not repeat its output: confirm briefly, or explain a failure and fix it (e.g. unknown radio station: list the stations, then retry). Chain several commands when needed.
-- Voice: you have no voice of your own. To say something aloud, ask EVE (say <text>). M-O plays radio. Voice commands need the user to be in a voice channel (see live context); bots join it automatically.
+- Voice: you have no voice of your own. To say something aloud, ask EVE (say <text>). M-O plays radio. A bot that is not in voice joins the requesting user's voice channel by itself; if the user is NOT in voice (or for a trigger), first run the join command with the voice channel id from the live context (e.g. EVE: join <id>), then say. A bot already in voice speaks/plays there.
 - You already know the voice status and the bot commands from the live context, so do not look them up with other tools.
 - The earlier messages of this conversation are already above. You cannot read other channel messages.
 
@@ -84,6 +86,9 @@ Times (members live in Europe, India and the US):
 - When you confirm a timer or mention a specific time, give it in UTC and add the discord_time tag from the tool result exactly as returned (Discord shows it in each reader's own time zone), so people can spot a wrong zone and correct you.
 
 Rules:
+- Answer only the latest message. Do not bring up earlier topics, pending items, reminders or offers again unless the user asks about them. Once something is done, or the user says ok / enough / leave it, drop it for good. Notes like "[later: trigger #N fired ...]" tell you a trigger already ran: it is done.
+- Keep texts you post, speak or store in triggers short (a few sentences). Write Tamil in Tamil script only when the user writes in it or asks for it; otherwise use Tanglish.
+- To tag someone, write @ followed by their exact display name (or use the mention from get_user_info).
 - Only take actions (polls, triggers, posting messages, bot commands) when the user asks for them. Ask before moderation actions (timeout, ban, kick, warn, mute, purge) unless the request is explicit and unambiguous.
 - Never invent commands, channel names or facts. You cannot browse the web or open links; if asked about current events, say your knowledge may be out of date. If a tool returns an error, explain it simply and do not call it again for the same purpose.'''
 
@@ -129,6 +134,7 @@ class Agent:
         messages = list(conv.history) + [{'role': 'user', 'content': user_content}]
         result = AgentResult(text='', model=self.model)
         actions = list()
+        progress_said = list()
 
         for step in range(self.max_steps + 1):
             last = step == self.max_steps
@@ -151,8 +157,13 @@ class Agent:
 
             text = ''.join(block.text for block in response.content if block.type == 'text').strip()
             tool_uses = [block for block in response.content if block.type == 'tool_use']
+            result.stop_reason = response.stop_reason
             if response.stop_reason == 'refusal':
                 result.text = "Sorry, I can't help with that."
+                break
+            if response.stop_reason == 'max_tokens':  # cut off; a half-written tool call cannot be run
+                result.text = (text + ' …') if text else \
+                    'That got too long for me to finish. Ask me again with a shorter request or text.'
                 break
             if response.stop_reason != 'tool_use' or not tool_uses:
                 result.text = text
@@ -161,6 +172,7 @@ class Agent:
             messages.append({'role': 'assistant', 'content': response.content})
             if text and on_progress:
                 await on_progress(text)
+                progress_said.append(text)
             tool_results = list()
             for tool_use in tool_uses:
                 output = await call_tool(ctx, tool_use.name, tool_use.input)
@@ -175,7 +187,12 @@ class Agent:
             messages.append({'role': 'user', 'content': tool_results})
 
         if not result.text:
-            result.text = '✅ Done.' if actions else "Hmm, I couldn't come up with a reply. Try rephrasing?"
+            if progress_said:  # everything was already said before the tool calls
+                result.text, result.already_sent = progress_said[-1], True
+            else:
+                result.text = '✅ Done.' if actions else "Hmm, I couldn't come up with a reply. Try rephrasing?"
+        elif result.text in progress_said:  # same text as a message posted before the tool call
+            result.already_sent = True
 
         # Keep only text in history: the user's turn, and the answer + a short note of actions taken
         remembered = result.text + (('\n[actions: ' + '; '.join(actions) + ']') if actions else '')
