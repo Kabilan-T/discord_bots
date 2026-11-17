@@ -14,9 +14,12 @@ import yaml
 import discord
 import typing
 import datetime
+import random
 from discord.ext import tasks
 from discord.ext import commands
 from discord.ext.commands import Context
+
+IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
 class Announcements(commands.Cog, name="Announcements"):
     def __init__(self, bot):
@@ -26,7 +29,52 @@ class Announcements(commands.Cog, name="Announcements"):
             self.broadcast_daily_highlights.stop()
             self.bot.log.info("broadcast_daily_highlights task stopped")
         self.broadcast_daily_highlights.start()
-    
+        self.broadcast_birthdays.start()
+
+    # ---------------- Birthdays (data: guilds/<id>/birthdays.yml, not in git) ----------------
+
+    def load_birthdays(self, guild_id):
+        path = self.bot.guild_path(guild_id, "birthdays.yml")
+        if not os.path.exists(path): return None
+        try:
+            with open(path, "r") as file:
+                return yaml.safe_load(file) or None
+        except Exception as e:
+            self.bot.log.warning(f"Error loading birthdays: {e}")
+            return None
+
+    @tasks.loop(time=datetime.time(hour=0, minute=0, second=5, tzinfo=IST))
+    async def broadcast_birthdays(self):
+        ''' Wish members at midnight Indian time '''
+        today = datetime.datetime.now(IST).strftime("%d-%m")
+        for guild in self.bot.guilds:
+            data = self.load_birthdays(guild.id)
+            if not data: continue
+            channel = guild.get_channel(int(data.get("channel_id") or 0))
+            if channel is None:
+                self.bot.log.warning(f"Birthday channel not found in {guild.name}", guild)
+                continue
+            quotes = data.get("quotes") or ["Wishing you a fantastic year ahead!"]
+            for user_id, date in (data.get("birthdays") or {}).items():
+                if date != today: continue
+                member = guild.get_member(int(user_id))
+                name = member.display_name if member else "passenger"
+                embed = discord.Embed(
+                    title=f":birthday: Happy Birthday, {name}! :tada:",
+                    description=f"_{random.choice(quotes)}_\n\nThe whole Axiom crew wishes you a fantastic year ahead. :rocket:",
+                    color=discord.Color.gold())
+                embed.set_author(name=self.bot.name+", The Autopilot", icon_url=self.bot.user.avatar.url)
+                if member: embed.set_thumbnail(url=member.display_avatar.url)
+                embed.set_footer(text=f"Star Date: {(discord.utils.utcnow() - guild.created_at).days} days")
+                content = f"Happy birthday <@{user_id}>! <@&{data.get('role_id')}>"
+                await channel.send(content=content, embed=embed,
+                                   allowed_mentions=discord.AllowedMentions(users=True, roles=True))
+                self.bot.log.info(f"Sent birthday wish for {name} ({user_id}) in {channel.name}", guild)
+
+    @broadcast_birthdays.before_loop
+    async def before_birthdays(self):
+        await self.bot.wait_until_ready()
+
     @tasks.loop(time=datetime.time(hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc))
     async def broadcast_daily_highlights(self):
         ''' Broadcast daily highlights to all servers '''
@@ -64,6 +112,7 @@ class Announcements(commands.Cog, name="Announcements"):
     
     def cog_unload(self):
         self.broadcast_daily_highlights.cancel()
+        self.broadcast_birthdays.cancel()
         
     def load_holiday_data(self):
         ''' Load holidays data from file '''
