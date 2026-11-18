@@ -22,7 +22,7 @@ eve:
   default_prefix: 'eve?'
   default_color: 0xBEBEFE
   bridge_port: 47312
-  bridge_about: 'voice: joins voice and speaks text aloud (join, say, leave, volume, language), movie watchlist, memes'
+  bridge_about: 'voice: joins voice and speaks text aloud in Tamil (join, say, leave, volume), movie watchlist, memes'
   extensions:
     - 'cogs.general'
     - 'cogs.eve.voice'

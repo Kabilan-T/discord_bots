@@ -236,6 +236,7 @@ class Bridge(commands.Cog, name="Bridge"):
         message.author = member
         message.content = prefix + command_line
         context = await self.bot.get_context(message)
+        context.bridged = True   # lets commands know GO-4 asked (e.g. EVE speaks in her own voice)
 
         if context.command is None:
             return web.json_response({'ok': False, 'error': f'unknown command "{command_line.split()[0] if command_line else ""}" for {self.bot.name}'})

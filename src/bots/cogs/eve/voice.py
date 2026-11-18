@@ -11,31 +11,25 @@
 
 import os
 import regex
-import gtts
+import shutil
 import asyncio
-import requests
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
+from .. import tts
 
-tmp = "tmp"
+MAX_SAY_LENGTH = 300
+AUDIO_EXTENSIONS = (".mp3", ".ogg", ".wav", ".m4a")
 
 class Voice(commands.Cog, name="Voice Features"):
     def __init__(self, bot):
         self.bot = bot
         self.volume = 90
-        self.language = 'ta'
-        self.domain = 'co.in'
         self.called_channel = dict()
-        self.available_languages = gtts.lang.tts_langs()
-        try:
-            response = requests.get("https://www.google.com/supported_domains").text.splitlines()
-            self.available_domains = [domain.removeprefix(".google.") for domain in response]
-        except:
-            self.available_domains = [self.domain]
+        self.session_voices = dict()   # guild_id -> {user_id: index in tts.USER_VOICES}; cleared when EVE leaves voice
         self.greet_messages = dict()
         self.load_greet_messages()
-        self.bot.log.info(f"Voice features initialized with volume {self.volume}, language {self.language} and domain {self.domain}")
+        self.bot.log.info(f"Voice features initialized with volume {self.volume}")
 
     @commands.command(name="join", description="Join a voice channel (id or name); without one, joins the voice channel of the user", aliases=["j"])
     async def join(self, context: Context, voice_channel: discord.VoiceChannel = None):
@@ -77,6 +71,29 @@ class Voice(commands.Cog, name="Voice Features"):
     @commands.command(name="say", description="Say the text in the bot's voice channel; if not in voice, joins the user's channel (use join <channel> first otherwise)", aliases=["s"])
     async def say(self, context: Context, *, text: str):
         ''' Say the text in the voice channel '''
+        if getattr(context, "bridged", False):   # asked through GO-4 -> EVE's own voice
+            voice_name, voice = "Pallavi", tts.EVE_VOICE
+        else:
+            voice_name, voice = self.session_voice(context.guild.id, context.author.id)
+        await self.speak(context, text, voice, voice_name)
+
+    def session_voice(self, guild_id, user_id):
+        ''' Voice of a user for this voice session: 1st user gets voice 1, 2nd voice 2, ... wraps after 7 '''
+        voices = self.session_voices.setdefault(guild_id, dict())
+        if user_id not in voices:
+            voices[user_id] = len(voices) % len(tts.USER_VOICES)
+        return tts.USER_VOICES[voices[user_id]]
+
+    async def speak(self, context: Context, text: str, voice: str, voice_name: str):
+        ''' Clean the text, convert Tanglish, synthesize and play it in the voice channel '''
+        if len(text) > MAX_SAY_LENGTH:
+            embed = discord.Embed(
+                title="Too long :scroll:",
+                description=f"Please keep it under {MAX_SAY_LENGTH} characters",
+                color=self.bot.default_color,
+                )
+            await context.reply(embed=embed)
+            return
         if context.voice_client is None:
             if not await self.join(context):
                 return
@@ -89,9 +106,10 @@ class Voice(commands.Cog, name="Voice Features"):
             await context.reply(embed=embed)
             self.bot.log.warning(f"{context.author} tried to use say command when already speaking in voice channel {context.voice_client.channel.name} in {context.guild.name}", context.guild)
             # wait for the bot to finish speaking
-            while context.voice_client.is_playing():
+            while context.voice_client is not None and context.voice_client.is_playing():
                 await asyncio.sleep(1)
-            context.voice_client.stop()
+            if context.voice_client is None:
+                return
         # Replace mentions with their display names
         for mention in context.message.mentions:
             text = text.replace(mention.mention, mention.display_name)
@@ -104,20 +122,32 @@ class Voice(commands.Cog, name="Voice Features"):
         # Replace server emojis with their names
         for emoji in context.message.guild.emojis:
             text = text.replace(str(emoji), emoji.name)
-        tts = gtts.gTTS(text, lang=self.language, tld=self.domain)
-        file = os.path.join(tmp, "message.mp3")
-        os.makedirs(os.path.dirname(file), exist_ok=True)
-        tts.save(file)
-        context.voice_client.play(discord.FFmpegPCMAudio(file))
+        spoken = await tts.to_tamil_script(text)
+        try:
+            file = await tts.synthesize(spoken, voice)
+        except Exception as e:
+            embed = discord.Embed(
+                title="Voice service is down :mute:",
+                description="I couldn't generate the voice right now. Please try again later",
+                color=self.bot.default_color,
+                )
+            await context.reply(embed=embed)
+            self.bot.log.error(f"edge-tts failed for voice {voice}: {e}", context.guild)
+            return
+        if context.voice_client is None:
+            tts.remove_file(file)
+            return
+        context.voice_client.play(discord.FFmpegPCMAudio(file), after=lambda error: tts.remove_file(file))
         context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source)
         context.voice_client.source.volume = self.volume / 100
         embed = discord.Embed(
             title="Speaking :speaking_head:",
-            description=" *'" + text + "'*",
+            description=" *'" + text + "'*\n\n:loud_sound: " + context.voice_client.channel.mention,
             color=self.bot.default_color,
             )
+        embed.set_footer(text=f"Voice: {voice_name}")
         await context.reply(embed=embed)
-        self.bot.log.info(f"{context.author} used say the text '{text}' in voice channel {context.voice_client.channel.name} in {context.guild.name}", context.guild)
+        self.bot.log.info(f"{context.author} used say with voice {voice_name}: '{text}' (spoken: '{spoken}') in voice channel {context.voice_client.channel.name} in {context.guild.name}", context.guild)
 
     @commands.command(name="leave", description="Leave the voice channel", aliases=["l"])
     async def leave(self, context: Context, force: bool = False):
@@ -203,82 +233,39 @@ class Voice(commands.Cog, name="Voice Features"):
             await context.reply(embed=embed)
             self.bot.log.info(f"{context.author} set the volume to {volume} in {context.guild.name}", context.guild)
 
-    @commands.command(name="lang", description="Get or set the language of the bot")
-    async def language(self, context: Context, language: str = None):
-        ''' Get or set the language of the bot '''
-        if language is None:
-            embed = discord.Embed(
-                title="Language :globe_with_meridians:",
-                description=f"Language is '{self.language} - {self.available_languages[self.language]}'",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.info(f"Current language is {self.language} checked by {context.author} in {context.guild.name}", context.guild)
-        elif language not in self.available_languages.keys():
-            embed = discord.Embed(
-                title="Invalid language :confused:",
-                description="Please enter a valid language.The available languages are:\n" + ",\t".join([f"'{key} - {value}'" for key, value in self.available_languages.items()]),
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.warning(f"{context.author} tried to set the language to invalid language {language} in {context.guild.name}", context.guild)
-        else:
-            self.language = language
-            embed = discord.Embed(
-                title="Language set :globe_with_meridians:",
-                description=f"Language set to '{language} - {self.available_languages[language]}'",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.info(f"{context.author} set the language to {language} in {context.guild.name}", context.guild)
-
-    @commands.command(name="domain", description="Get or set the domain of the google text to speech")
-    async def domain(self, context: Context, domain: str = None):
-        ''' Get or set the domain of the google text to speech '''
-        if domain is None:
-            embed = discord.Embed(
-                title="Domain :globe_with_meridians:",
-                description=f"Domain is '{self.domain} - google.{self.domain}'",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.info(f"Current domain is {self.domain} checked by {context.author} in {context.guild.name}", context.guild)
-        elif domain not in self.available_domains:
-            embed = discord.Embed(
-                title="Invalid domain :confused:",
-                description="Please enter a valid domain.The available domains are:\n" + ",\t".join([f"'{domain}'" for domain in self.available_domains]),
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.warning(f"{context.author} tried to set the domain to invalid domain {domain} in {context.guild.name}", context.guild)
-        else:
-            self.domain = domain
-            embed = discord.Embed(
-                title="Domain set :globe_with_meridians:",
-                description=f"domain set to '{domain} - google.{domain}'",
-                color=self.bot.default_color,
-                )
-            await context.reply(embed=embed)
-            self.bot.log.info(f"{context.author} set the domain to {domain} in {context.guild.name}", context.guild)
-
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if member.bot: return
         voice_client = member.guild.voice_client
         if voice_client is None or voice_client.is_playing(): return # ignore if bot is not in a voice channel or is speaking
         if before.channel != after.channel and after.channel == voice_client.channel:
-            greet_message = "Vanakkam " + f"{member.display_name}"
-            if str(member.guild.id) in self.greet_messages.keys():
-                if str(member.id) in self.greet_messages[str(member.guild.id)].keys():
-                    name = member.display_name.replace('_', ' ')
-                    name = name.replace('.', ' ')
-                    greet_message = self.greet_messages[str(member.guild.id)][str(member.id)] + f" {name}"
-            tts = gtts.gTTS(f"{greet_message}", lang='ta', tld='co.in')
-            file = os.path.join(tmp, "greet.mp3")
-            os.makedirs(os.path.dirname(file), exist_ok=True)
-            tts.save(file)
-            await asyncio.sleep(3) 
-            voice_client.play(discord.FFmpegPCMAudio(file))
+            name = member.display_name.replace('_', ' ').replace('.', ' ').strip()
+            greet = str(self.greet_messages.get(str(member.guild.id), dict()).get(str(member.id), "") or "").strip()
+            clip = None
+            if greet.lower().endswith(AUDIO_EXTENSIONS):
+                # greet is an audio file in data/<bot>/guilds/<id>/greet_audio/ (not in git) -> play only the clip
+                clip = self.bot.guild_path(member.guild.id, "greet_audio", os.path.basename(greet))
+                if not os.path.exists(clip):
+                    self.bot.log.warning(f"Greet audio {greet} for {member.display_name} not found, using default greet", member.guild)
+                    clip, greet = None, ""
+            if clip is not None:
+                file = os.path.join(tts.tmp, f"greet_{member.id}_{os.getpid()}{os.path.splitext(clip)[1]}")
+                os.makedirs(tts.tmp, exist_ok=True)
+                shutil.copyfile(clip, file)
+            else:
+                # text greet (Tanglish converted) or default Vanakkam; the name stays in English
+                text = (await tts.to_tamil_script(greet)) if greet else "வணக்கம்"
+                try:
+                    file = await tts.synthesize(f"{text} {name}", tts.EVE_VOICE)
+                except Exception as e:
+                    self.bot.log.error(f"edge-tts failed for greet: {e}", member.guild)
+                    return
+            await asyncio.sleep(3)
+            voice_client = member.guild.voice_client
+            if voice_client is None or voice_client.is_playing():
+                tts.remove_file(file)
+                return
+            voice_client.play(discord.FFmpegPCMAudio(file), after=lambda error: tts.remove_file(file))
             voice_client.source = discord.PCMVolumeTransformer(voice_client.source)
             voice_client.source.volume = self.volume / 100
             self.bot.log.info(f"{self.bot.name} greeted {member.display_name} in voice channel {voice_client.channel.name} in {member.guild.name}", member.guild)
@@ -302,6 +289,7 @@ class Voice(commands.Cog, name="Voice Features"):
 
     async def _hard_disconnect(self, guild: discord.Guild, *, force: bool = True):
         ''' Forcefully disconnect the bot from the voice channel in the guild '''
+        self.session_voices.pop(guild.id, None)
         voice_client = guild.voice_client
         if voice_client is None:
             return

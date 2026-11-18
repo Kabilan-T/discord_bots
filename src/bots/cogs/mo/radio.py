@@ -10,14 +10,13 @@
 #-------------------------------------------------------------------------------
 
 import os
-import gtts
 import asyncio
 import aiohttp
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
+from .. import tts
 
-tmp = "tmp"
 
 class Radio(commands.Cog, name="Radio FM"):
     def __init__(self, bot):
@@ -76,15 +75,15 @@ class Radio(commands.Cog, name="Radio FM"):
             text = f"Switching from {now_playing.replace('_', ' ')} to {radio_name.replace('_', ' ')} radio station"
         else:
             text = f"Playing the radio station {radio_name.replace('_', ' ')}"
-        tts = gtts.gTTS(text, lang="en", tld="com.au")
-        file = os.path.join(tmp, "radio_welcome.mp3")
-        os.makedirs(os.path.dirname(file), exist_ok=True)
-        tts.save(file)
-        context.voice_client.play(discord.FFmpegPCMAudio(file))
-        context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source)
-        while context.voice_client.is_playing():
-            await asyncio.sleep(1)
-        os.remove(file)
+        try:
+            file = await tts.synthesize(text, tts.MO_VOICE)
+            context.voice_client.play(discord.FFmpegPCMAudio(file))
+            context.voice_client.source = discord.PCMVolumeTransformer(context.voice_client.source)
+            while context.voice_client.is_playing():
+                await asyncio.sleep(1)
+            tts.remove_file(file)
+        except Exception as e:
+            self.bot.log.error(f"edge-tts failed for radio announcement: {e}", context.guild)
         # Play the radio
         self.now_playing[context.guild.id] = radio_name
         context.voice_client.play(discord.FFmpegPCMAudio(radio_url))
@@ -369,14 +368,21 @@ class Radio(commands.Cog, name="Radio FM"):
         if context.voice_client.is_playing():
             context.voice_client.stop()
         # Generate TTS audio
-        tts = gtts.gTTS(text, lang="en", tld="com.au")
-        file = os.path.join(tmp, "repeat.mp3")
-        os.makedirs(os.path.dirname(file), exist_ok=True)
-        tts.save(file)
+        try:
+            file = await tts.synthesize(text, tts.MO_VOICE)
+        except Exception as e:
+            embed = discord.Embed(
+                title="Voice service is down :mute:",
+                description="I couldn't generate the voice right now. Please try again later",
+                color=self.bot.default_color,
+                )
+            await context.reply(embed=embed)
+            self.bot.log.error(f"edge-tts failed for say: {e}", context.guild)
+            return
         context.voice_client.play(discord.FFmpegPCMAudio(file))
         while context.voice_client.is_playing():
             await asyncio.sleep(1)
-        os.remove(file)
+        tts.remove_file(file)
         embed = discord.Embed(
                 title="Radio FM",
                 description=f"Repeating the text in {context.voice_client.channel.mention} :loud_sound:",
